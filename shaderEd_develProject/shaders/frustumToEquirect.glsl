@@ -46,9 +46,14 @@ struct FS_input {
 	//@ label: "dome tilt degrees", editor: range,  min: 0, max: 180, range_min: 0, range_max: 180, range_default: 21
 	float domeTilt;
 	
+	// renderTargetResolution_uncropped
+	ivec2 renderTargetResolution_uncropped;
 	
-	//workaround for shaderEd development: scale preview
-	float scalefactor;
+	mat4 frustum_viewProjectionMatrix;
+	
+	
+	//workaround for shaderEd development: scale preview;
+	float debug_previewScalefactor;
 	
 };
 
@@ -231,11 +236,11 @@ layout(location = 0) out vec4 out_color;
 void main()
 {
 
-	// workaround for SHADEReD, because the authoring tool shows nan when using texture coords.
-	// hence using builtin gl_FragCoord instead and downscaling it with a dummy resolution
-	#define DOME_MASTER_TEXTURE_SIZE (4096.0f)
-	vec2 tc = gl_FragCoord.xy / DOME_MASTER_TEXTURE_SIZE ; //;;texcoord.xy;
-    tc /= in_params.scalefactor;
+
+    vec2 tc = gl_FragCoord.xy / vec2(in_params.renderTargetResolution_uncropped);
+
+    //debug/workaround
+    tc /= in_params.debug_previewScalefactor;
 
 	if(tc.x > 1 || tc.y > 1 )
 	{

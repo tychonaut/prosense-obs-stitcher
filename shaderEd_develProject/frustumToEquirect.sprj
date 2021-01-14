@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project version="2">
 	<pipeline>
-		<pass name="frstumToEquirect_pass" type="shader" active="true">
+		<pass name="frustumToEquirect_pass" type="shader" active="true">
 			<shader type="vs" path="shaders\frustumToEquirect.vert" entry="main" />
 			<shader type="ps" path="shaders\frustumToEquirect.glsl" entry="main" />
 			<inputlayout>
@@ -39,17 +39,17 @@
 				</variable>
 				<variable type="float" name="in_params.virtualScreenHeight">
 					<row>
-						<value>200.639999</value>
+						<value>205.309998</value>
 					</row>
 				</variable>
 				<variable type="float" name="in_params.virtualScreenAzimuth">
 					<row>
-						<value>-39.9900017</value>
+						<value>-44.5</value>
 					</row>
 				</variable>
 				<variable type="float" name="in_params.virtualScreenElevation">
 					<row>
-						<value>0</value>
+						<value>3.5999999</value>
 					</row>
 				</variable>
 				<variable type="float" name="in_params.domeAperture">
@@ -59,48 +59,83 @@
 				</variable>
 				<variable type="float" name="in_params.domeTilt">
 					<row>
-						<value>20.5</value>
+						<value>21.6100006</value>
 					</row>
 				</variable>
-				<variable type="float" name="in_params.scalefactor">
+				<variable type="float" name="in_params.debug_previewScalefactor">
 					<row>
-						<value>0.5</value>
+						<value>0.460000008</value>
 					</row>
 				</variable>
+				<variable type="int2" name="in_params.renderTargetResolution_uncropped">
+					<row>
+						<value>8192</value>
+						<value>4096</value>
+					</row>
+				</variable>
+				<variable type="float4x4" name="in_params.frustum_viewProjectionMatrix" system="ViewProjection" />
 			</variables>
 			<macros />
 		</pass>
 	</pipeline>
 	<objects>
 		<object type="rendertexture" name="renderTarget" fsize="8192,4096" clear="true" />
-		<object type="texture" path="earth.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
-			<bind slot="0" name="frstumToEquirect_pass" />
+		<object type="texture" path="..\testData\fisheye_180_bourke.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+		<object type="texture" path="..\testData\fisheye_as_equirect_180_bourke.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="1" name="frustumToEquirect_pass" />
 		</object>
-		<object type="texture" path="domemaster-vioso_4096x4096.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
-			<bind slot="1" name="frstumToEquirect_pass" />
+		<object type="texture" path="..\testData\RT001.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="0" name="frustumToEquirect_pass" />
 		</object>
 	</objects>
-	<cameras />
+	<cameras>
+		<camera name="Frustum0">
+			<row>
+				<value>0.998291254</value>
+				<value>0</value>
+				<value>-0.0584352165</value>
+				<value>-0.0389674008</value>
+			</row>
+			<row>
+				<value>-5.09943311e-05</value>
+				<value>0.999999762</value>
+				<value>-0.000871173223</value>
+				<value>0.00624597585</value>
+			</row>
+			<row>
+				<value>0.0584351942</value>
+				<value>0.000872664386</value>
+				<value>0.998290896</value>
+				<value>-7.15736103</value>
+			</row>
+			<row>
+				<value>0</value>
+				<value>0</value>
+				<value>0</value>
+				<value>1</value>
+			</row>
+			<row />
+		</camera>
+	</cameras>
 	<settings>
-		<entry type="property" name="frstumToEquirect_pass" item="pipe" />
-		<entry type="file" name="frstumToEquirect_pass" shader="vs" />
-		<entry type="file" name="frstumToEquirect_pass" shader="ps" />
-		<entry type="pinned" name="in_params.virtualScreenWidth" owner="frstumToEquirect_pass" />
-		<entry type="pinned" name="in_params.virtualScreenHeight" owner="frstumToEquirect_pass" />
-		<entry type="pinned" name="in_params.virtualScreenAzimuth" owner="frstumToEquirect_pass" />
-		<entry type="pinned" name="in_params.domeTilt" owner="frstumToEquirect_pass" />
-		<entry type="pinned" name="in_params.scalefactor" owner="frstumToEquirect_pass" />
-		<entry type="pinned" name="in_params.domeAperture" owner="frstumToEquirect_pass" />
-		<entry type="pinned" name="in_params.virtualScreenElevation" owner="frstumToEquirect_pass" />
-		<entry type="pinned" name="in_params.domeRadius" owner="frstumToEquirect_pass" />
-		<entry type="camera" fp="false">
-			<distance>8</distance>
-			<pitch>-89</pitch>
-			<yaw>207</yaw>
-			<roll>360</roll>
+		<entry type="pinned" name="in_params.virtualScreenWidth" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="in_params.virtualScreenHeight" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="in_params.virtualScreenAzimuth" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="in_params.domeTilt" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="in_params.domeAperture" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="in_params.virtualScreenElevation" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="in_params.domeRadius" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="in_params.debug_previewScalefactor" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="in_params.renderTargetResolution_uncropped" owner="frustumToEquirect_pass" />
+		<entry type="camera" fp="true">
+			<positionX>0.45714286</positionX>
+			<positionY>0</positionY>
+			<positionZ>7.14285564</positionZ>
+			<yaw>3.3499999</yaw>
+			<pitch>-0.0500000007</pitch>
 		</entry>
-		<entry type="clearcolor" r="0" g="0" b="0" a="0" />
-		<entry type="usealpha" val="false" />
+		<entry type="clearcolor" r="1" g="0" b="0" a="0" />
+		<entry type="usealpha" val="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="177" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="87" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="133" use_cond="true" cond="" enabled="true" />
@@ -113,6 +148,7 @@
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="174" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="84" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="130" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="245" use_cond="false" cond="" enabled="true" />
 	</settings>
 	<plugindata />
 </project>

@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<project version="2">
+	<pipeline>
+		<pass name="flatRectOntoDome" type="shader" active="true">
+			<shader type="vs" path="shaders\frustumToEquirect.vert" entry="main" />
+			<shader type="ps" path="shaders\frustumToEquirect.glsl" entry="main" />
+			<inputlayout>
+				<item value="Position" semantic="POSITION" />
+				<item value="Texcoord" semantic="NORMAL" />
+				<item value="Texcoord" semantic="TEXCOORD0" />
+			</inputlayout>
+			<rendertexture />
+			<items>
+				<item name="fullscreenQuad" type="geometry">
+					<type>ScreenQuadNDC</type>
+					<width>1</width>
+					<height>1</height>
+					<depth>1</depth>
+					<topology>TriangleList</topology>
+				</item>
+			</items>
+			<itemvalues />
+			<variables>
+				<variable type="float4x4" name="modelMat" system="GeometryTransform" />
+				<variable type="float" name="backgroundTexture">
+					<row>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.sampler">
+					<row>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.domeRadius">
+					<row>
+						<value>300</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.virtualScreenWidth">
+					<row>
+						<value>200</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.virtualScreenHeight">
+					<row>
+						<value>200.639999</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.virtualScreenAzimuth">
+					<row>
+						<value>-40.8199997</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.virtualScreenElevation">
+					<row>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.domeAperture">
+					<row>
+						<value>180</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.domeTilt">
+					<row>
+						<value>21</value>
+					</row>
+				</variable>
+			</variables>
+			<macros />
+		</pass>
+	</pipeline>
+	<objects>
+		<object type="rendertexture" name="renderTarget" fsize="1024,1024" clear="true" />
+		<object type="texture" path="earth.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="0" name="flatRectOntoDome" />
+		</object>
+		<object type="texture" path="domemaster-vioso_4096x4096.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="1" name="flatRectOntoDome" />
+		</object>
+	</objects>
+	<cameras />
+	<settings>
+		<entry type="file" name="flatRectOntoDome" shader="ps" />
+		<entry type="file" name="flatRectOntoDome" shader="vs" />
+		<entry type="pinned" name="in_params.virtualScreenWidth" owner="flatRectOntoDome" />
+		<entry type="pinned" name="in_params.virtualScreenHeight" owner="flatRectOntoDome" />
+		<entry type="pinned" name="in_params.virtualScreenAzimuth" owner="flatRectOntoDome" />
+		<entry type="pinned" name="in_params.virtualScreenElevation" owner="flatRectOntoDome" />
+		<entry type="pinned" name="in_params.domeTilt" owner="flatRectOntoDome" />
+		<entry type="camera" fp="false">
+			<distance>6</distance>
+			<pitch>89</pitch>
+			<yaw>336</yaw>
+			<roll>360</roll>
+		</entry>
+		<entry type="clearcolor" r="0" g="0" b="0" a="0" />
+		<entry type="usealpha" val="false" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="177" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="87" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="133" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="176" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="86" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="132" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="175" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="85" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="131" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="174" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="84" use_cond="true" cond="" enabled="true" />
+		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="130" use_cond="true" cond="" enabled="true" />
+	</settings>
+	<plugindata />
+</project>

@@ -23,15 +23,19 @@
  const vec4 c_BgColor= vec4( 0, 0, 1, 0);
 
 //@implements: sampler2D
-struct frame2dome {
+struct FS_input {
 
-	sampler2D sampler;
+	sampler2D currentPlanarRendering;
 	
 	//@ label: "dome radius cm", editor: range,  min: 0, max: 10000, range_min: 0, range_max: 10000, range_default: 300
 	float domeRadius;
 	//@ label: "dome aperture degrees", editor: range,  min: 0, max: 360, range_min: 0, range_max: 360, range_default: 180
 	float domeAperture;
 	//@ label: "virtual screen azimuth", editor: range,  min: -180, max: 180, range_min: -180, range_max: 180, range_default: 0
+	
+	
+	
+	
 	float virtualScreenAzimuth;
 	//@ label: "virtual screen elevation", editor: range,  min: -90, max: 90, range_min: -90, range_max: 90, range_default: 35
 	float virtualScreenElevation;
@@ -41,6 +45,10 @@ struct frame2dome {
 	float virtualScreenHeight;
 	//@ label: "dome tilt degrees", editor: range,  min: 0, max: 180, range_min: 0, range_max: 180, range_default: 21
 	float domeTilt;
+	
+	
+	//workaround for shaderEd development: scale preview
+	float scalefactor;
 	
 };
 
@@ -60,7 +68,7 @@ float angleToRadians(float angle)
 //      south (-z axis): 2pi  radians 
 // ele: top   (+y axis): 0 radians
 //      horizon (xz-plane): pi/2 radians
-vec2 texCoordsToAziEle_radians(frame2dome s, vec2 tc)
+vec2 texCoordsToAziEle_radians(FS_input s, vec2 tc)
 {
 	//[0..1]^2 --> [-1..-1]^2
 	vec2 tc_centered_0_1 = (tc - vec2(0.5f,0.5f)) * 2.0f;
@@ -91,7 +99,7 @@ vec2 texCoordsToAziEle_radians(frame2dome s, vec2 tc)
 // to a point on the physical dome (dome radius is respected, dome tilt not,
 // because we want observer coordinates, not dome-local coordinates)
 // Coordinate system is described in comments to texCoordsToAziEle()
-vec3 aziEleToCartesian3D(frame2dome s, vec2 aziEle_rads)
+vec3 aziEleToCartesian3D(FS_input s, vec2 aziEle_rads)
 {
 	
 	// just for readability:
@@ -114,7 +122,7 @@ vec3 aziEleToCartesian3D(frame2dome s, vec2 aziEle_rads)
 
 
 
-vec4 DOMESHADER_FUNCTION_NAME(frame2dome s, vec2 tex_coords)
+vec4 DOMESHADER_FUNCTION_NAME(FS_input s, vec2 tex_coords)
 {
 	const vec4 backgroundColor = vec4(0,0,0,0);
 	
@@ -201,7 +209,7 @@ vec4 DOMESHADER_FUNCTION_NAME(frame2dome s, vec2 tex_coords)
 		return backgroundColor;
 	}
 	
-	return vec4(texture(s.sampler,localTexCoords).xyz,1);
+	return vec4(texture(s.currentPlanarRendering,localTexCoords).xyz,1);
 }
 
 
@@ -209,7 +217,7 @@ vec4 DOMESHADER_FUNCTION_NAME(frame2dome s, vec2 tex_coords)
 #if DEVELOPMENT_CODE
 
 
-uniform frame2dome in_params;
+uniform FS_input in_params;
 
 uniform sampler2D backgroundTexture;
 //uniform sampler2D payloadTexture;
@@ -225,8 +233,9 @@ void main()
 
 	// workaround for SHADEReD, because the authoring tool shows nan when using texture coords.
 	// hence using builtin gl_FragCoord instead and downscaling it with a dummy resolution
-	#define DOME_MASTER_TEXTURE_SIZE (1024.0f)
+	#define DOME_MASTER_TEXTURE_SIZE (4096.0f)
 	vec2 tc = gl_FragCoord.xy / DOME_MASTER_TEXTURE_SIZE ; //;;texcoord.xy;
+    tc /= in_params.scalefactor;
 
 	if(tc.x > 1 || tc.y > 1 )
 	{

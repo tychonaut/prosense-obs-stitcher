@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project version="2">
 	<pipeline>
-		<pass name="flatRectOntoDome" type="shader" active="true">
+		<pass name="frstumToEquirect_pass" type="shader" active="true">
 			<shader type="vs" path="shaders\frustumToEquirect.vert" entry="main" />
 			<shader type="ps" path="shaders\frustumToEquirect.glsl" entry="main" />
 			<inputlayout>
@@ -27,11 +27,6 @@
 						<value>0</value>
 					</row>
 				</variable>
-				<variable type="float" name="in_params.sampler">
-					<row>
-						<value>0</value>
-					</row>
-				</variable>
 				<variable type="float" name="in_params.domeRadius">
 					<row>
 						<value>300</value>
@@ -49,7 +44,7 @@
 				</variable>
 				<variable type="float" name="in_params.virtualScreenAzimuth">
 					<row>
-						<value>-40.8199997</value>
+						<value>-39.9900017</value>
 					</row>
 				</variable>
 				<variable type="float" name="in_params.virtualScreenElevation">
@@ -64,7 +59,12 @@
 				</variable>
 				<variable type="float" name="in_params.domeTilt">
 					<row>
-						<value>21</value>
+						<value>20.5</value>
+					</row>
+				</variable>
+				<variable type="float" name="in_params.scalefactor">
+					<row>
+						<value>0.5</value>
 					</row>
 				</variable>
 			</variables>
@@ -72,27 +72,31 @@
 		</pass>
 	</pipeline>
 	<objects>
-		<object type="rendertexture" name="renderTarget" fsize="1024,1024" clear="true" />
+		<object type="rendertexture" name="renderTarget" fsize="8192,4096" clear="true" />
 		<object type="texture" path="earth.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
-			<bind slot="0" name="flatRectOntoDome" />
+			<bind slot="0" name="frstumToEquirect_pass" />
 		</object>
 		<object type="texture" path="domemaster-vioso_4096x4096.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
-			<bind slot="1" name="flatRectOntoDome" />
+			<bind slot="1" name="frstumToEquirect_pass" />
 		</object>
 	</objects>
 	<cameras />
 	<settings>
-		<entry type="file" name="flatRectOntoDome" shader="ps" />
-		<entry type="file" name="flatRectOntoDome" shader="vs" />
-		<entry type="pinned" name="in_params.virtualScreenWidth" owner="flatRectOntoDome" />
-		<entry type="pinned" name="in_params.virtualScreenHeight" owner="flatRectOntoDome" />
-		<entry type="pinned" name="in_params.virtualScreenAzimuth" owner="flatRectOntoDome" />
-		<entry type="pinned" name="in_params.virtualScreenElevation" owner="flatRectOntoDome" />
-		<entry type="pinned" name="in_params.domeTilt" owner="flatRectOntoDome" />
+		<entry type="property" name="frstumToEquirect_pass" item="pipe" />
+		<entry type="file" name="frstumToEquirect_pass" shader="vs" />
+		<entry type="file" name="frstumToEquirect_pass" shader="ps" />
+		<entry type="pinned" name="in_params.virtualScreenWidth" owner="frstumToEquirect_pass" />
+		<entry type="pinned" name="in_params.virtualScreenHeight" owner="frstumToEquirect_pass" />
+		<entry type="pinned" name="in_params.virtualScreenAzimuth" owner="frstumToEquirect_pass" />
+		<entry type="pinned" name="in_params.domeTilt" owner="frstumToEquirect_pass" />
+		<entry type="pinned" name="in_params.scalefactor" owner="frstumToEquirect_pass" />
+		<entry type="pinned" name="in_params.domeAperture" owner="frstumToEquirect_pass" />
+		<entry type="pinned" name="in_params.virtualScreenElevation" owner="frstumToEquirect_pass" />
+		<entry type="pinned" name="in_params.domeRadius" owner="frstumToEquirect_pass" />
 		<entry type="camera" fp="false">
-			<distance>6</distance>
-			<pitch>89</pitch>
-			<yaw>336</yaw>
+			<distance>8</distance>
+			<pitch>-89</pitch>
+			<yaw>207</yaw>
 			<roll>360</roll>
 		</entry>
 		<entry type="clearcolor" r="0" g="0" b="0" a="0" />

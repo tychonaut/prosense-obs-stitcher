@@ -15,11 +15,19 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 set(MY_DEPENDENCY_DIR "${PROJECT_SOURCE_DIR}/deps" CACHE STRING "Directory to external dependencies (extract deps.7z)")
 
+#TODO trigger build (and install or local linking) from plugin build
+set(EXPAT_INSTALL_DIR "C:/Program Files/expat/" CACHE STRING "Install directory of expat xml C library")
+
 set (CMAKE_PREFIX_PATH 
 	"${MY_DEPENDENCY_DIR}/glm-0.9.9.8/glm" 
 	"${MY_DEPENDENCY_DIR}/glew-2.2.0-win32/glew-2.2.0"
 	"${MY_DEPENDENCY_DIR}/SDL2-devel-2.0.14-VC/SDL2-2.0.14"
+	"${EXPAT_INSTALL_DIR}"
 )
+
+
+#pure-C xml library
+find_package(EXPAT REQUIRED)
 
 
 
@@ -72,17 +80,27 @@ set_target_properties(FrustumToEquirect PROPERTIES
 # include directories
 #target_include_directories(FrustumToEquirect PRIVATE  ${SDL2_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
 # SDL2_INCLUDE_DIR, without 'S'
-target_include_directories(FrustumToEquirect PRIVATE  ${SDL2_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
+target_include_directories(FrustumToEquirect PRIVATE 
+	${SDL2_INCLUDE_DIR} 
+	${GLEW_INCLUDE_DIRS} 
+	${OPENGL_INCLUDE_DIRS} 
+	${GLM_INCLUDE_DIRS}
+	${EXPAT_INCLUDE_DIRS}
+)
 
 
 # link libraries
-target_link_libraries(FrustumToEquirect ${GLM_LIBRARY_DIRS} ${OPENGL_LIBRARIES})
+target_link_libraries(FrustumToEquirect 
+	${GLM_LIBRARY_DIRS} 
+	${OPENGL_LIBRARIES}
+	${EXPAT_LIBRARIES}
+)
 
 if(WIN32)
 	# link specific win32 libraries
 	## SDL makes problems...
 	#target_link_libraries(FrustumToEquirect GLEW::GLEW SDL2::SDL2)
-	target_link_libraries(FrustumToEquirect GLEW::glew ${SDL2MAIN_LIBRARY} ${SDL2_LIBRARY})
+	target_link_libraries(FrustumToEquirect GLEW::glew ${SDL2MAIN_LIBRARY} ${SDL2_LIBRARY} )
 	
 else()
 	# link linux libraries

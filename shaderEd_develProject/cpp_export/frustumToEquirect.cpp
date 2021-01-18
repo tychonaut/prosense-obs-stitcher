@@ -22,6 +22,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#ifdef HAVE_EXPAT_CONFIG_H
+#include <expat_config.h>
+#endif
+#include <expat.h>
+
 
 
 	// required functions

@@ -1,0 +1,44 @@
+Algorithm create_blendmasks(
+	frustaList, 
+	// frame where an input image is supposed to be faded out towards the edges:
+	fadingDistance_pixels = 200, 
+	// only dome geometry and projection related stuff to come:
+	domeOpeningAngle = 180,
+	domeTilt = 21,
+	//to make hemisphere from 4:1 aspect ratio to 1:1; 
+	// needed because nvenc supports max. 4096 pixels per dimension
+	projectionRotation = 90
+)
+{
+	//how many frusta contribute to each pixel?
+	for each output pixel x, y: 
+	for each frustum i:
+	overlapCount_x_y := increment via atomic_inc in compute shader; 
+
+	 // for each input image’s pixel, determine weight w_i_x_y:
+	 // condition: sum_i(w_i_x_y)=1;
+
+	for each frustum i:
+	  For each input pixel x,y:
+		 // determine preliminary fadingWeight_i_x_y 
+		  If output pixel is outside frustum_i:
+			w_i_x_y = 0;
+		   fadingWeight_i_x_y = 0;
+		  Else:
+			distance_border_x = min(pixelPos_x, imageRes_x - pixelPos_x);
+			distance_border_y = min(pixelPos_y, imageRes_y - pixelPos_y);
+			// Manhattan distance:
+			distance_border= min(distance_border_x, distance_border_y);
+			
+			fadingWeight_i_x_y = 1, if distance_border > fadingDistance_pixels
+										distance_border / fadingDistance_pixels, else;
+
+	for each input pixel x,y:
+	   // determine final weight w_i_x_y 
+		If output pixel is outside frustum_i:
+		  w_i_x_y = 0;
+		else:
+		  fadingWeight_xy_sum = sum_i(fadingWeight_i_x_y );
+		  // normalize so that weighted sum == 1
+		  w_i_x_y  = fadingWeight_i_x_y / fadingWeight_xy_sum;
+}

@@ -15,21 +15,36 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <obs-module.h>
 #include <graphics/vec2.h>
 #include <graphics/image-file.h>
 #include <stdio.h>
 #include "obs.h"
-#include "obs-internal.h"
+//#include "obs-internal.h"
+
+
+#include <expat.h>
+
+
+
 
 OBS_DECLARE_MODULE()
 
-struct obs_source_info stitch_filter;
+#ifdef __cplusplus
+//	forward decl makes trouble
+#else
+	struct obs_source_info stitch_filter;
+#endif
 
-bool obs_module_load(void)
-{
-	obs_register_source(&stitch_filter);
-}
+bool obs_module_load(void);
+
+
 
 static void stitch_filter_update(void *data, obs_data_t *settings);
 
@@ -67,7 +82,8 @@ static const char *stitch_filter_get_name(void *unused)
 
 static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context)
 {
-	struct stitch_filter_data *filter = bzalloc(sizeof(*filter));
+	struct stitch_filter_data *filter =
+		(struct stitch_filter_data *)bzalloc(sizeof(*filter));
 
 	filter->context = context;
 	
@@ -77,7 +93,7 @@ static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context)
 
 static void stitch_filter_destroy(void *data)
 {
-	struct stitch_filter_data *filter = data;
+	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
 	obs_enter_graphics();
 	gs_effect_destroy(filter->effect);
@@ -130,17 +146,17 @@ void parse_script_crop(char* str, struct vec2* crop_c, struct vec2* crop_r, char
 	crop_r->y = (crop.w - crop.z) / 2.0f;
 }
 
-void parse_file(char* path, int cam, struct stitch_filter_data* filter)
+void parse_file(const char* path, int cam, struct stitch_filter_data* filter)
 {
 	if (cam < 0)return;
 	FILE* pFile;
 	char* str;
-	str = malloc(150 * 1000 * 1000);
+	str =  (char*) malloc(150 * 1000 * 1000);
 
 	pFile = fopen(path, "r");
 	if (pFile != NULL)
 	{
-		char* fext = strrchr(path, '.');
+		const char* fext = strrchr(path, '.');
 		if (strcmp(fext, ".pts") == 0)
 		{
 			char *effect_path = obs_module_file("pts-stitcher.effect");
@@ -164,12 +180,12 @@ void parse_file(char* path, int cam, struct stitch_filter_data* filter)
 				if (fgets(str, 150 * 1000 * 1000, pFile) == NULL) break;
 			}
 
-			float v = parse_script(str, " v") * M_PI / 180.0f;
-			filter->abc.x = parse_script(str, " a");
-			filter->abc.y = parse_script(str, " b");
-			filter->abc.z = parse_script(str, " c");
-			filter->de.x = parse_script(str, " d");
-			filter->de.y = parse_script(str, " e");
+			float v = parse_script(str, (char*) " v")* M_PI / 180.0f;
+			filter->abc.x = parse_script(str, (char *)" a");
+			filter->abc.y = parse_script(str, (char *)" b");
+			filter->abc.z = parse_script(str, (char *)" c");
+			filter->de.x = parse_script(str, (char *)" d");
+			filter->de.y = parse_script(str, (char *)" e");
 
 			int i = -1;
 			while (i < cam)
@@ -185,9 +201,12 @@ void parse_file(char* path, int cam, struct stitch_filter_data* filter)
 				i++;
 			}
 
-			filter->yrp.x = parse_script(str, " y") * M_PI / 180.0f;
-			filter->yrp.y = parse_script(str, " r") * M_PI / 180.0f;
-			filter->yrp.z = parse_script(str, " p") * M_PI / 180.0f;
+			filter->yrp.x =
+				parse_script(str, (char *)" y") * M_PI / 180.0f;
+			filter->yrp.y =
+				parse_script(str, (char *)" r") * M_PI / 180.0f;
+			filter->yrp.z =
+				parse_script(str, (char *)" p") * M_PI / 180.0f;
 			parse_script_crop(str, &filter->crop_c, &filter->crop_r, 'C');
 			filter->ppr = (filter->crop_r.x + filter->crop_r.y) / v;
 		}
@@ -223,17 +242,22 @@ void parse_file(char* path, int cam, struct stitch_filter_data* filter)
 				i++;
 			}
 
-			float v = parse_script(str, " v") * M_PI / 180.0f;
-			filter->abc.x = parse_script(str, " a");
-			filter->abc.y = parse_script(str, " b");
-			filter->abc.z = parse_script(str, " c");
-			filter->de.x = parse_script(str, " d");
-			filter->de.y = parse_script(str, " e");
+			float v =
+				parse_script(str, (char *)" v") * M_PI / 180.0f;
+			filter->abc.x = parse_script(str, (char *)" a");
+			filter->abc.y = parse_script(str, (char *)" b");
+			filter->abc.z = parse_script(str, (char *)" c");
+			filter->de.x = parse_script(str, (char *)" d");
+			filter->de.y = parse_script(str, (char *)" e");
 
-			filter->yrp.x = parse_script(str, " y") * M_PI / 180.0f;
-			filter->yrp.y = parse_script(str, " r") * M_PI / 180.0f;
-			filter->yrp.z = parse_script(str, " p") * M_PI / 180.0f;
-			filter->ppr = parse_script(str, " w") / v;
+			filter->yrp.x =
+				parse_script(str, (char *)" y") * M_PI / 180.0f;
+			filter->yrp.y =
+				parse_script(str, (char *)" r") * M_PI / 180.0f;
+			filter->yrp.z =
+				parse_script(str, (char *)" p") * M_PI / 180.0f;
+			filter->ppr =
+				parse_script(str, (char *)" w") / v;
 		}
 
 		fclose(pFile);
@@ -243,27 +267,43 @@ void parse_file(char* path, int cam, struct stitch_filter_data* filter)
 
 static void stitch_filter_update(void *data, obs_data_t *settings)
 {
-	struct stitch_filter_data *filter = data;
+	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
 	filter->resO.x = (float)4096;
 	filter->resO.y = (float)2048;
 
 	int cam = (int)obs_data_get_int(settings, "cam");
 	const char *path = obs_data_get_string(settings, "alpha");
-	char* res = obs_data_get_string(settings, "res");
-	long r = strtol(res, &res, 10);
+
+	//original code: C seems to be less strict with th constness
+	//char* res = obs_data_get_string(settings, "res");
+
+	//workaround: 
+	//const char *res_const = obs_data_get_string(settings, "res");
+	char const *const res_const = obs_data_get_string(settings, (const char *) "res");
+
+	//char *res = (char *)malloc(strlen(res_const) * sizeof(char));
+	//res =
+	//strcpy(res, res_const);
+	//char *res = strdup(res_const);
+	//char *const res = (char *const) res_const;
+	char **res_ptr = (char **)&(res_const);
+
+	//long r = strtol(res, &res, 10);
+	long r = strtol(res_const, res_ptr, 10);
 	if (r > 0)
 	{
 		filter->resO.x = (float)r;
-		if (res != NULL)
+		if (res_const != NULL)
 		{
-			r = strtol(res + 1, NULL, 10);
+			r = strtol(res_const + 1, NULL, 10);
 			if (r > 0)
 			{
 				filter->resO.y = (float)r;
 			}
 		}
 	}
+
 
 	gs_image_file_init(&filter->alpha, path);
 
@@ -279,6 +319,10 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 	{
 		parse_file(path, cam, filter);
 	}
+
+	
+	//free(res);
+	//res = NULL;
 }
 
 static obs_properties_t *stitch_filter_properties(void *data)
@@ -302,7 +346,7 @@ static void stitch_filter_defaults(obs_data_t *settings)
 
 static void stitch_filter_tick(void *data, float seconds)
 {
-	struct stitch_filter_data *filter = data;
+	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
 	obs_source_t *target;
 	target = obs_filter_get_target(filter->context);
@@ -314,7 +358,7 @@ static void stitch_filter_tick(void *data, float seconds)
 
 static void stitch_filter_render(void *data, gs_effect_t *effect)
 {
-	struct stitch_filter_data *filter = data;
+	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
 	if (!filter->target || !filter->effect) {
 		obs_source_skip_video_filter(filter->context);
@@ -344,7 +388,8 @@ static uint32_t stitch_filter_width(void *data)
 {
 	if (data != NULL)
 	{
-		struct stitch_filter_data *filter = data;
+		struct stitch_filter_data *filter =
+			(struct stitch_filter_data *)data;
 		return (uint32_t)filter->resO.x;
 	}
 	else
@@ -357,7 +402,8 @@ static uint32_t stitch_filter_height(void *data)
 {
 	if (data != NULL)
 	{
-		struct stitch_filter_data *filter = data;
+		struct stitch_filter_data *filter =
+			(struct stitch_filter_data *)data;
 		return (uint32_t)filter->resO.y;
 	}
 	else
@@ -366,6 +412,25 @@ static uint32_t stitch_filter_height(void *data)
 	}
 }
 
+
+#ifdef __cplusplus
+
+struct obs_source_info stitch_filter = {.id = "prosense_obs_stitcher_filter",
+					.type = OBS_SOURCE_TYPE_FILTER,
+					.output_flags = OBS_SOURCE_VIDEO,
+					.get_name = stitch_filter_get_name,
+					.create = stitch_filter_create,
+					.destroy = stitch_filter_destroy,
+					.get_width = stitch_filter_width,
+					.get_height = stitch_filter_height,
+					.get_defaults = stitch_filter_defaults,
+					.get_properties =
+						stitch_filter_properties,
+					.update = stitch_filter_update,
+					.video_tick = stitch_filter_tick,
+					.video_render = stitch_filter_render,
+};
+#else
 struct obs_source_info stitch_filter = {
 	.id = "prosense_obs_stitcher_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
@@ -381,3 +446,19 @@ struct obs_source_info stitch_filter = {
 	.get_width = stitch_filter_width,
 	.get_height = stitch_filter_height
 };
+#endif
+
+
+bool obs_module_load(void)
+{
+	obs_register_source(&stitch_filter);
+
+	return true;
+}
+
+
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+

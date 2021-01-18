@@ -8,15 +8,44 @@ set(prosense-obs-stitcher_config_HEADERS
 
 include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
 
+
+
+#TODO trigger build (and install or local linking) from plugin build
+set(MY_EXPAT_DIR "C:/Program Files/expat/" CACHE STRING "Install directory of expat xml C library")
+set (CMAKE_PREFIX_PATH 
+	"${MY_EXPAT_DIR}"
+)
+
+
+#pure-C xml library
+find_package(EXPAT REQUIRED)
+
+
+
+
 set(prosense-obs-stitcher_SOURCES
-	prosense-obs-stitcher.c)
+	prosense-obs-stitcher.cpp)
 
 add_library(prosense-obs-stitcher MODULE
 	${prosense-obs-stitcher_SOURCES}
 	${prosense-obs-stitcher_config_HEADERS})
 
+
+# properties
+set_target_properties(prosense-obs-stitcher PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED YES
+)
+
+
+target_include_directories(prosense-obs-stitcher PRIVATE
+	${EXPAT_INCLUDE_DIRS}
+)
+
 target_link_libraries(prosense-obs-stitcher
-	libobs)
+	libobs
+	${EXPAT_LIBRARIES}
+)
 
 
 set_target_properties(prosense-obs-stitcher PROPERTIES FOLDER "plugins")

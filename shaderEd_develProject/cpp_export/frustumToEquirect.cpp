@@ -56,98 +56,127 @@ static bool graphene_test_matrix_near()
 
 //-----------------------------------------------------------------------------
 // test linking agains expat
-//#include <expat.h>
-//#include <stdio.h>
-//#include <string.h>
 
-#define MY_BUFFER_SIZE 1000000
+static const char *xml =
+	"<data>\n"
+	"    <header length=\"4\">\n"
+	"            <item name=\"time\" type=\"time\">16</item>\n"
+	"            <item name=\"ref\" type=\"string\">3843747</item>\n"
+	"            <item name=\"port\" type=\"int16\">0</item>\n"
+	"            <item name=\"frame\" type=\"int16\">20</item>\n" 
+	"            <item name=\"deioemer\" type=\"string\"> wadde hadde DUDDe da <embeddedTag> umbedded char data </embeddedTag> blubberdi </item>\n"
+	"    </header>\n"
+	"</data>\n";
 
-/* track the current level in the xml tree */
-static int depth = 0;
+void reset_char_data_buffer();
+void process_char_data_buffer();
+static bool grab_next_value;
 
-//static char *last_content;
-
-/* first when start element is encountered */
 void start_element(void *data, const char *element, const char **attribute)
 {
-	int i;
+	process_char_data_buffer();
+	reset_char_data_buffer();
 
-	for (i = 0; i < depth; i++) {
-		printf("X");
+	if (strcmp("item", element) == 0) {
+		size_t matched = 0;
+
+		for (size_t i = 0; attribute[i]; i += 2) {
+			if ((strcmp("name", attribute[i]) == 0) &&
+			    (strcmp("frame", attribute[i + 1]) == 0))
+				++matched;
+
+			if ((strcmp("type", attribute[i]) == 0) &&
+			    (strcmp("int16", attribute[i + 1]) == 0))
+				++matched;
+		}
+
+		if (matched == 2) {
+			printf("this is the element you are looking for\n");
+			grab_next_value = true;
+		}
 	}
-
-	printf("%s", element);
-
-	for (i = 0; attribute[i]; i += 2) {
-		printf(" %s= '%s'", attribute[i], attribute[i + 1]);
-	}
-
-	printf("\n");
-	depth++;
 }
 
-/* decrement the current level of the tree */
 void end_element(void *data, const char *el)
 {
-	//int i;
-	//for (i = 0; i < depth; i++) {
-	//	printf("Y");
-	//}
-	//printf("Content of element %s was \"%s\"\n", el, last_content);
-	depth--;
+	process_char_data_buffer();
+	reset_char_data_buffer();
 }
 
-void handle_data(void *data, const char *content, int length)
-{
-	//char *tmp = (char *) malloc(length);
-	//strncpy(tmp, content, length);
-	//tmp[length] = '\0';
-	//data = (void *)tmp;
-	//last_content = tmp; /* TODO: concatenate the text nodes? */
+static char char_data_buffer[1024];
+static size_t offs;
+static bool overflow;
 
-	//printf("handle data: %s", content);
+void reset_char_data_buffer(void)
+{
+	offs = 0;
+	overflow = false;
+	grab_next_value = false;
 }
 
-int parse_xml(char *buff, size_t buff_size)
+// pastes parts of the node together
+void char_data(void *userData, const XML_Char *s, int len)
 {
-	FILE *fp;
-	fp = fopen("../../../testdata/calibration_viewfrusta.xml", "r");
-	if (fp == NULL) {
-		printf("Failed to open file\n");
-		return 1;
+	if (!overflow) {
+		if (len + offs >= sizeof(char_data_buffer)) {
+			overflow = true;
+		} else {
+			memcpy(char_data_buffer + offs, s, len);
+			offs += len;
+		}
 	}
+}
 
-	XML_Parser parser = XML_ParserCreate("utf-8");
+// if the element is the one we're after, convert the character data to
+// an integer value
+void process_char_data_buffer(void)
+{
+	if (offs > 0) {
+		char_data_buffer[offs] = '\0';
+
+		printf("character data: %s\n", char_data_buffer);
+
+		if (grab_next_value) {
+			int value = atoi(char_data_buffer);
+
+			printf("the value is %d\n", value);
+		}
+	}
+}
+
+int test_expat(void)
+{
+	XML_Parser parser = XML_ParserCreate(NULL);
+
 	XML_SetElementHandler(parser, start_element, end_element);
-	XML_SetCharacterDataHandler(parser, handle_data);
+	XML_SetCharacterDataHandler(parser, char_data);
 
-	memset(buff, 0, buff_size);
-	printf("strlen(buff) before parsing: %d\n", strlen(buff));
+	reset_char_data_buffer();
 
-	size_t file_size = 0;
-	file_size = fread(buff, sizeof(char), buff_size, fp);
 
-	/* parse the xml */
-	if (XML_Parse(parser, buff, strlen(buff), XML_TRUE) ==
-	    XML_STATUS_ERROR) {
+	 FILE *fp;
+	 fp = fopen("../../../testdata/calibration_viewfrusta.xml", "r");
+	 if (fp == NULL) {
+		 printf("Failed to open file\n");
+		 return 1;
+	 }
+
+
+	if (XML_Parse(parser, xml, strlen(xml), XML_TRUE) == XML_STATUS_ERROR)
 		printf("Error: %s\n",
 		       XML_ErrorString(XML_GetErrorCode(parser)));
-	}
 
-	fclose(fp);
 	XML_ParserFree(parser);
 
 	return 0;
 }
 
-int test_expat(int argc, char **argv)
-{
-	int result;
-	char buffer[MY_BUFFER_SIZE];
-	result = parse_xml(buffer, MY_BUFFER_SIZE);
-	printf("Result is %i\n", result);
-	return 0;
-}
+
+//-----------------------------------------------------------------------------------
+
+
+
+
 
 
 
@@ -165,7 +194,7 @@ const GLenum FBO_Buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_CO
 
 int main(int argc, char **argv)
 {
-	test_expat(argc,argv);
+	test_expat();
 	graphene_test_matrix_near();
 
 	stbi_set_flip_vertically_on_load(1);

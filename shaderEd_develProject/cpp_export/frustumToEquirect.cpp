@@ -28,9 +28,6 @@
 #include <expat.h>
 
 
-
-
-#include <math.h>
 #include <graphene.h>
 
 
@@ -57,13 +54,106 @@ static bool graphene_test_matrix_near()
 }
 
 
+//-----------------------------------------------------------------------------
+// test linking agains expat
+//#include <expat.h>
+//#include <stdio.h>
+//#include <string.h>
+
+#define MY_BUFFER_SIZE 1000000
+
+/* track the current level in the xml tree */
+static int depth = 0;
+
+//static char *last_content;
+
+/* first when start element is encountered */
+void start_element(void *data, const char *element, const char **attribute)
+{
+	int i;
+
+	for (i = 0; i < depth; i++) {
+		printf("X");
+	}
+
+	printf("%s", element);
+
+	for (i = 0; attribute[i]; i += 2) {
+		printf(" %s= '%s'", attribute[i], attribute[i + 1]);
+	}
+
+	printf("\n");
+	depth++;
+}
+
+/* decrement the current level of the tree */
+void end_element(void *data, const char *el)
+{
+	//int i;
+	//for (i = 0; i < depth; i++) {
+	//	printf("Y");
+	//}
+	//printf("Content of element %s was \"%s\"\n", el, last_content);
+	depth--;
+}
+
+void handle_data(void *data, const char *content, int length)
+{
+	//char *tmp = (char *) malloc(length);
+	//strncpy(tmp, content, length);
+	//tmp[length] = '\0';
+	//data = (void *)tmp;
+	//last_content = tmp; /* TODO: concatenate the text nodes? */
+
+	//printf("handle data: %s", content);
+}
+
+int parse_xml(char *buff, size_t buff_size)
+{
+	FILE *fp;
+	fp = fopen("../../../testdata/calibration_viewfrusta.xml", "r");
+	if (fp == NULL) {
+		printf("Failed to open file\n");
+		return 1;
+	}
+
+	XML_Parser parser = XML_ParserCreate("utf-8");
+	XML_SetElementHandler(parser, start_element, end_element);
+	XML_SetCharacterDataHandler(parser, handle_data);
+
+	memset(buff, 0, buff_size);
+	printf("strlen(buff) before parsing: %d\n", strlen(buff));
+
+	size_t file_size = 0;
+	file_size = fread(buff, sizeof(char), buff_size, fp);
+
+	/* parse the xml */
+	if (XML_Parse(parser, buff, strlen(buff), XML_TRUE) ==
+	    XML_STATUS_ERROR) {
+		printf("Error: %s\n",
+		       XML_ErrorString(XML_GetErrorCode(parser)));
+	}
+
+	fclose(fp);
+	XML_ParserFree(parser);
+
+	return 0;
+}
+
+int test_expat(int argc, char **argv)
+{
+	int result;
+	char buffer[MY_BUFFER_SIZE];
+	result = parse_xml(buffer, MY_BUFFER_SIZE);
+	printf("Result is %i\n", result);
+	return 0;
+}
 
 
 
 
-	// required functions
-	void
-	CreateVAO(GLuint& geoVAO, GLuint geoVBO);
+// required functions
+void CreateVAO(GLuint& geoVAO, GLuint geoVBO);
 GLuint CreatePlane(GLuint& vbo, float sx, float sy);
 GLuint CreateScreenQuadNDC(GLuint& vbo);
 GLuint CreateCube(GLuint& vbo, float sx, float sy, float sz);
@@ -73,8 +163,9 @@ GLuint LoadTexture(const std::string& filename);
 
 const GLenum FBO_Buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15 };
 
-int main()
+int main(int argc, char **argv)
 {
+	test_expat(argc,argv);
 	graphene_test_matrix_near();
 
 	stbi_set_flip_vertically_on_load(1);

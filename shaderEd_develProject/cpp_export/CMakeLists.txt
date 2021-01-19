@@ -213,9 +213,10 @@ if(WIN32)
 	get_filename_component(SDL_SHARED_LIBRARIES_directory  ${SDL2MAIN_LIBRARY} DIRECTORY)
 	add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SDL_SHARED_LIBRARIES_directory}/SDL2.dll ${FrustumToEquirect_BINARY_DIR}/. )
 
-	# copy dll to application execution directory
 	set(graphene_SHARED_LIBRARY "${root_dir}/bin/graphene-1.0-0.dll")
 	add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${graphene_SHARED_LIBRARY} ${FrustumToEquirect_BINARY_DIR}/. )
+	
+	add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${EXPAT_INSTALL_DIR}/bin/libexpat.dll ${FrustumToEquirect_BINARY_DIR}/. )
 	
 endif()
 

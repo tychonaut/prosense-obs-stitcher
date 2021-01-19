@@ -15,8 +15,13 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 set(MY_DEPENDENCY_DIR "${PROJECT_SOURCE_DIR}/deps" CACHE STRING "Directory to external dependencies (extract deps.7z)")
 
+
+
+
 #TODO trigger build (and install or local linking) from plugin build
 set(EXPAT_INSTALL_DIR "C:/Program Files/expat/" CACHE STRING "Install directory of expat xml C library")
+
+#set(ENV{SDL2DIR} "${MY_DEPENDENCY_DIR}/SDL2-devel-2.0.14-VC/SDL2-2.0.14")
 
 set (CMAKE_PREFIX_PATH 
 	"${MY_DEPENDENCY_DIR}/glm-0.9.9.8/glm" 
@@ -26,37 +31,113 @@ set (CMAKE_PREFIX_PATH
 )
 
 
-#pure-C xml library
-find_package(EXPAT REQUIRED)
-
-
-
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./bin)
 
-# source code
-set(SOURCES
-	frustumToEquirect.cpp
-)
+# -----------------------------------------------------------------------------
 
 # cmake toolchain 
 if(CMAKE_TOOLCHAIN_FILE)
     include(${CMAKE_TOOLCHAIN_FILE})
 endif(CMAKE_TOOLCHAIN_FILE)
 
+
+
+
+# -----------------------------------------------------------------------------
+# source code
+set(SOURCES
+	frustumToEquirect.cpp
+)
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+
+# -----------------------------------------------------------------------------
+# graphene pure-C alternative to GLM math
+
+# Dirty hack, after failing to integrate graphene's meson build into CMake'
+# "ExternalProject_Add" workflow: 
+# Because meson build needs the visual studio command prompt to detect the
+# MSVC compiler, it must be invoked from  cmake somehow. Resarach gave
+# some very ugly hardcode- results like 
+# https://www.codeproject.com/Questions/706617/How-to-open-Visual-studio-command-Prompt-using-Win
+# rendering any kind of partability useless. So I will just link to the
+# headers and libs of the graphene install, which is expected to be 
+# built & installed "by hand" before.
+
+#TODO maybe outsource as FindGraphene.cmake...
+
+if(WIN32)
+	set(root_dir "C:")
+else()
+	set(root_dir "")
+endif()
+
+
+SET(graphene_SEARCH_PATHS
+	"${root_dir}/bin"
+	"${root_dir}/lib"
+	"${root_dir}/include"
+)
+#message("${graphene_SEARCH_PATHS}")
+
+FIND_PATH(graphene_INCLUDE_DIR graphene.h
+	HINTS
+	$ENV{grapheneDIR}
+	PATH_SUFFIXES  graphene-1.0
+	PATHS ${graphene_SEARCH_PATHS}
+)
+
+
+FIND_PATH(graphene_CONFIG_INCLUDE_DIR graphene-config.h
+	HINTS
+	$ENV{grapheneDIR}
+	PATH_SUFFIXES graphene-1.0/include
+	PATHS ${graphene_SEARCH_PATHS}
+)
+
+
+FIND_LIBRARY(graphene_LIBRARY
+	NAMES graphene-1.0
+	HINTS
+	$ENV{grapheneDIR}
+	PATH_SUFFIXES lib64 lib lib/x64
+	PATHS ${graphene_SEARCH_PATHS}
+)
+
+#message("${graphene_INCLUDE_DIR}; ${graphene_CONFIG_INCLUDE_DIR}; ${graphene_LIBRARY} ")
+# -----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+# -----------------------------------------------------------------------------
+#pure-C xml library 
+find_package(EXPAT REQUIRED)
+
+
+# -----------------------------------------------------------------------------
 # opengl
 find_package(OpenGL REQUIRED)
 
+# -----------------------------------------------------------------------------
 # glm
 find_package(GLM REQUIRED)
 
-
-# glew
+# -----------------------------------------------------------------------------
+# glew 
 #set(GLEW_USE_STATIC_LIBS ON)
 find_package(GLEW REQUIRED)
 
 
-
-# sdl2
+# -----------------------------------------------------------------------------
+# sdl2 
 if(WIN32 OR APPLE OR NOT ${USE_PKG_CHECK_SDL})
   find_package(SDL2 REQUIRED)
 else()
@@ -64,6 +145,11 @@ else()
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(SDL2 REQUIRED sdl2)
 endif()
+#set(SDL2MAIN_LIBRARY "${PROJECT_SOURCE_DIR}/deps/SDL2-devel-2.0.14-VC/SDL2-2.0.14/lib/x64/SDL2main.lib"
+#	CACHE STRING "some .lib required, though not set by find-script")
+
+
+#find_package(graphene REQUIRED)
 
 
 
@@ -73,7 +159,7 @@ add_executable(FrustumToEquirect ${SOURCES})
 
 # properties
 set_target_properties(FrustumToEquirect PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
 )
 
@@ -86,7 +172,11 @@ target_include_directories(FrustumToEquirect PRIVATE
 	${OPENGL_INCLUDE_DIRS} 
 	${GLM_INCLUDE_DIRS}
 	${EXPAT_INCLUDE_DIRS}
+	${graphene_INCLUDE_DIR}
+	${graphene_CONFIG_INCLUDE_DIR}
 )
+
+
 
 
 # link libraries
@@ -94,6 +184,7 @@ target_link_libraries(FrustumToEquirect
 	${GLM_LIBRARY_DIRS} 
 	${OPENGL_LIBRARIES}
 	${EXPAT_LIBRARIES}
+	${graphene_LIBRARY} 
 )
 
 if(WIN32)
@@ -112,12 +203,22 @@ if (NOT MSVC)
 endif()
 
 ####-------------
-# awful hack to get the DLLs found: just copy them to the location where the exe will be run in by visual studio...
-get_filename_component(GLEW_SHARED_LIBRARIES_directory ${GLEW_SHARED_LIBRARIES} DIRECTORY)
-add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${GLEW_SHARED_LIBRARIES_directory}/../../../bin/Release/x64/glew32.dll ${FrustumToEquirect_BINARY_DIR}/. )
+if(WIN32)
 
-get_filename_component(SDL_SHARED_LIBRARIES_directory ${SDL2_LIBRARY} DIRECTORY)
-add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SDL_SHARED_LIBRARIES_directory}/SDL2.dll ${FrustumToEquirect_BINARY_DIR}/. )
+	# awful hacks to get the DLLs found by executable: just copy them to the location where the exe will be run in by visual studio...
+
+	get_filename_component(GLEW_SHARED_LIBRARIES_directory ${GLEW_SHARED_LIBRARIES} DIRECTORY)
+	add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${GLEW_SHARED_LIBRARIES_directory}/../../../bin/Release/x64/glew32.dll ${FrustumToEquirect_BINARY_DIR}/. )
+
+	get_filename_component(SDL_SHARED_LIBRARIES_directory  ${SDL2MAIN_LIBRARY} DIRECTORY)
+	add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SDL_SHARED_LIBRARIES_directory}/SDL2.dll ${FrustumToEquirect_BINARY_DIR}/. )
+
+	# copy dll to application execution directory
+	set(graphene_SHARED_LIBRARY "${root_dir}/bin/graphene-1.0-0.dll")
+	add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${graphene_SHARED_LIBRARY} ${FrustumToEquirect_BINARY_DIR}/. )
+	
+endif()
+
 ####-------------
 
 

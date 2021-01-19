@@ -29,6 +29,38 @@
 
 
 
+
+#include <math.h>
+#include <graphene.h>
+
+
+/* Custom matcher for near matrices */
+static bool graphene_test_matrix_near()
+{
+	graphene_matrix_t *m = graphene_matrix_alloc();
+	m = graphene_matrix_init_perspective(m, 45.0f, 1.6f, 0.1f, 1000.0f);
+	graphene_matrix_free(m);
+
+	const graphene_matrix_t *check = m;
+
+	for (unsigned i = 0; i < 4; i++) {
+		graphene_vec4_t m_row, check_row;
+
+		graphene_matrix_get_row(m, i, &m_row);
+		graphene_matrix_get_row(check, i, &check_row);
+
+		if (!graphene_vec4_near(&m_row, &check_row, 0.1f))
+			return false;
+	}
+
+	return true;
+}
+
+
+
+
+
+
 	// required functions
 	void
 	CreateVAO(GLuint& geoVAO, GLuint geoVBO);
@@ -43,6 +75,8 @@ const GLenum FBO_Buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_CO
 
 int main()
 {
+	graphene_test_matrix_near();
+
 	stbi_set_flip_vertically_on_load(1);
 
 	// init sdl2

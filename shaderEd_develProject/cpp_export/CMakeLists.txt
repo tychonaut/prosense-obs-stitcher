@@ -21,7 +21,6 @@ set(MY_DEPENDENCY_DIR "${PROJECT_SOURCE_DIR}/deps" CACHE STRING "Directory to ex
 #TODO trigger build (and install or local linking) from plugin build
 set(EXPAT_INSTALL_DIR "C:/Program Files/expat/" CACHE STRING "Install directory of expat xml C library")
 
-#set(ENV{SDL2DIR} "${MY_DEPENDENCY_DIR}/SDL2-devel-2.0.14-VC/SDL2-2.0.14")
 
 set (CMAKE_PREFIX_PATH 
 	"${MY_DEPENDENCY_DIR}/glm-0.9.9.8/glm" 
@@ -31,7 +30,10 @@ set (CMAKE_PREFIX_PATH
 )
 
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./bin)
+
+#set(ENV{SDL2DIR} "${MY_DEPENDENCY_DIR}/SDL2-devel-2.0.14-VC/SDL2-2.0.14")
+
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ./bin)
 
 # -----------------------------------------------------------------------------
 
@@ -44,10 +46,31 @@ endif(CMAKE_TOOLCHAIN_FILE)
 
 
 # -----------------------------------------------------------------------------
-# source code
-set(SOURCES
+# App source code
+
+# app
+set(APP_SOURCES
 	frustumToEquirect.cpp
 )
+
+
+# share some code with OBS plugin. This project here 
+# is the playground for non-OBS-related development, after all
+set(clusti_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/include")
+set(clusti_SOURCES_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/src")
+
+
+set(clusti_HEADERS
+    ${clusti_INCLUDE_DIR}/clusti.h
+)
+set(clusti_SOURCES
+    ${clusti_SOURCES_DIR}/clusti_types.h
+    ${clusti_SOURCES_DIR}/clusti.c
+    ${clusti_SOURCES_DIR}/clusti_readConfig.c
+    ${clusti_SOURCES_DIR}/clusti_math.c
+)
+
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -107,7 +130,6 @@ FIND_LIBRARY(graphene_LIBRARY
 	PATHS ${graphene_SEARCH_PATHS}
 )
 
-#message("${graphene_INCLUDE_DIR}; ${graphene_CONFIG_INCLUDE_DIR}; ${graphene_LIBRARY} ")
 # -----------------------------------------------------------------------------
 
 
@@ -149,19 +171,40 @@ endif()
 #	CACHE STRING "some .lib required, though not set by find-script")
 
 
-#find_package(graphene REQUIRED)
 
 
 
 
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# create clusti library
+
+
+
+
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # create executable
-add_executable(FrustumToEquirect ${SOURCES})
+
+
+add_executable(FrustumToEquirect
+    ${APP_SOURCES} 
+    ${clusti_HEADERS}
+    ${clusti_SOURCES}
+)
 
 # properties
 set_target_properties(FrustumToEquirect PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
 )
+
+
+
+
 
 # include directories
 #target_include_directories(FrustumToEquirect PRIVATE  ${SDL2_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
@@ -174,6 +217,7 @@ target_include_directories(FrustumToEquirect PRIVATE
 	${EXPAT_INCLUDE_DIRS}
 	${graphene_INCLUDE_DIR}
 	${graphene_CONFIG_INCLUDE_DIR}
+    ${clusti_INCLUDE_DIR}
 )
 
 
@@ -186,6 +230,8 @@ target_link_libraries(FrustumToEquirect
 	${EXPAT_LIBRARIES}
 	${graphene_LIBRARY} 
 )
+
+
 
 if(WIN32)
 	# link specific win32 libraries
@@ -201,6 +247,12 @@ endif()
 if (NOT MSVC)
 	target_compile_options(FrustumToEquirect PRIVATE -Wno-narrowing)
 endif()
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+
+
 
 ####-------------
 if(WIN32)

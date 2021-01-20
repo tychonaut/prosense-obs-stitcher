@@ -22,93 +22,28 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#include <clusti.h>
+
+
+#ifdef __cplusplus
+}  /* end extern "C" */
+#endif
+
+
 #ifdef HAVE_EXPAT_CONFIG_H
 #include <expat_config.h>
 #endif
 #include <expat.h>
 
-
 #include <graphene.h>
-
-
-
-struct Stitcher_CanvasParams {
-	int resolution_x;
-	int resolution_y;
-
-	// Opening angle in degrees (default 180)
-	float domeOpeningAngle_degrees;
-	// (default 21 degrees)
-	float domeTilt_degrees;
-
-	//not sure if required...
-	float domeRadius_meters;
-
-	// projection rotations to e.g. fit a 8k*2k projection into 4k*4k;
-	// has to be reversed at the video stream receiver;
-	float projectionYaw;
-	float projectionPitch;
-	float projectionRoll;
-};
-
-struct Stitcher_BlendMaskGenerationParams {
-	bool blendMaskGenerationRequested;
-
-	//how thick is the border area
-	//where the image is slowly faded towards the outside?
-	int fadingRange_pixels;
-
-	char *blendmaskBasename;
-};
-
-
-
-struct Stitcher_VideoSourceParams {
-	// which OBS input will this source be?
-	int index;
-
-	int resolution_x;
-	int resolution_y;
-
-	char *testImagePath;
-
-	//Decklink "black bar"-bug workaround:
-	int verticalOffset;
-};
-
-struct Stitcher_FrustumParams {
-	float fovUp_degrees;
-	float fovDown_degrees;
-	float fovLeft_degrees;
-	float fovRight_degrees;
-
-	float yaw_degrees;
-	float pitch_degrees;
-	float roll_degrees;
-
-	// calculated from the above data;
-	// passed to and used in shader in shadowmapping-style
-	graphene_matrix_t *viewProjectionMatrix;
-};
-
-
-
-
-/* All data parsed from XML config file */
-struct Stitcher_StitchingConfig {
-	
-	//number of render nodes
-	int numVideoSources;
-	struct Stitcher_CanvasParams canvasParams;
-	struct Stitcher_BlendMaskGenerationParams blendMaskGenerationParams;
-
-	//array of size numVideoSources:
-	struct Stitcher_VideoSourceParams *videoSources;
-	//array of size numVideoSources:
-	struct Stitcher_FrustumParams *frustaParams;
-};
-
-
 
 
 
@@ -135,8 +70,12 @@ static bool graphene_test_matrix_near()
 }
 
 
-//-----------------------------------------------------------------------------
-// test linking agains expat
+
+
+
+
+/*---------------------------------------------------------------------------*/
+/* test linking against expat */
 
 static const char *xml =
 	"<data>\n"
@@ -275,6 +214,14 @@ const GLenum FBO_Buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_CO
 
 int main(int argc, char **argv)
 {
+	Clusti_Stitcher *stitcher = clusti_Stitcher_create();
+
+	clusti_Stitcher_readConfig(
+		stitcher, "../../../testdata/calibration_viewfrusta.xml");
+
+	clusti_Stitcher_destroy(stitcher);
+
+
 	test_expat();
 	graphene_test_matrix_near();
 

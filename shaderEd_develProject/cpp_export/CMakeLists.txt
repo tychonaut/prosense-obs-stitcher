@@ -45,13 +45,9 @@ endif(CMAKE_TOOLCHAIN_FILE)
 
 
 
-# -----------------------------------------------------------------------------
-# App source code
 
-# app
-set(APP_SOURCES
-	frustumToEquirect.cpp
-)
+# -----------------------------------------------------------------------------
+# clusti (ClusterStitching) library source code
 
 
 # share some code with OBS plugin. This project here 
@@ -72,9 +68,23 @@ set(clusti_SOURCES
 
 
 
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# App source code
+
+# app
+set(APP_SOURCES
+	frustumToEquirect.cpp
+)
+
+
+
+
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Find external libraries
 
 
 # -----------------------------------------------------------------------------
@@ -136,9 +146,6 @@ FIND_LIBRARY(graphene_LIBRARY
 
 
 
-
-
-
 # -----------------------------------------------------------------------------
 #pure-C xml library 
 find_package(EXPAT REQUIRED)
@@ -181,8 +188,23 @@ endif()
 # create clusti library
 
 
+add_library(clusti
+    ${clusti_HEADERS}
+    ${clusti_SOURCES}
+)
 
 
+target_include_directories(clusti PRIVATE 
+	${clusti_INCLUDE_DIR}
+    ${EXPAT_INCLUDE_DIRS}
+	${graphene_INCLUDE_DIR}
+	${graphene_CONFIG_INCLUDE_DIR}
+)
+
+target_link_libraries(clusti 
+	${EXPAT_LIBRARIES}
+	${graphene_LIBRARY} 
+)
 
 
 # -----------------------------------------------------------------------------
@@ -192,8 +214,6 @@ endif()
 
 add_executable(FrustumToEquirect
     ${APP_SOURCES} 
-    ${clusti_HEADERS}
-    ${clusti_SOURCES}
 )
 
 # properties
@@ -225,6 +245,7 @@ target_include_directories(FrustumToEquirect PRIVATE
 
 # link libraries
 target_link_libraries(FrustumToEquirect 
+    clusti
 	${GLM_LIBRARY_DIRS} 
 	${OPENGL_LIBRARIES}
 	${EXPAT_LIBRARIES}

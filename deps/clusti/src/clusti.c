@@ -14,13 +14,11 @@
 
 Clusti_Stitcher* clusti_Stitcher_create() {
 
+	// alloc and init all to zero
 	Clusti_Stitcher *stitcher =
-		(Clusti_Stitcher *)malloc(sizeof(Clusti_Stitcher));
+		(Clusti_Stitcher *)calloc(1, sizeof(Clusti_Stitcher));
 
-	// init all to zero
-	if (stitcher != NULL) {
-		memset(stitcher, 0, sizeof(Clusti_Stitcher));
-	} else {
+	if (stitcher == NULL){
 		assert(0);
 		exit(-1);
 	}

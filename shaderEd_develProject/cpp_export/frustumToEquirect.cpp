@@ -219,7 +219,15 @@ int main(int argc, char **argv)
 	clusti_Stitcher_readConfig(
 		stitcher, "../../../testdata/calibration_viewfrusta.xml");
 
+
+
+
+
 	clusti_Stitcher_destroy(stitcher);
+
+
+
+
 
 
 	test_expat();

@@ -1,195 +1,157 @@
 <?xml version="1.0" ?>
 
-<Cluster masterAddress="10.0.0.5">
-	<Scene>
-		<!-- TODO maybe rotate sth. by 21 degrees?-->
-		<Orientation yaw="0.0" pitch="0.0" roll="0.0" />
-		<Offset x="0.0" y="0.0" z="0.0" />
-		<Scale value="1.0" />
-	</Scene>
-	
-	<Node
-	    address="10.0.0.21"
-	    port="20402"
-    >
-		<Window
-		    fullScreen="false"
-		    border="false"
-        >
-            <Stereo type="none" />
-			<Pos x="1920" y="0" />
-			<Size x="2560" y="1600" />
-			<Viewport>
-                <Pos x="0.0" y="0.0" />
-                <Size x="1.0" y="1.0" />
-				<PlanarProjection>
-					<FOV
-					    up="41.00000"
-					    down="41.00000"
-					    left="55.00000"
-					    right="55.00000"
-                    />
-					<!--
-                        yaw=38.56322
-                        pitch=22.76471
-                        roll=-15.01428
-                    -->
-					<Orientation
-					    heading="38.56322"
-					    pitch="22.76471"
-					    roll="-15.01428"
-                    />
-				</PlanarProjection>      
-			</Viewport>
-		</Window>
-	</Node> 
 
-	<Node
-	    address="10.0.0.22"
-	    port="20403"
+<Cluster>
+    
+    <Stitching
+        numVideoSources="5" 
     >
-		<Window
-		    fullScreen="false"
-		    border="false"
+    
+        <Canvas
+            domeOpeningAngle_degrees="180.0"
+            domeTilt_degrees="21.0"
+            domeRadius_meters="3.0"
+            projectionYaw_degrees="0.0"
+            projectionPitch_degrees="0.0"
+            projectionRoll_degrees="0.0"
+            debug_canvasRenderScaleFactor="1.0"
+            debug_backgroundImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/fisheye_as_equirect_180_bourke.jpg"
         >
-            <Stereo type="none" />
-            <Pos x="1920" y="0" />
-			<Size x="2560" y="1600" />
-                <Viewport>
-                <Pos x="0.0" y="0.0" />
-                <Size x="1.0" y="1.0" />
-                <PlanarProjection>
-                    <FOV
-					    up="45.00000"
-					    down="45.00000"
-					    left="61.00000"
-					    right="61.00000"
-                    />
-					<!--
-                        yaw=-33.41741
-                        pitch=26.48922
-                        roll=15.66994
-                    -->
-					<Orientation
-					    heading="-33.41741"
-					    pitch="26.48922"
-					    roll="15.66994"
-                    />
-				</PlanarProjection>            
-			</Viewport>		        
-		</Window>
-	</Node> 
-
-	<Node
-	    address="10.0.0.23"
-	    port="20404"
-    >
-		<Window
-		    fullScreen="false"
-		    border="false"
-        >
-            <Stereo type="none" />
-            <Pos x="1920" y="0" />
-            <Size x="2560" y="1600" />
-            <Viewport>
-                <Pos x="0.0" y="0.0" />
-                <Size x="1.0" y="1.0" />
-                <PlanarProjection>
-					<FOV
-					    up="42.00000"
-					    down="42.00000"
-					    left="58.00000"
-					    right="58.00000"
-                    />
-					<!--
-                        yaw=-116.45371
-                        pitch=52.31257
-                        roll=25.71614
-                    -->
-					<Orientation
-					    heading="-116.45371"
-					    pitch="52.31257"
-					    roll="25.71614"
-                    />
-				</PlanarProjection>
-			</Viewport>
-		</Window>
-	</Node> 
-
-	<Node
-	    address="10.0.0.24"
-	    port="20405"
-    >
-		<Window
-		    fullScreen="false"
-		    border="false"
-        >
-            <Stereo type="none" />
-            <Pos x="1920" y="0" />
-            <Size x="2560" y="1600" />
-            <Viewport>
-                <Pos x="0.0" y="0.0" />
-                <Size x="1.0" y="1.0" />
-                <PlanarProjection>
-					<FOV
-					    up="44.00000"
-					    down="44.00000"
-					    left="55.00000"
-					    right="55.00000"
-                    />
-					<!--
-                        yaw=115.04663
-                        pitch=53.06412
-                        roll=-28.08995
-                    -->
-					<Orientation
-					    heading="115.04663"
-					    pitch="53.06412"
-					    roll="-28.08995"
-                    />
-				</PlanarProjection> 
-			</Viewport>
-		</Window>
-	</Node> 
-
-	<Node
-	    address="10.0.0.25"
-	    port="20406"
-    >
-		<Window
-		    fullScreen="false"
-		    border="false"
-        >
-            <Stereo type="none" />
-            <Pos x="1920" y="0" />
-			<Size x="2560" y="1600" />
-            <Viewport>
-                <Pos x="0.0" y="0.0" />
-                <Size x="1.0" y="1.0" />
-				<PlanarProjection>
-					<FOV
-					    up="43.00000"
-					    down="43.00000"
-					    left="57.00000"
-					    right="57.00000"
-                    />
-					<!--
-                        yaw=-6.74970
-                        pitch=72.18367
-                        roll=4.26111
-                    -->
-					<Orientation
-					    heading="-6.74970"
-					    pitch="72.18367"
-					    roll="4.26111"
-                    />
-				</PlanarProjection>				            
-			</Viewport>		        
-		</Window>
-	</Node> 
-
-	<User eyeSeparation="0.06">
-		<Pos x="0.0" y="0.0" z="0.0" />
-	</User>
+        
+            <VirtualResolution
+                x="8192"
+                y="4096"
+            />
+            
+            <!-- will yield actual canvas resolution -->
+            <CropRectangle
+                x_min="0"
+                y_min="0"
+                x_max="8192"
+                y_max="4096"
+            />
+            
+        </Canvas>
+        
+        <BlendMask
+            requestAutoGeneration="true"
+            fadingRange_pixels="200"
+            blendMaskDirectory="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData"
+            blendMaskBaseName="Blendmask"
+            blendMaskImageType="png"
+        />
+        
+        <VideoSource
+            index="0"
+            name="ArenaRT1"
+            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT001.png"
+            decklinkWorkaround_verticalOffset_pixels="28"
+        >        
+            <Resolution x="2560" y="1600" /> 
+            <Frustum>
+                <FOV
+				    up="41.00000"
+				    down="41.00000"
+				    left="55.00000"
+				    right="55.00000"
+                />
+				<Orientation
+					yaw="38.56322"
+					pitch="22.76471"
+					roll="-15.01428"
+                />
+            </Frustum>
+        </VideoSource>
+        
+        <VideoSource
+            index="1"
+            name="ArenaRT2"
+            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT002.png"
+            decklinkWorkaround_verticalOffset_pixels="28"
+        >        
+            <Resolution x="2560" y="1600" /> 
+            <Frustum>
+                <FOV
+                    up="45.00000"
+                    down="45.00000"
+                    left="61.00000"
+                    right="61.00000"
+                />
+				<Orientation
+                    yaw="-33.41741"
+                    pitch="26.48922"
+                    roll="15.66994"
+                />
+            </Frustum>
+        </VideoSource>
+        
+        <VideoSource
+            index="2"
+            name="ArenaRT3"
+            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT003.png"
+            decklinkWorkaround_verticalOffset_pixels="28"
+        >        
+            <Resolution x="2560" y="1600" /> 
+            <Frustum>
+                <FOV
+                    up="42.00000"
+                    down="42.00000"
+                    left="58.00000"
+                    right="58.00000"
+                />
+                <Orientation
+                    yaw="-116.45371"
+                    pitch="52.31257"
+                    roll="25.71614"
+                />
+            </Frustum>
+        </VideoSource>
+        
+        <VideoSource
+            index="3"
+            name="ArenaRT4"
+            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT004.png"
+            decklinkWorkaround_verticalOffset_pixels="28"
+        >        
+            <Resolution x="2560" y="1600" /> 
+            <Frustum>
+                <FOV
+                    up="44.00000"
+                    down="44.00000"
+                    left="55.00000"
+                    right="55.00000"
+                />
+                <Orientation
+                    yaw="115.04663"
+                    pitch="53.06412"
+                    roll="-28.08995"
+                />
+            </Frustum>
+        </VideoSource>
+        
+        <VideoSource
+            index="4"
+            name="ArenaRT5"
+            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT005.png"
+            decklinkWorkaround_verticalOffset_pixels="28"
+        >        
+            <Resolution x="2560" y="1600" /> 
+            <Frustum>
+                <FOV
+                    up="43.00000"
+                    down="43.00000"
+                    left="57.00000"
+                    right="57.00000"
+                />
+                <Orientation
+                    yaw="-6.74970"
+                    pitch="72.18367"
+                    roll="4.26111"
+                />
+            </Frustum>
+        </VideoSource>
+        
+    </Stitching>
+    
 
 </Cluster>

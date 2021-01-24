@@ -116,7 +116,7 @@ void clusti_Stitcher_readConfig(Clusti_Stitcher *stitcher,
 {
 	assert(stitcher);
 	stitcher->parsingState.configPath = configPath;
-	stitcher->parsingState.currentVideoSourceIndex = -1;
+	stitcher->parsingState.currentElementIndex = -1;
 
 	char *fileContents = clusti_loadFileContents(configPath);
 	assert(fileContents);

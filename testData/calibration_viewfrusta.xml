@@ -3,153 +3,244 @@
 
 <Cluster>
     
-    <Stitching
-        numVideoSources="5" 
-    >
+    <Stitching>
     
-        <Canvas
-            domeOpeningAngle_degrees="180.0"
-            domeTilt_degrees="21.0"
-            domeRadius_meters="3.0"
-            projectionYaw_degrees="0.0"
-            projectionPitch_degrees="0.0"
-            projectionRoll_degrees="0.0"
-            debug_canvasRenderScaleFactor="1.0"
-            debug_backgroundImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/fisheye_as_equirect_180_bourke.jpg"
+        <!-- All files are supposed to be specified relative to  this file's folder-->
+    
+    
+        <!-- Maybe needed later...
+        <Geometry
+            type="dome"
+            openingAngle_degrees="180.0"
+            tilt_degrees="21.0"
+            radius_meters="3.0"
+        />
+        -->
+    
+  
+        <!-- ############################################################### -->
+        <!-- Video sinks, i.e., the canvases; Yes, can be multiple, in principle -->
+         <VideoSinks
+            num="1"
+         >
+         
+            <VideoSink
+                ID="0"
+                name="MainCanvas"
+                debug_renderScale="1.0"
+                debug_backgroundImageName="fisheye_as_equirect_180_bourke.jpg"
+            >
+            
+                <VirtualResolution
+                    x="8192"
+                    y="4096"
+                />
+                
+                <!-- will yield actual canvas rendering, encoding and streaming resolution -->
+                <CropRectangle
+                    x_min="0"
+                    y_min="0"
+                    x_max="8192"
+                    y_max="4096"
+                />
+                
+                <!-- alternative projections (not supported yet): 
+                     "fisheye", "equi-angular-cubemap" 
+                     (https://blog.google/products/google-ar-vr/bringing-pixels-front-and-center-vr-video/)
+                -->
+                <Projection
+                    type="equirectangular"
+                >
+                    <!-- VIOSO has the euler angle convention 
+                         "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
+                    -->
+                    <Orientation
+                        type="euler_static_zxy"
+                        unit="degree"
+                        yaw="0.0"
+                        pitch="0.0"
+                        roll="0.0"
+                    />
+                </Projection>
+                
+            </VideoSink>
+        
+        </VideoSinks>    
+        <!-- ############################################################### -->
+        
+        
+        
+
+        
+        
+        
+        
+        <!-- ############################################################### -->
+        <!-- ############################################################### -->
+        <VideoSources
+            num="5" 
         >
         
-            <VirtualResolution
-                x="8192"
-                y="4096"
+            <!-- ########################################################### -->
+            <Warping
+                use="false"
+                type="imageLUT"
+                invert="true"
+                warpfileBaseName="warpLUT_RT.pfm"
             />
             
-            <!-- will yield actual canvas resolution -->
-            <CropRectangle
-                x_min="0"
-                y_min="0"
-                x_max="8192"
-                y_max="4096"
+            <Blending
+                use="false"
+                autoGenerate="false"
+                fadingRange_pixels="200"
+                imageBaseName="blendmask_RT.png"
             />
+            <!-- ########################################################### -->
+        
+        
+            <VideoSource
+                index="0"
+                name="ArenaRT1"
+                testImageName="RT001.png"
+                decklinkWorkaround_verticalOffset_pixels="28"
+            >        
+                <Resolution x="2560" y="1600" /> 
+                <Projection
+                    type="planar"
+                >
+                    <Frustum>
+                        <FOV
+                            up="41.00000"
+                            down="41.00000"
+                            left="55.00000"
+                            right="55.00000"
+                        />
+                        <Orientation
+                            type="euler_static_zxy"
+                            unit="degree"
+                            yaw="38.56322"
+                            pitch="22.76471"
+                            roll="-15.01428"
+                        />
+                    </Frustum>
+                </Projection>
+            </VideoSource>
             
-        </Canvas>
-        
-        <BlendMask
-            requestAutoGeneration="true"
-            fadingRange_pixels="200"
-            blendMaskDirectory="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData"
-            blendMaskBaseName="Blendmask"
-            blendMaskImageType="png"
-        />
-        
-        <VideoSource
-            index="0"
-            name="ArenaRT1"
-            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT001.png"
-            decklinkWorkaround_verticalOffset_pixels="28"
-        >        
-            <Resolution x="2560" y="1600" /> 
-            <Frustum>
-                <FOV
-				    up="41.00000"
-				    down="41.00000"
-				    left="55.00000"
-				    right="55.00000"
-                />
-				<Orientation
-					yaw="38.56322"
-					pitch="22.76471"
-					roll="-15.01428"
-                />
-            </Frustum>
-        </VideoSource>
-        
-        <VideoSource
-            index="1"
-            name="ArenaRT2"
-            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT002.png"
-            decklinkWorkaround_verticalOffset_pixels="28"
-        >        
-            <Resolution x="2560" y="1600" /> 
-            <Frustum>
-                <FOV
-                    up="45.00000"
-                    down="45.00000"
-                    left="61.00000"
-                    right="61.00000"
-                />
-				<Orientation
-                    yaw="-33.41741"
-                    pitch="26.48922"
-                    roll="15.66994"
-                />
-            </Frustum>
-        </VideoSource>
-        
-        <VideoSource
-            index="2"
-            name="ArenaRT3"
-            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT003.png"
-            decklinkWorkaround_verticalOffset_pixels="28"
-        >        
-            <Resolution x="2560" y="1600" /> 
-            <Frustum>
-                <FOV
-                    up="42.00000"
-                    down="42.00000"
-                    left="58.00000"
-                    right="58.00000"
-                />
-                <Orientation
-                    yaw="-116.45371"
-                    pitch="52.31257"
-                    roll="25.71614"
-                />
-            </Frustum>
-        </VideoSource>
-        
-        <VideoSource
-            index="3"
-            name="ArenaRT4"
-            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT004.png"
-            decklinkWorkaround_verticalOffset_pixels="28"
-        >        
-            <Resolution x="2560" y="1600" /> 
-            <Frustum>
-                <FOV
-                    up="44.00000"
-                    down="44.00000"
-                    left="55.00000"
-                    right="55.00000"
-                />
-                <Orientation
-                    yaw="115.04663"
-                    pitch="53.06412"
-                    roll="-28.08995"
-                />
-            </Frustum>
-        </VideoSource>
-        
-        <VideoSource
-            index="4"
-            name="ArenaRT5"
-            testImagePath="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/RT005.png"
-            decklinkWorkaround_verticalOffset_pixels="28"
-        >        
-            <Resolution x="2560" y="1600" /> 
-            <Frustum>
-                <FOV
-                    up="43.00000"
-                    down="43.00000"
-                    left="57.00000"
-                    right="57.00000"
-                />
-                <Orientation
-                    yaw="-6.74970"
-                    pitch="72.18367"
-                    roll="4.26111"
-                />
-            </Frustum>
-        </VideoSource>
+            <VideoSource
+                index="1"
+                name="ArenaRT2"
+                testImageName="RT002.png"
+                decklinkWorkaround_verticalOffset_pixels="28"
+            >        
+                <Resolution x="2560" y="1600" /> 
+                <Projection
+                    type="planar"
+                >
+                    <Frustum>
+                        <FOV
+                            up="45.00000"
+                            down="45.00000"
+                            left="61.00000"
+                            right="61.00000"
+                        />
+                        <Orientation
+                            type="euler_static_zxy"
+                            unit="degree"
+                            yaw="-33.41741"
+                            pitch="26.48922"
+                            roll="15.66994"
+                        />
+                    </Frustum>
+                </Projection>
+            </VideoSource>
+            
+            <VideoSource
+                index="2"
+                name="ArenaRT3"
+                testImageName="RT003.png"
+                decklinkWorkaround_verticalOffset_pixels="28"
+            >        
+                <Resolution x="2560" y="1600" /> 
+                <Projection
+                    type="planar"
+                >
+                    <Frustum>
+                        <FOV
+                            up="42.00000"
+                            down="42.00000"
+                            left="58.00000"
+                            right="58.00000"
+                        />
+                        <Orientation
+                            type="euler_static_zxy"
+                            unit="degree"
+                            yaw="-116.45371"
+                            pitch="52.31257"
+                            roll="25.71614"
+                        />
+                    </Frustum>
+                </Projection>
+            </VideoSource>
+            
+            <VideoSource
+                index="3"
+                name="ArenaRT4"
+                testImageName="RT004.png"
+                decklinkWorkaround_verticalOffset_pixels="28"
+            >        
+                <Resolution x="2560" y="1600" /> 
+                <Projection
+                    type="planar"
+                >
+                    <Frustum>
+                        <FOV
+                            up="44.00000"
+                            down="44.00000"
+                            left="55.00000"
+                            right="55.00000"
+                        />
+                        <Orientation
+                            type="euler_static_zxy"
+                            unit="degree"
+                            yaw="115.04663"
+                            pitch="53.06412"
+                            roll="-28.08995"
+                        />
+                    </Frustum>
+                </Projection>
+            </VideoSource>
+            
+            <VideoSource
+                index="4"
+                name="ArenaRT5"
+                testImageName="RT005.png"
+                decklinkWorkaround_verticalOffset_pixels="28"
+            >        
+                <Resolution x="2560" y="1600" /> 
+                <Projection
+                    type="planar"
+                >
+                    <Frustum>
+                        <FOV
+                            up="43.00000"
+                            down="43.00000"
+                            left="57.00000"
+                            right="57.00000"
+                        />
+                        <Orientation
+                            type="euler_static_zxy"
+                            unit="degree"
+                            yaw="-6.74970"
+                            pitch="72.18367"
+                            roll="4.26111"
+                        />
+                    </Frustum>
+                </Projection>
+            </VideoSource>
+            
+        </VideoSources>
+        <!-- ############################################################### -->
+        <!-- ############################################################### -->
         
     </Stitching>
     

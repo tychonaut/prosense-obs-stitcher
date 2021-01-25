@@ -18,16 +18,19 @@ enum Clusti_StatusType {
 
 
 // forward decl, as both mem and status implementations need pointers to it
-struct Clusti_DoublyLinkedList;
-typedef struct Clusti_DoublyLinkedList Clusti_DoublyLinkedList;
+struct Clusti_MemoryRegistry;
+typedef struct Clusti_MemoryRegistry Clusti_MemoryRegistry;
 
 struct Clusti_Status;
 typedef struct Clusti_Status Clusti_Status;
 // definition needed by clusti_mem.c
 struct Clusti_Status {
+	// error/status stuff:
 	Clusti_StatusType currentStatusType;
 	char const * statusMessage;
-	Clusti_DoublyLinkedList *memoryRegistry;
+
+	// memory management stuff
+	Clusti_MemoryRegistry *memoryRegistry;
 };
 
 

@@ -12,6 +12,8 @@
 
 Clusti_Stitcher *clusti_Stitcher_create()
 {
+	//setup memory tracker
+	clusti_mem_init();
 
 	// alloc and init all to zero
 	Clusti_Stitcher *stitcher =
@@ -39,6 +41,9 @@ void clusti_Stitcher_destroy(Clusti_Stitcher *stitcher)
 
 	clusti_free(stitcher);
 
+	//destroy memory tracker
+	clusti_mem_deinit();
 
+	//reset status, final conistency checks
 	clusti_status_declareDeinitialized();
 }

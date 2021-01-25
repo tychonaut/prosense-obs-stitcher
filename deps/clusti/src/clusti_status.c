@@ -18,10 +18,12 @@ Clusti_Status g_clustiStatus = {.currentStatusType =
 
 void clusti_status_declareInitialized()
 {
+	g_clustiStatus.memoryRegistry;
 	assert(g_clustiStatus.currentStatusType ==
 	       CLUSTI_STATUS_not_initialized);
 	assert("null string" && (g_clustiStatus.statusMessage == NULL));
-	assert("null mem registry" && g_clustiStatus.memoryRegistry == NULL);
+	assert("mem registry created" && g_clustiStatus.memoryRegistry != NULL);
+	
 
 	g_clustiStatus.currentStatusType = CLUSTI_STATUS_initialized;
 

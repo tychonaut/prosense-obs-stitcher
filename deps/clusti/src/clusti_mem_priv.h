@@ -3,9 +3,10 @@
 
 // Memory allocation and leak detection
 
-// forward decl, as both mem and status implementations need pointers to it
-struct Clusti_DoublyLinkedList;
-typedef struct Clusti_DoublyLinkedList Clusti_DoublyLinkedList;
+void clusti_mem_init();
+void clusti_mem_deinit();
+
+
 
 //#define malloc(X) perror("ERROR_USE_CALLOC_INSTEAD")
 

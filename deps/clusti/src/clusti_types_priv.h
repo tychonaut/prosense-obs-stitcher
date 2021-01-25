@@ -317,7 +317,7 @@ struct Clusti_State_Parsing {
 	int currentElementIndex;
 
 	//maybe handy for later writing of updated config...
-	char *configPath;
+	char const *configPath;
 
 	///* to be filled, but not owned */
 	//Clusti_StitchingConfig* config_ref;

@@ -173,16 +173,16 @@ int test_expat(void)
 
 	reset_char_data_buffer();
 
+	FILE *fp = NULL;
+	errno_t err = fopen_s(&fp, "../../../testdata/calibration_viewfrusta.xml", "rb");
+	if (!fp || (err != 0)) {
+		perror("../../../testdata/calibration_viewfrusta.xml");
+		exit(1);
+	}
 
-	 FILE *fp;
-	 fp = fopen("../../../testdata/calibration_viewfrusta.xml", "r");
-	 if (fp == NULL) {
-		 printf("Failed to open file\n");
-		 return 1;
-	 }
 
 
-	if (XML_Parse(parser, xml, strlen(xml), XML_TRUE) == XML_STATUS_ERROR)
+	if (XML_Parse(parser, xml, (int) strlen(xml), XML_TRUE) == XML_STATUS_ERROR)
 		printf("Error: %s\n",
 		       XML_ErrorString(XML_GetErrorCode(parser)));
 
@@ -327,12 +327,12 @@ int main(int argc, char **argv)
 			if (event.type == SDL_QUIT) {
 				run = false;
 			} else if (event.type == SDL_MOUSEMOTION) {
-				sedMouseX = event.motion.x;
-				sedMouseY = event.motion.y;
+				sedMouseX = (float) event.motion.x;
+				sedMouseY = (float) event.motion.y;
 				sysMousePosition = glm::vec2(sedMouseX / sedWindowWidth, 1.f - (sedMouseY / sedWindowHeight));
 			} else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
-				sedWindowWidth = event.window.data1;
-				sedWindowHeight = event.window.data2;
+				sedWindowWidth = (float) event.window.data1;
+				sedWindowHeight = (float) event.window.data2;
 
 
 							sysViewportSize = glm::vec2(sedWindowWidth, sedWindowHeight);
@@ -356,7 +356,8 @@ int main(int argc, char **argv)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		glViewport(0, 0, sedWindowWidth, sedWindowHeight);
+		glViewport(0, 0, (GLsizei)sedWindowWidth,
+			   (GLsizei) sedWindowHeight);
 
 		// RENDER
 
@@ -1363,21 +1364,26 @@ GLuint LoadTexture(const std::string& file)
 		fmt = GL_LUMINANCE;
 
 	if (nrChannels != 4) {
-		paddedData = (unsigned char*)malloc(width * height * 4);
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
-				if (nrChannels == 3) {
-					paddedData[(y * width + x) * 4 + 0] = data[(y * width + x) * 3 + 0];
-					paddedData[(y * width + x) * 4 + 1] = data[(y * width + x) * 3 + 1];
-					paddedData[(y * width + x) * 4 + 2] = data[(y * width + x) * 3 + 2];
-				} else if (nrChannels == 1) {
-					unsigned char val = data[(y * width + x) * 1 + 0];
-					paddedData[(y * width + x) * 4 + 0] = val;
-					paddedData[(y * width + x) * 4 + 1] = val;
-					paddedData[(y * width + x) * 4 + 2] = val;
+		size_t padSize = (size_t)width * (size_t)height * (size_t)4;
+		paddedData = (unsigned char *)malloc(padSize);
+		if (paddedData != NULL) {
+			for (int x = 0; x < width; x++) {
+				for (int y = 0; y < height; y++) {
+					if (nrChannels == 3) {
+						paddedData[(y * width + x) * 4 + 0] = data[(y * width + x) * 3 + 0];
+						paddedData[(y * width + x) * 4 + 1] = data[(y * width + x) * 3 + 1];
+						paddedData[(y * width + x) * 4 + 2] = data[(y * width + x) * 3 + 2];
+					} else if (nrChannels == 1) {
+						unsigned char val = data[(y * width + x) * 1 + 0];
+						paddedData[(y * width + x) * 4 + 0] = val;
+						paddedData[(y * width + x) * 4 + 1] = val;
+						paddedData[(y * width + x) * 4 + 2] = val;
+					}
+					paddedData[(y * width + x) * 4 + 3] = (unsigned char)(255);
 				}
-				paddedData[(y * width + x) * 4 + 3] = 255;
 			}
+		} else {
+			perror("malloc failed!");
 		}
 	}
 

@@ -7,10 +7,8 @@
 struct Clusti_Stitcher;
 typedef struct Clusti_Stitcher Clusti_Stitcher;
 
-
 /* -------------------------------------------------------------------------- */
 /* Function API */
-
 
 /**
  * @brief Constructor
@@ -22,14 +20,9 @@ Clusti_Stitcher *clusti_Stitcher_create();
 */
 void clusti_Stitcher_destroy(Clusti_Stitcher *stitcher);
 
-
 void clusti_Stitcher_readConfig(Clusti_Stitcher *stitcher,
-				const char *configPath);
+				char const *configPath);
 
 /* -------------------------------------------------------------------------- */
-
-
-
-
 
 #endif /* CLUSTI_H */

@@ -1,5 +1,7 @@
 
 #include "clusti.h"
+
+#include "clusti_status_priv.h"
 #include "clusti_types_priv.h"
 
 #include <stdio.h>
@@ -80,8 +82,9 @@ char* clusti_loadFileContents(const char* configPath) {
 	long lSize = 0L;
 	char *buffer = NULL;
 
-	fp = fopen(configPath, "rb");
-	if (!fp) {
+	//fp = fopen(configPath, "rb");
+	errno_t err = fopen_s(&fp, configPath, "rb");
+	if (!fp || (err != 0)  ) {
 		perror(configPath);
 		exit(1);
 	}
@@ -112,7 +115,7 @@ char* clusti_loadFileContents(const char* configPath) {
 
 
 void clusti_Stitcher_readConfig(Clusti_Stitcher *stitcher,
-				const char *configPath)
+				char const *configPath)
 {
 	assert(stitcher);
 	stitcher->parsingState.configPath = configPath;
@@ -136,7 +139,7 @@ void clusti_Stitcher_readConfig(Clusti_Stitcher *stitcher,
 	XML_SetUserData(parser, stitcher);
 
 	/* parse the xml */
-	if (XML_Parse(parser, fileContents, strlen(fileContents), XML_TRUE) ==
+	if (XML_Parse(parser, fileContents, (int) strlen(fileContents), XML_TRUE) ==
 	    XML_STATUS_ERROR) {
 		printf("Error: %s\n", XML_ErrorString(XML_GetErrorCode(parser)));
 	}

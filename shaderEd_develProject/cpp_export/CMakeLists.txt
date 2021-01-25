@@ -63,12 +63,16 @@ set(clusti_HEADERS_PUBLIC
 
 set(clusti_HEADERS_PRIVATE
     ${clusti_SOURCES_DIR}/clusti_types_priv.h
+    ${clusti_SOURCES_DIR}/clusti_status_priv.h
+    ${clusti_SOURCES_DIR}/clusti_mem_priv.h
 )
 
 set(clusti_SOURCES
     ${clusti_SOURCES_DIR}/clusti.c
     ${clusti_SOURCES_DIR}/clusti_readConfig.c
     ${clusti_SOURCES_DIR}/clusti_math.c
+    ${clusti_SOURCES_DIR}/clusti_status.c
+    ${clusti_SOURCES_DIR}/clusti_mem.c
 )
 
 
@@ -200,6 +204,10 @@ add_library(clusti
 )
 
 
+set_target_properties(clusti PROPERTIES
+    C_STANDARD 11
+)
+
 target_include_directories(clusti PRIVATE 
 	${clusti_INCLUDE_DIR}
     ${clusti_SOURCES_DIR}
@@ -226,7 +234,7 @@ add_executable(FrustumToEquirect
 # properties
 set_target_properties(FrustumToEquirect PROPERTIES
     CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED YES
+    C_STANDARD_REQUIRED YES
 )
 
 

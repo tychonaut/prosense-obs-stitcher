@@ -56,11 +56,16 @@ set(clusti_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/include")
 set(clusti_SOURCES_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/src")
 
 
-set(clusti_HEADERS
+set(clusti_HEADERS_PUBLIC
     ${clusti_INCLUDE_DIR}/clusti.h
 )
+
+
+set(clusti_HEADERS_PRIVATE
+    ${clusti_SOURCES_DIR}/clusti_types_priv.h
+)
+
 set(clusti_SOURCES
-    ${clusti_SOURCES_DIR}/clusti_types.h
     ${clusti_SOURCES_DIR}/clusti.c
     ${clusti_SOURCES_DIR}/clusti_readConfig.c
     ${clusti_SOURCES_DIR}/clusti_math.c
@@ -189,13 +194,15 @@ endif()
 
 
 add_library(clusti
-    ${clusti_HEADERS}
+    ${clusti_HEADERS_PUBLIC}
+    ${clusti_HEADERS_PRIVATE}
     ${clusti_SOURCES}
 )
 
 
 target_include_directories(clusti PRIVATE 
 	${clusti_INCLUDE_DIR}
+    ${clusti_SOURCES_DIR}
     ${EXPAT_INCLUDE_DIRS}
 	${graphene_INCLUDE_DIR}
 	${graphene_CONFIG_INCLUDE_DIR}

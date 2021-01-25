@@ -2,7 +2,7 @@
 
 
 #include "clusti.h"
-#include "clusti_types.h"
+#include "clusti_types_priv.h"
 
 #include <assert.h>
 

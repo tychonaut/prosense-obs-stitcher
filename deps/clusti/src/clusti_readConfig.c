@@ -1,6 +1,6 @@
 
 #include "clusti.h"
-#include "clusti_types.h"
+#include "clusti_types_priv.h"
 
 #include <stdio.h>
 #include <stdlib.h>

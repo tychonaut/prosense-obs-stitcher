@@ -1,5 +1,5 @@
-#ifndef CLUSTI_TYPES_H
-#define CLUSTI_TYPES_H
+#ifndef CLUSTI_TYPES_PRIV_H
+#define CLUSTI_TYPES_PRIV_H
 
 #ifdef HAVE_EXPAT_CONFIG_H
 #include <expat_config.h>
@@ -334,4 +334,4 @@ struct Clusti_Stitcher {
 };
 
 
-#endif /* CLUSTI_TYPES_H */
+#endif /* CLUSTI_TYPES_PRIV_H */

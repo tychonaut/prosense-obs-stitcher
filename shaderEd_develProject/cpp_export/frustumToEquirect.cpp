@@ -214,16 +214,16 @@ const GLenum FBO_Buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_CO
 
 int main(int argc, char **argv)
 {
-	Clusti_Stitcher *stitcher = clusti_Stitcher_create();
+	Clusti *stitcher = clusti_create();
 
-	clusti_Stitcher_readConfig(
+	clusti_readConfig(
 		stitcher, "../../../testdata/calibration_viewfrusta.xml");
 
 
 
 
 
-	clusti_Stitcher_destroy(stitcher);
+	clusti_destroy(stitcher);
 
 
 

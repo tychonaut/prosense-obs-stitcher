@@ -6,40 +6,40 @@
 #include "clusti_status_priv.h"
 #include "clusti_types_priv.h"
 
-#include <assert.h>
+#include <assert.h> // assert
 
 /* private forwards*/
 
-Clusti_Stitcher *clusti_Stitcher_create()
+Clusti *clusti_create()
 {
-	//setup memory tracker
+	//setup global memory tracker
 	clusti_mem_init();
 
 	// alloc and init all to zero
-	Clusti_Stitcher *stitcher =
-		(Clusti_Stitcher *)clusti_calloc(1, sizeof(Clusti_Stitcher));
+	Clusti *instance =
+		(Clusti *)clusti_calloc(1, sizeof(Clusti));
 
-	assert(stitcher != NULL);
+	assert(instance != NULL);
 
-	if (stitcher == NULL) {
+	if (instance == NULL) {
 		perror("Stitcher alloc failed!");
 		exit(-1);
 	}
 
 	clusti_status_declareInitialized();
 
-	return stitcher;
+	return instance;
 }
 
 /**
  * @brief Destroy Stitcher object
 */
-void clusti_Stitcher_destroy(Clusti_Stitcher *stitcher)
+void clusti_destroy(Clusti *instance)
 {
 	//TODO free stichter's pointer members
 
 
-	clusti_free(stitcher);
+	clusti_free(instance);
 
 	//destroy memory tracker
 	clusti_mem_deinit();

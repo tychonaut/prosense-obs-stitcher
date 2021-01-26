@@ -4,8 +4,8 @@
 /* -------------------------------------------------------------------------- */
 /* Type forward decls. */
 
-struct Clusti_Stitcher;
-typedef struct Clusti_Stitcher Clusti_Stitcher;
+struct Clusti;
+typedef struct Clusti Clusti;
 
 /* -------------------------------------------------------------------------- */
 /* Function API */
@@ -14,13 +14,13 @@ typedef struct Clusti_Stitcher Clusti_Stitcher;
  * @brief Constructor
  * @return Clusti_Stitcher with all members set to zero
 */
-Clusti_Stitcher *clusti_Stitcher_create();
+Clusti *clusti_create();
 /**
  * @brief Destructor
 */
-void clusti_Stitcher_destroy(Clusti_Stitcher *stitcher);
+void clusti_destroy(Clusti *instance);
 
-void clusti_Stitcher_readConfig(Clusti_Stitcher *stitcher,
+void clusti_readConfig(Clusti *instance,
 				char const *configPath);
 
 /* -------------------------------------------------------------------------- */

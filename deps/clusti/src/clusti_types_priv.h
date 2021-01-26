@@ -54,8 +54,8 @@ typedef struct Clusti_iRectangle Clusti_iRectangle;
 // -----------------------------------------------------------------------------
 // Forward declarations
 
-struct Clusti_Stitcher;
-typedef struct Clusti_Stitcher Clusti_Stitcher;
+struct Clusti;
+typedef struct Clusti Clusti;
 
 struct Clusti_State_Parsing;
 typedef struct Clusti_State_Parsing Clusti_State_Parsing;
@@ -328,9 +328,12 @@ struct Clusti_State_Parsing {
 /**
  * @brief Main object containing all the relevant data
 */
-struct Clusti_Stitcher {
+struct Clusti {
 	struct Clusti_State_Parsing parsingState;
+
 	struct Clusti_Params_Stitching stitchingConfig;
+
+	//  t.b.d.
 };
 
 

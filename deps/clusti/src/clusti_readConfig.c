@@ -114,12 +114,12 @@ char* clusti_loadFileContents(const char* configPath) {
 }
 
 
-void clusti_Stitcher_readConfig(Clusti_Stitcher *stitcher,
+void clusti_readConfig(Clusti *instance,
 				char const *configPath)
 {
-	assert(stitcher);
-	stitcher->parsingState.configPath = configPath;
-	stitcher->parsingState.currentElementIndex = -1;
+	assert(instance);
+	instance->parsingState.configPath = configPath;
+	instance->parsingState.currentElementIndex = -1;
 
 	char *fileContents = clusti_loadFileContents(configPath);
 	assert(fileContents);
@@ -136,7 +136,7 @@ void clusti_Stitcher_readConfig(Clusti_Stitcher *stitcher,
 	// hence no need for a callback
 	//XML_SetCharacterDataHandler(parser, handle_data);
 
-	XML_SetUserData(parser, stitcher);
+	XML_SetUserData(parser, instance);
 
 	/* parse the xml */
 	if (XML_Parse(parser, fileContents, (int) strlen(fileContents), XML_TRUE) ==
@@ -156,7 +156,7 @@ void clusti_Parser_startElement_callback(void *userdata,
 					 const char *elementName,
 					 const char **attributeNamesAndValues)
 {
-	Clusti_Stitcher *stitcher = (Clusti_Stitcher *)userdata;
+	Clusti *stitcher = (Clusti *)userdata;
 	assert(stitcher);
 
 	//test

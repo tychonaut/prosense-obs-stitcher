@@ -36,13 +36,29 @@ Clusti *clusti_create()
 */
 void clusti_destroy(Clusti *instance)
 {
+	assert(instance);
+
 	//TODO free stichter's pointer members
+	for (int i = 0; i < instance->stitchingConfig.numVideoSinks; i++) {
+		Clusti_Params_VideoSink *sink =
+			&(instance->stitchingConfig.videoSinks[i]);
+		clusti_free(sink->name);
+		clusti_free(sink->debug_backgroundImageName);
+	}
+	for (int i = 0; i < instance->stitchingConfig.numVideoSources; i++) {
+		Clusti_Params_VideoSource *source =
+			&(instance->stitchingConfig.videoSources[i]);
+		clusti_free(source->name);
+		clusti_free(source->testImageName);
+	}
+
+
 	clusti_free(instance->stitchingConfig.videoSinks);
 	clusti_free(instance->stitchingConfig.videoSources);
 
 	// Free parsing stuff:
 	//TODO better free at end of parsing;
-	clusti_free(instance->parsingState.currentParentElementName);
+	//clusti_free(instance->parsingState.currentParentElementName);
 
 	// free main object
 	clusti_free(instance);

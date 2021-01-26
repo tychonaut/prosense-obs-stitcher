@@ -25,7 +25,7 @@
          >
          
             <VideoSink
-                ID="0"
+                index="0"
                 name="MainCanvas"
                 debug_renderScale="1.0"
                 debug_backgroundImageName="fisheye_as_equirect_180_bourke.jpg"

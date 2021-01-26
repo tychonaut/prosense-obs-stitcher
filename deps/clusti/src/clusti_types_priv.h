@@ -110,12 +110,13 @@ typedef graphene_euler_t Clusti_Params_Orientation;
 // Projection Parameter Definitions
 
 enum Clusti_Enum_Projection_Type {
-	CLUSTI_ENUM_PROJECTION_TYPE_PLANAR = 0,
-	CLUSTI_ENUM_PROJECTION_TYPE_EQUIRECT = 1,
-	CLUSTI_ENUM_PROJECTION_TYPE_FISHEYE = 2,
-	CLUSTI_ENUM_PROJECTION_TYPE_EQUI_ANGULAR_CUBEMAP = 3,
+	CLUSTI_ENUM_PROJECTION_TYPE_INVALID = 0,
+	CLUSTI_ENUM_PROJECTION_TYPE_PLANAR = 1,
+	CLUSTI_ENUM_PROJECTION_TYPE_EQUIRECT = 2,
+	CLUSTI_ENUM_PROJECTION_TYPE_FISHEYE = 3,
+	CLUSTI_ENUM_PROJECTION_TYPE_EQUI_ANGULAR_CUBEMAP = 4,
 };
-
+#define CLUSTI_ENUM_NUM_PROJECTION_TYPES (5)
 
 
 
@@ -309,6 +310,14 @@ struct Clusti_Params_Stitching {
 	Clusti_Params_VideoSource *videoSources;
 };
 
+enum Clusti_Enum_ParsingModes;
+typedef enum Clusti_Enum_ParsingModes Clusti_Enum_ParsingModes;
+enum Clusti_Enum_ParsingModes {
+	CLUSTI_ENUM_PARSING_MODES_general = 0,
+	CLUSTI_ENUM_PARSING_MODES_videoSinks = 1,
+	CLUSTI_ENUM_PARSING_MODES_videoSources = 2,
+};
+#define CLUSTI_ENUM_NUM_PARSING_MODES (3)
 
 struct Clusti_State_Parsing {
 
@@ -316,9 +325,11 @@ struct Clusti_State_Parsing {
 	//maybe handy for later writing of updated config...
 	char const *configPath;
 
+	Clusti_Enum_ParsingModes currentParsingMode;
+
 	// for basic consistency checks:
 	//char *currentElementName;
-	char *currentParentElementName;
+	//char *currentParentElementName;
 	//#define CLUSTI_MAX_NAME_LENGTH (1024)
 	//char currentElementName[CLUSTI_MAX_NAME_LENGTH];
 

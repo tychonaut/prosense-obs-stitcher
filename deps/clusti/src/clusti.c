@@ -37,7 +37,10 @@ Clusti *clusti_create()
 void clusti_destroy(Clusti *instance)
 {
 	//TODO free stichter's pointer members
+	//instance->stitchingConfig.videoSinks.
 
+	//TODO better free at end of parsing;
+	clusti_free(instance->parsingState.currentParentElementName);
 
 	clusti_free(instance);
 

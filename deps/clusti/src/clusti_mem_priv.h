@@ -23,6 +23,8 @@ void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
 void clusti_free_internal(void *ptr, const char *file, int line,
 			  const char *func);
 
-char const *clusti_String_callocAndCopy(char const *message);
+void clusti_String_reallocAndCopy(char **dst, char const *src);
+
+char *clusti_String_callocAndCopy(char const *str);
 
 #endif // CLUSTI_MEM_PRIV_H

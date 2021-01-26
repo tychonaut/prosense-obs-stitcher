@@ -17,6 +17,8 @@
 #include <string.h> // strncpy_s
 #include <assert.h> // assert
 
+#define CLUSTI_MAX_EXPECTED_STRING_LENGTH (1000000)
+
 // global status object, defined in clusti_status.c
 extern Clusti_Status g_clustiStatus;
 
@@ -204,7 +206,6 @@ Clusti_DoublyLinkedMemoryChunkListItem *clusti_findMemoryItem(void *ptr)
 void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
 			     const char *file, int line, const char *func)
 {
-
 	void *p = calloc(numInstances, numBytesPerInstance);
 
 	if (p == NULL) {
@@ -235,11 +236,34 @@ void clusti_free_internal(void *ptr, const char *file, int line,
 	free(ptr);
 }
 
-char const *clusti_String_callocAndCopy(char const *orig)
+void clusti_String_reallocAndCopy(char **dst, char const *src)
 {
-#define CLUSTI_MAX_EXPECTED_STRING_LENGTH (1000000)
+	assert(dst != NULL);
 
-	size_t siz = strnlen_s(orig, CLUSTI_MAX_EXPECTED_STRING_LENGTH) *
+	size_t srcLen = strnlen_s(src, CLUSTI_MAX_EXPECTED_STRING_LENGTH) *
+			sizeof(char) +1;
+	size_t dstLen = strnlen_s(*dst, CLUSTI_MAX_EXPECTED_STRING_LENGTH) *
+				sizeof(char) +
+			1;
+	if (*dst == NULL) {
+		*dst = clusti_String_callocAndCopy(src);
+	} else if (srcLen <= dstLen) {
+		// dst is long enough 
+		errno_t err = strncpy_s(*dst, srcLen, src, dstLen);
+		assert(strcmp(src, *dst) == 0);
+		if (err != 0) {
+			clusti_status_declareError("String copy failed");
+		}
+	} else {
+		// realloc would be faster, but break the memory management;
+		clusti_free(*dst);
+		*dst = clusti_String_callocAndCopy(src);
+	}
+}
+
+char *clusti_String_callocAndCopy(char const *orig)
+{
+	size_t siz = (1 + strnlen_s(orig, CLUSTI_MAX_EXPECTED_STRING_LENGTH) ) *
 		     sizeof(char);
 
 	assert(siz < CLUSTI_MAX_EXPECTED_STRING_LENGTH);
@@ -249,11 +273,10 @@ char const *clusti_String_callocAndCopy(char const *orig)
 	}
 
 	// +1 because of null termination
-	char *result = clusti_calloc(1, siz + 1);
+	char *result = clusti_calloc(1, siz );
 
 	errno_t err = strncpy_s(result, siz, orig, siz);
 	assert(strcmp(orig, result) == 0);
-
 	if (err != 0) {
 		clusti_status_declareError("string copy failed");
 	}
@@ -261,12 +284,12 @@ char const *clusti_String_callocAndCopy(char const *orig)
 	return result;
 }
 
-void clusti_mem_printItem(int index, int numTotalItems, Clusti_DoublyLinkedMemoryChunkListItem* item)
+void clusti_mem_printItem(int index, int numTotalItems,
+			  Clusti_DoublyLinkedMemoryChunkListItem *item)
 {
 	assert(item);
 
-	printf("Item #%d/%d: num bytes allocated: %d;\n", index,
-	       numTotalItems,
+	printf("Item #%d/%d: num bytes allocated: %d;\n", index, numTotalItems,
 	       item->memoryChunk.sizeInBytes);
 }
 
@@ -274,7 +297,8 @@ void clusti_mem_printSummary()
 {
 	assert(g_clustiStatus.memoryRegistry);
 	printf("Clusti Memory summary:\n");
-	printf("Total allocated items: %d;\n", g_clustiStatus.memoryRegistry->numAllocations);
+	printf("Total allocated items: %d;\n",
+	       g_clustiStatus.memoryRegistry->numAllocations);
 	printf("Total bytes allocated: %d;\n",
 	       g_clustiStatus.memoryRegistry->totalUsedCPUMemory);
 
@@ -284,12 +308,11 @@ void clusti_mem_printSummary()
 		g_clustiStatus.memoryRegistry->lastMemoryItem;
 	Clusti_DoublyLinkedMemoryChunkListItem *current = first;
 	int index = 0;
-	while (current != NULL ) {
+	while (current != NULL) {
 		clusti_mem_printItem(
 			index, g_clustiStatus.memoryRegistry->numAllocations,
 			current);
 		index += 1;
 		current = current->next;
 	}
-
 }

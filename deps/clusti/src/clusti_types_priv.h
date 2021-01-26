@@ -312,12 +312,19 @@ struct Clusti_Params_Stitching {
 
 struct Clusti_State_Parsing {
 
-	char *currentElementName;
-	// to keep track during XLM sub-elements of VideoSource elements.
-	int currentElementIndex;
 
 	//maybe handy for later writing of updated config...
 	char const *configPath;
+
+	// for basic consistency checks:
+	//char *currentElementName;
+	char *currentParentElementName;
+	//#define CLUSTI_MAX_NAME_LENGTH (1024)
+	//char currentElementName[CLUSTI_MAX_NAME_LENGTH];
+
+	// to keep track during XLM sub-elements of VideoSource elements.
+	int currentElementIndex;
+
 
 	///* to be filled, but not owned */
 	//Clusti_StitchingConfig* config_ref;

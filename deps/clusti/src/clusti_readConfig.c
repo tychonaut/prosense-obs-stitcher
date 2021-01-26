@@ -151,13 +151,78 @@ void clusti_readConfig(Clusti *instance,
 
 
 
+void clusti_parseVideoSinks(Clusti *instance, Clusti_State_Parsing *parser,
+			    const char **attributeNamesAndValues);
+void clusti_parseVideoSources(Clusti *instance, Clusti_State_Parsing *parser,
+			      const char **attributeNamesAndValues);
+
+
+
+
+void clusti_parseVideoSinks(Clusti *instance, Clusti_State_Parsing *parser,
+			    const char **attributeNamesAndValues)
+{
+	assert(instance->stitchingConfig.numVideoSinks == 0);
+
+	int numVideoSinks = 0;
+
+	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
+		if ((strcmp("num", attributeNamesAndValues[i]) == 0)) {
+			instance->stitchingConfig.numVideoSinks =
+				atoi(attributeNamesAndValues[i + 1]);
+			printf("numVideoSinks: %d \n",
+			       instance->stitchingConfig.numVideoSinks);	
+		} else {
+			printf("unexpected xml attribute: %d\n",
+			       attributeNamesAndValues[i]);
+			clusti_status_declareError("unexpected xml attribute");
+		}
+	}
+
+	
+}
+
+void clusti_parseVideoSources(Clusti *instance, Clusti_State_Parsing *parser,
+			      const char **attributeNamesAndValues)
+{
+	//TODO
+}
+
+
+
 
 void clusti_Parser_startElement_callback(void *userdata,
 					 const char *elementName,
 					 const char **attributeNamesAndValues)
 {
-	Clusti *stitcher = (Clusti *)userdata;
-	assert(stitcher);
+	Clusti *instance = (Clusti *)userdata;
+	assert(instance);
+	Clusti_State_Parsing *parser = &(instance->parsingState);
+
+
+
+	if (strcmp(elementName, "Cluster") == 0) {
+		// toplevel, all shall be null
+		//assert(parser->currentElementName == 0);
+		assert(parser->currentParentElementName == 0);
+	} else if (strcmp(elementName, "Stitching") == 0) {
+		assert(strcmp(parser->currentParentElementName, 
+			      "Cluster") == 0);
+	} else if (strcmp(elementName, "VideoSinks") == 0) {
+		clusti_parseVideoSinks(instance, parser,
+				       attributeNamesAndValues);
+	} else if (strcmp(elementName, "VideoSources") == 0) {
+	} else if (strcmp(elementName, "VideoSource") == 0) {
+	} else if (strcmp(elementName, "VideoSource") == 0) {
+	}
+
+	// update the backtracking info
+	clusti_String_reallocAndCopy(&(parser->currentParentElementName),
+				     elementName);
+
+
+
+
 
 	//test
 	if (strcmp(elementName, "VideoSource") == 0) {

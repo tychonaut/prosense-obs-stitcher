@@ -3,6 +3,7 @@
 
 #include "clusti_status_priv.h"
 #include "clusti_types_priv.h"
+#include "clusti_mem_priv.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,7 +96,8 @@ char* clusti_loadFileContents(const char* configPath) {
 	rewind(fp);
 
 	/* allocate memory for entire content */
-	buffer = calloc(1, (size_t)lSize + (size_t)1L);
+	// buffer = calloc(1, (size_t)lSize + (size_t)1L);
+	buffer = clusti_calloc(1, (size_t)lSize + (size_t)1L);
 	if (!buffer)
 		fclose(fp), fputs("memory alloc fails", stderr), exit(1);
 
@@ -144,7 +146,7 @@ void clusti_readConfig(Clusti *instance,
 		printf("Error: %s\n", XML_ErrorString(XML_GetErrorCode(parser)));
 	}
 
-	free(fileContents);
+	clusti_free(fileContents);
 
 	XML_ParserFree(parser);
 }
@@ -155,7 +157,10 @@ void clusti_parseVideoSinks(Clusti *instance, Clusti_State_Parsing *parser,
 			    const char **attributeNamesAndValues);
 void clusti_parseVideoSources(Clusti *instance, Clusti_State_Parsing *parser,
 			      const char **attributeNamesAndValues);
-
+void clusti_parseVideoSink(Clusti *instance, Clusti_State_Parsing *parser,
+			   const char **attributeNamesAndValues);
+void clusti_parseVideoSource(Clusti *instance, Clusti_State_Parsing *parser,
+			   const char **attributeNamesAndValues);
 
 
 
@@ -164,8 +169,6 @@ void clusti_parseVideoSinks(Clusti *instance, Clusti_State_Parsing *parser,
 {
 	assert(instance->stitchingConfig.numVideoSinks == 0);
 
-	int numVideoSinks = 0;
-
 	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
 		if ((strcmp("num", attributeNamesAndValues[i]) == 0)) {
 			instance->stitchingConfig.numVideoSinks =
@@ -173,20 +176,60 @@ void clusti_parseVideoSinks(Clusti *instance, Clusti_State_Parsing *parser,
 			printf("numVideoSinks: %d \n",
 			       instance->stitchingConfig.numVideoSinks);	
 		} else {
-			printf("unexpected xml attribute: %d\n",
+			printf("unexpected xml attribute: %s\n",
 			       attributeNamesAndValues[i]);
 			clusti_status_declareError("unexpected xml attribute");
 		}
 	}
 
-	
+	assert(instance->stitchingConfig.numVideoSinks > 0);
+
+	// allocate array for the sinks 
+	instance->stitchingConfig.videoSinks =
+		clusti_calloc(instance->stitchingConfig.numVideoSinks,
+			      sizeof(Clusti_Params_VideoSink));
+
 }
 
 void clusti_parseVideoSources(Clusti *instance, Clusti_State_Parsing *parser,
 			      const char **attributeNamesAndValues)
 {
+	assert(instance->stitchingConfig.numVideoSources == 0);
+
+	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
+		if ((strcmp("num", attributeNamesAndValues[i]) == 0)) {
+			instance->stitchingConfig.numVideoSources =
+				atoi(attributeNamesAndValues[i + 1]);
+			printf("numVideoSources: %d \n",
+			       instance->stitchingConfig.numVideoSources);
+		} else {
+			printf("unexpected xml attribute: %s\n",
+			       attributeNamesAndValues[i]);
+			clusti_status_declareError("unexpected xml attribute");
+		}
+	}
+
+	assert(instance->stitchingConfig.numVideoSources > 0);
+
+	// allocate array for the sinks
+	instance->stitchingConfig.videoSources =
+		clusti_calloc(instance->stitchingConfig.numVideoSources,
+			      sizeof(Clusti_Params_VideoSource));
+}
+
+
+void clusti_parseVideoSink(Clusti *instance, Clusti_State_Parsing *parser,
+			   const char **attributeNamesAndValues)
+{
+	// assert(instance->stitchingConfig. == 0);
 	//TODO
 }
+void clusti_parseVideoSource(Clusti *instance, Clusti_State_Parsing *parser,
+			     const char **attributeNamesAndValues)
+{
+	//TODO
+}
+
 
 
 
@@ -211,7 +254,9 @@ void clusti_Parser_startElement_callback(void *userdata,
 	} else if (strcmp(elementName, "VideoSinks") == 0) {
 		clusti_parseVideoSinks(instance, parser,
 				       attributeNamesAndValues);
-	} else if (strcmp(elementName, "VideoSources") == 0) {
+	} else if (strcmp(elementName, "VideoSink") == 0) {
+		clusti_parseVideoSink(instance, parser,
+				       attributeNamesAndValues);
 	} else if (strcmp(elementName, "VideoSource") == 0) {
 	} else if (strcmp(elementName, "VideoSource") == 0) {
 	}

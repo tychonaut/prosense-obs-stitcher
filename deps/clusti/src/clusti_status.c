@@ -41,7 +41,7 @@ void clusti_status_declareError(char const *message)
 
 	g_clustiStatus.statusMessage = message;
 
-	perror(message);
+	//perror(message);
 
 	// maybe later try to recover gracefully, but crash for now
 	exit(-1);

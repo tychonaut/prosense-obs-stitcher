@@ -229,6 +229,10 @@ void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
 void clusti_free_internal(void *ptr, const char *file, int line,
 			  const char *func)
 {
+	if (ptr == NULL) {
+		return; // nothing to free
+	}
+
 	clusti_mem_unregisterAllocation(ptr);
 
 	clusti_mem_printSummary();

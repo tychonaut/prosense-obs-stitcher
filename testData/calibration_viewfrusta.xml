@@ -84,16 +84,14 @@
             <!-- ########################################################### -->
             <Warping
                 use="false"
-                type="imageLUT"
+                type="imageLUT2D"
                 invert="true"
-                warpfileBaseName="warpLUT_RT.pfm"
             />
             
             <Blending
                 use="false"
                 autoGenerate="false"
                 fadingRange_pixels="200"
-                imageBaseName="blendmask_RT.png"
             />
             <!-- ########################################################### -->
         
@@ -101,6 +99,8 @@
             <VideoSource
                 index="0"
                 name="ArenaRT1"
+                warpFileName="warpLUT_RT001.pfm"
+                blendImageName="blendmask_RT001.png"
                 testImageName="RT001.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
@@ -110,6 +110,7 @@
                 >
                     <Frustum>
                         <FOV
+                            unit="degree"
                             up="41.00000"
                             down="41.00000"
                             left="55.00000"
@@ -129,6 +130,8 @@
             <VideoSource
                 index="1"
                 name="ArenaRT2"
+                warpFileName="warpLUT_RT002.pfm"
+                blendImageName="blendmask_RT002.png"
                 testImageName="RT002.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
@@ -157,6 +160,8 @@
             <VideoSource
                 index="2"
                 name="ArenaRT3"
+                warpFileName="warpLUT_RT003.pfm"
+                blendImageName="blendmask_RT003.png"
                 testImageName="RT003.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
@@ -185,6 +190,8 @@
             <VideoSource
                 index="3"
                 name="ArenaRT4"
+                warpFileName="warpLUT_RT004.pfm"
+                blendImageName="blendmask_RT004.png"
                 testImageName="RT004.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
@@ -213,6 +220,8 @@
             <VideoSource
                 index="4"
                 name="ArenaRT5"
+                warpFileName="warpLUT_RT005.pfm"
+                blendImageName="blendmask_RT005.png"
                 testImageName="RT005.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        

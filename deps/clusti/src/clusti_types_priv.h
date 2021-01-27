@@ -72,6 +72,8 @@ typedef struct Clusti_Params_VideoSource Clusti_Params_VideoSource;
 
 struct Clusti_Params_Warping;
 typedef struct Clusti_Params_Warping Clusti_Params_Warping;
+enum Clusti_Enum_Warping_Type;
+typedef enum Clusti_Enum_Warping_Type Clusti_Enum_Warping_Type;
 struct Clusti_Params_Blending;
 typedef struct Clusti_Params_Blending Clusti_Params_Blending;
 
@@ -82,26 +84,26 @@ typedef enum Clusti_Enum_Projection_Type Clusti_Enum_Projection_Type;
 struct Clusti_Params_Projection;
 typedef struct Clusti_Params_Projection Clusti_Params_Projection;
 
-struct Clusti_Params_Projection_Equirect;
-typedef struct Clusti_Params_Projection_Equirect
-	Clusti_Params_Projection_Equirect;
-
-struct Clusti_Params_Projection_Planar;
-typedef struct Clusti_Params_Projection_Planar Clusti_Params_Projection_Planar;
-
-struct Clusti_Params_Projection_Fisheye;
-typedef struct Clusti_Params_Projection_Fisheye Clusti_Params_Projection_Fisheye;
-
-struct Clusti_Params_Projection_EquiAngularCubeMap;
-typedef struct Clusti_Params_Projection_EquiAngularCubeMap
-	Clusti_Params_Projection_EquiAngularCubeMap;
+//struct Clusti_Params_Projection_Equirect;
+//typedef struct Clusti_Params_Projection_Equirect
+//	Clusti_Params_Projection_Equirect;
+//
+//struct Clusti_Params_Projection_Planar;
+//typedef struct Clusti_Params_Projection_Planar Clusti_Params_Projection_Planar;
+//
+//struct Clusti_Params_Projection_Fisheye;
+//typedef struct Clusti_Params_Projection_Fisheye Clusti_Params_Projection_Fisheye;
+//
+//struct Clusti_Params_Projection_EquiAngularCubeMap;
+//typedef struct Clusti_Params_Projection_EquiAngularCubeMap
+//	Clusti_Params_Projection_EquiAngularCubeMap;
 
 
 struct Clusti_Params_Frustum;
 typedef struct Clusti_Params_Frustum Clusti_Params_Frustum;
 
-struct Clusti_Params_FOV;
-typedef struct Clusti_Params_FOV Clusti_Params_FOV;
+struct Clusti_Params_FrustumFOV;
+typedef struct Clusti_Params_FrustumFOV Clusti_Params_FrustumFOV;
 
 typedef graphene_euler_t Clusti_Params_Orientation;
 
@@ -122,60 +124,65 @@ enum Clusti_Enum_Projection_Type {
 
 
 
-struct Clusti_Params_FOV {
+struct Clusti_Params_FrustumFOV {
 	float up_degrees;
 	float down_degrees;
 	float left_degrees;
 	float right_degrees;
 };
 
-struct Clusti_Params_Frustum {
-
-	Clusti_Params_FOV fov;
-
-        /*
-	   GRAPHENE_EULER_ORDER_SZXY,
-           as VIOSO has the euler angle convention 
-           "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
-	*/
-	Clusti_Params_Orientation orientation;
-
-	// Redundant: calculated from the above data;
-	// passed to and used in shader in shadowmapping-style
-	graphene_matrix_t viewProjectionMatrix;
-};
+//struct Clusti_Params_Frustum {
+//
+//	Clusti_Params_FrustumFOV fov;
+//	// Redundant: calculated from the above data;
+//	// passed to and used in shader in shadowmapping-style
+//	graphene_matrix_t viewProjectionMatrix;
+//
+//        
+//
+//	//Clusti_Params_Orientation orientation;
+//
+//};
 
 
 
-struct Clusti_Params_Projection_Planar {
-	Clusti_Params_Frustum frustum;
-};
+//struct Clusti_Params_Projection_Planar {
+//	Clusti_Params_Frustum frustum;
+//};
 
-struct Clusti_Params_Projection_Equirect {
-	Clusti_Params_Orientation orientation;
-};
+//struct Clusti_Params_Projection_Equirect {
+//	//Clusti_Params_Orientation orientation;
+//};
 
-struct Clusti_Params_Projection_Fisheye {
-	float openingAngle_degrees;
-	Clusti_Params_Orientation orientation;
-};
+//struct Clusti_Params_Projection_Fisheye {
+//	float openingAngle_degrees;
+//	//Clusti_Params_Orientation orientation;
+//};
 
-struct Clusti_Params_Projection_EquiAngularCubeMap {
-	// https : //blog.google/products/google-ar-vr/bringing-pixels-front-and-center-vr-video/
-	Clusti_Params_Orientation orientation;
-};
+//// https : //blog.google/products/google-ar-vr/bringing-pixels-front-and-center-vr-video/
+//struct Clusti_Params_Projection_EquiAngularCubeMap {
+//	
+//};
 
 struct Clusti_Params_Projection {
-	// e.g. type="dome"
+	// e.g. type="planar"
 	Clusti_Enum_Projection_Type type;
 
-	// Poor man's polymorphism; Don't wanna hassle with too much pointer de/alloc
-	union {
-		Clusti_Params_Projection_Planar planar;
-		Clusti_Params_Projection_Equirect equirect;
-		Clusti_Params_Projection_Fisheye fisheye;
-		Clusti_Params_Projection_EquiAngularCubeMap equiAngCM;
-	};
+	// GRAPHENE_EULER_ORDER_SZXY,
+	// as VIOSO has the euler angle convention
+	// "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
+	Clusti_Params_Orientation orientation;
+
+	//{ Very poor man's polymorphism: Some members only used for some proj. types.
+	// (Don't wanna hassle with too much pointer de/alloc and keep XML parsing simple).
+
+	Clusti_Params_FrustumFOV planar_FrustumFOV;
+	// Redundant: calculated from the above data;
+	// passed to and used in shader in shadowmapping-style
+	graphene_matrix_t planar_viewProjectionMatrix;
+				
+	float fisheye_openingAngle_degrees;
+	//}
 
 };
 //-----------------------------------------------------------------------------
@@ -185,12 +192,10 @@ struct Clusti_Params_VideoSink {
 	int index;
 	char *name;
 
-	/* Because preview might be too big to literally see the whole
-	   picture without zooming out
-	*/
-	float debug_renderScale;
-
 	char *debug_backgroundImageName;
+	// Because preview might be too big to literally see the whole
+	//   picture without zooming out
+	float debug_renderScale;
 
 	/* e.g. 8192*4096 for full-sphere equirectangular projection */
 	Clusti_ivec2 virtualResolution;
@@ -211,7 +216,14 @@ struct Clusti_Params_VideoSink {
 };
 
 
-
+enum Clusti_Enum_Warping_Type {
+	CLUSTI_ENUM_WARPING_TYPE_none = 0,
+	CLUSTI_ENUM_WARPING_TYPE_imageLUT2D = 1,
+	CLUSTI_ENUM_WARPING_TYPE_imageLUT3D = 2,
+	CLUSTI_ENUM_WARPING_TYPE_mesh2D = 3,
+	CLUSTI_ENUM_WARPING_TYPE_mesh3D = 4,
+};
+#define CLUSTI_ENUM_NUM_WARPING_TYPES (5)
 
 
 struct Clusti_Params_Warping {
@@ -226,13 +238,16 @@ struct Clusti_Params_Warping {
 	/**
 	 * @brief "imageLUT2D" "imageLUT3D" or "mesh2D" or "mesh3D";
 	 *        Warping is not implemented yet!
+	 * @todo turn string into enum
 	*/
-	char *type;
+	Clusti_Enum_Warping_Type type;
 	/**
 	 * @brief invert the provided mapping or not?
 	*/
 	bool invert;
-	char *warpfileBaseName;
+
+	// put into Clusti_Params_VideoSource
+	//char *warpfileBaseName;
 
 };
 
@@ -252,23 +267,13 @@ struct Clusti_Params_Blending {
 	          on the fly or read from disk.
 	 * @details If true, blend masks will be calculated, written to disk
 	 *        and subsequently used. If false, the images are assumed to exist
-	 *        and found by given dir, basename and image type, see below. 
+	 *        and found by given dir, file name (and image type extension). 
 	*/
 	bool autoGenerate;
 
 	// How thick is the border area
 	// where the image is slowly faded towards the outside?
 	int fadingRange_pixels;
-
-	/**
-	 * @brief Base name of image to be read or written
-	 * @details If e.g. the calibration xml file is "C:/Calibrations/myCalib.xml",
-	 *          for image source 0, the library will in this directory
-	 *          either look for or write to
-	 *          a file "C:/Calibrations/BlendMask001.png"
-	 *          (index + 1)
-	*/
-	char *imageBaseName;
 };
 
 
@@ -278,16 +283,14 @@ struct Clusti_Params_Blending {
 
 struct Clusti_Params_VideoSource {
 
-	/* which OBS input will this source be? */
+	// which OBS input will this source be?
 	int index;
 	char *name;
 	char *testImageName;
-
-	/*
-	  Decklink "black bar"-bug workaround:
-	  https://forum.blackmagicdesign.com/viewtopic.php?f=4&t=131164&p=711173&hilit=black+bar+quad#p711173
-
-	*/
+	char *warpfileName;
+	char *blendImageName; 
+	//  Decklink "black bar"-bug workaround:
+	//  https://forum.blackmagicdesign.com/viewtopic.php?f=4&t=131164&p=711173&hilit=black+bar+quad#p711173
 	int decklinkWorkaround_verticalOffset_pixels;
 
 	Clusti_ivec2 resolution;
@@ -299,6 +302,10 @@ struct Clusti_Params_VideoSource {
 
 /* All data parsed from XML config file */
 struct Clusti_Params_Stitching {
+
+	Clusti_Params_Warping generalWarpParams;	
+	Clusti_Params_Blending generalBlendParams;	
+
 
 	//number of canvases
 	int numVideoSinks;

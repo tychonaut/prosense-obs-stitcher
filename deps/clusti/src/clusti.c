@@ -49,6 +49,8 @@ void clusti_destroy(Clusti *instance)
 		Clusti_Params_VideoSource *source =
 			&(instance->stitchingConfig.videoSources[i]);
 		clusti_free(source->name);
+		clusti_free(source->warpfileName);
+		clusti_free(source->blendImageName);
 		clusti_free(source->testImageName);
 	}
 

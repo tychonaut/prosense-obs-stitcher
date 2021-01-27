@@ -1,27 +1,34 @@
 
+// ----------------------------------------------------------------------------
+// includes
 
 #include "clusti_mem_priv.h"
 
 #include "clusti_status_priv.h"
 
-//#ifdef malloc
-//#undef malloc
-//#endif
-//
-//#ifdef calloc
-//#undef calloc
-//#endif
 
 #include <stdlib.h> // calloc
 #include <stdio.h>  // printf
 #include <string.h> // strncpy_s
 #include <assert.h> // assert
+#include <stdbool.h> // bool
+// ----------------------------------------------------------------------------
+
+
+// ----------------------------------------------------------------------------
+// Macros
 
 #define CLUSTI_MAX_EXPECTED_STRING_LENGTH (1000000)
+// ----------------------------------------------------------------------------
+
+
+// ----------------------------------------------------------------------------
+// Types
 
 // global status object, defined in clusti_status.c
 extern Clusti_Status g_clustiStatus;
 
+// forwarded in header
 //struct Clusti_MemoryRegistry;
 //typedef struct Clusti_MemoryRegistry Clusti_MemoryRegistry;
 
@@ -50,17 +57,108 @@ struct Clusti_DoublyLinkedMemoryChunkListItem {
 	Clusti_DoublyLinkedMemoryChunkListItem *previous;
 	Clusti_DoublyLinkedMemoryChunkListItem *next;
 };
+// ----------------------------------------------------------------------------
 
-// internal forwards
+
+// ----------------------------------------------------------------------------
+// internal function  forwards
+
+
 void clusti_mem_registerNewAllocation(void *ptr, size_t sizeInBytes);
 void clusti_mem_unregisterAllocation(void *ptr);
 
-void clusti_mem_printSummary();
-
-// can return null if not found
+// Helper to maintain doubly linked list that tracks allocations;
+// Can return null if not found.
 Clusti_DoublyLinkedMemoryChunkListItem *clusti_findMemoryItem(void *ptr);
 
+void clusti_mem_printSummary();
+void clusti_mem_printItem(int index, int numTotalItems,
+			  Clusti_DoublyLinkedMemoryChunkListItem *item);
+
+
+
+
 //-----------------------------------------------------------------------------
+// function implementations (string helpers & string memory management)
+
+// returned string must be freed
+char *clusti_String_lowerCase(char const *str)
+{
+	char *resultString = clusti_String_callocAndCopy(str);
+	for (int i = 0; resultString[i] != '\0'; i++) {
+		resultString[i] = tolower(resultString[i]);
+	}
+	return resultString;
+}
+
+bool clusti_String_impliesTrueness(char const *str)
+{
+	char *tmpLower = clusti_String_lowerCase(str);
+
+	bool ret = (strcmp("true", tmpLower) == 0) ||
+		   (strcmp("yes", tmpLower) == 0) ||
+		   (strcmp("y", tmpLower) == 0) || (strcmp("1", tmpLower) == 0);
+
+	clusti_free(tmpLower);
+
+	return ret;
+}
+
+
+void clusti_String_reallocAndCopy(char **dst, char const *src)
+{
+	assert(dst != NULL);
+
+	size_t srcLen = strnlen_s(src, CLUSTI_MAX_EXPECTED_STRING_LENGTH) *
+				sizeof(char) +
+			1;
+	size_t dstLen = strnlen_s(*dst, CLUSTI_MAX_EXPECTED_STRING_LENGTH) *
+				sizeof(char) +
+			1;
+	if (*dst == NULL) {
+		*dst = clusti_String_callocAndCopy(src);
+	} else if (srcLen <= dstLen) {
+		// dst is long enough
+		errno_t err = strncpy_s(*dst, srcLen, src, dstLen);
+		assert(strcmp(src, *dst) == 0);
+		if (err != 0) {
+			clusti_status_declareError("String copy failed");
+		}
+	} else {
+		// realloc would be faster, but break the memory management;
+		clusti_free(*dst);
+		*dst = clusti_String_callocAndCopy(src);
+	}
+}
+
+char *clusti_String_callocAndCopy(char const *orig)
+{
+	size_t siz = (1 + strnlen_s(orig, CLUSTI_MAX_EXPECTED_STRING_LENGTH)) *
+		     sizeof(char);
+
+	assert(siz < CLUSTI_MAX_EXPECTED_STRING_LENGTH);
+	if (siz >= CLUSTI_MAX_EXPECTED_STRING_LENGTH) {
+		clusti_status_declareError(
+			"string does not seem to be null terminated");
+	}
+
+	// +1 because of null termination
+	char *result = clusti_calloc(1, siz);
+
+	errno_t err = strncpy_s(result, siz, orig, siz);
+	assert(strcmp(orig, result) == 0);
+	if (err != 0) {
+		clusti_status_declareError("string copy failed");
+	}
+
+	return result;
+}
+// ----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+// function implementations (pure memory management )
+
 
 void clusti_mem_init()
 {
@@ -240,53 +338,6 @@ void clusti_free_internal(void *ptr, const char *file, int line,
 	free(ptr);
 }
 
-void clusti_String_reallocAndCopy(char **dst, char const *src)
-{
-	assert(dst != NULL);
-
-	size_t srcLen = strnlen_s(src, CLUSTI_MAX_EXPECTED_STRING_LENGTH) *
-			sizeof(char) +1;
-	size_t dstLen = strnlen_s(*dst, CLUSTI_MAX_EXPECTED_STRING_LENGTH) *
-				sizeof(char) +
-			1;
-	if (*dst == NULL) {
-		*dst = clusti_String_callocAndCopy(src);
-	} else if (srcLen <= dstLen) {
-		// dst is long enough 
-		errno_t err = strncpy_s(*dst, srcLen, src, dstLen);
-		assert(strcmp(src, *dst) == 0);
-		if (err != 0) {
-			clusti_status_declareError("String copy failed");
-		}
-	} else {
-		// realloc would be faster, but break the memory management;
-		clusti_free(*dst);
-		*dst = clusti_String_callocAndCopy(src);
-	}
-}
-
-char *clusti_String_callocAndCopy(char const *orig)
-{
-	size_t siz = (1 + strnlen_s(orig, CLUSTI_MAX_EXPECTED_STRING_LENGTH) ) *
-		     sizeof(char);
-
-	assert(siz < CLUSTI_MAX_EXPECTED_STRING_LENGTH);
-	if (siz >= CLUSTI_MAX_EXPECTED_STRING_LENGTH) {
-		clusti_status_declareError(
-			"string does not seem to be null terminated");
-	}
-
-	// +1 because of null termination
-	char *result = clusti_calloc(1, siz );
-
-	errno_t err = strncpy_s(result, siz, orig, siz);
-	assert(strcmp(orig, result) == 0);
-	if (err != 0) {
-		clusti_status_declareError("string copy failed");
-	}
-
-	return result;
-}
 
 void clusti_mem_printItem(int index, int numTotalItems,
 			  Clusti_DoublyLinkedMemoryChunkListItem *item)

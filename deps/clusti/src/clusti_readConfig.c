@@ -7,21 +7,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h> // tolower
 
 #include <assert.h>
 
 /* -------------------------------------------------------------------------- */
 /* Internal function  forward decls. */
 
-/**
- * @brief Read a text line of arbitrary length from file.
-	  Returned buffer must be freed
-
- * @param f file pointer
- * @return String containing the text line or NULL on error.
- * @details See  https://stackoverflow.com/questions/29576799/reading-an-unknown-length-line-from-stdin-in-c-with-fgets/29576944 
-*/
-//char *clusti_getline(FILE *f);
 
 /**
  * @brief Read a file of arbitrary length from file into a buffer.
@@ -39,43 +31,40 @@ void clusti_Parser_endElement_callback(void *userdata,
 					 const char *elementName);
 
 
-/* -------------------------------------------------------------------------- */
+void clusti_parseVideoSinks(Clusti *instance, Clusti_State_Parsing *parser,
+			    const char **attributeNamesAndValues);
+void clusti_parseVideoSources(Clusti *instance, Clusti_State_Parsing *parser,
+			      const char **attributeNamesAndValues);
+void clusti_parseVideoSink(Clusti *instance, Clusti_State_Parsing *parser,
+			   const char **attributeNamesAndValues);
+void clusti_parseVideoSource(Clusti *instance, Clusti_State_Parsing *parser,
+			     const char **attributeNamesAndValues);
+
+void clusti_parseWarping(Clusti *instance, Clusti_State_Parsing *parser,
+			 const char **attributeNamesAndValues);
+void clusti_parseBlending(Clusti *instance, Clusti_State_Parsing *parser,
+			  const char **attributeNamesAndValues);
+
+void clusti_parseRectangle(Clusti *instance, Clusti_State_Parsing *parser,
+			   const char **attributeNamesAndValues);
+// also for "VirtualResolution" XML tag
+void clusti_parseResolution(Clusti *instance, Clusti_State_Parsing *parser,
+			    const char **attributeNamesAndValues);
+void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
+			    const char **attributeNamesAndValues);
+void clusti_parseFrustum(Clusti *instance, Clusti_State_Parsing *parser,
+			 const char **attributeNamesAndValues);
+void clusti_parseFrustumFOV(Clusti *instance, Clusti_State_Parsing *parser,
+		     const char **attributeNamesAndValues);
+void clusti_parseOrientation(Clusti *instance, Clusti_State_Parsing *parser,
+			     const char **attributeNamesAndValues);
+// ----------------------------------------------------------------------------
 
 
 
 
-//char *clusti_getline(FILE *f)
-//{
-//	size_t size = 0;
-//	size_t len = 0;
-//	size_t last = 0;
-//	char *buf = NULL;
-//	/* to omit memory leak*/
-//	char *buf_temp = NULL;
-//
-//	do {
-//		/* BUFSIZ is defined as "the optimal read size for this platform" */
-//		size += BUFSIZ;
-//		/* realloc(NULL,n) is the same as malloc(n) */
-//		buf_temp = realloc(
-//			buf,
-//			size); 
-//		if (buf_temp == NULL) {
-//			free(buf);
-//			return NULL;
-//		}
-//		buf = buf_temp;
-//
-//		/* Actually do the read. Note that fgets puts a terminal
-//		   '\0' on the end of the string, so we make sure we overwrite this */
-//		fgets(buf + last, size, f);
-//		len = strlen(buf);
-//		last = len - 1;
-//	} while (!feof(f) && buf[last] != '\n');
-//
-//	return buf;
-//}
-
+// ----------------------------------------------------------------------------
+// function impls.
 
 char* clusti_loadFileContents(const char* configPath) {
 
@@ -152,34 +141,6 @@ void clusti_readConfig(Clusti *instance,
 }
 
 
-
-void clusti_parseVideoSinks(Clusti *instance, Clusti_State_Parsing *parser,
-			    const char **attributeNamesAndValues);
-void clusti_parseVideoSources(Clusti *instance, Clusti_State_Parsing *parser,
-			      const char **attributeNamesAndValues);
-void clusti_parseVideoSink(Clusti *instance, Clusti_State_Parsing *parser,
-			   const char **attributeNamesAndValues);
-void clusti_parseVideoSource(Clusti *instance, Clusti_State_Parsing *parser,
-			   const char **attributeNamesAndValues);
-
-void clusti_parseWarping(Clusti *instance, Clusti_State_Parsing *parser,
-			 const char **attributeNamesAndValues);
-void clusti_parseBlending(Clusti *instance, Clusti_State_Parsing *parser,
-			  const char **attributeNamesAndValues);
-
-void clusti_parseRectangle(Clusti *instance, Clusti_State_Parsing *parser,
-			     const char **attributeNamesAndValues);
-// also for "VirtualResolution" XML tag
-void clusti_parseResolution(Clusti *instance, Clusti_State_Parsing *parser,
-			     const char **attributeNamesAndValues);
-void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
-			     const char **attributeNamesAndValues);
-void clusti_parseFrustum(Clusti *instance, Clusti_State_Parsing *parser,
-			     const char **attributeNamesAndValues);
-void clusti_parseFOV(Clusti *instance, Clusti_State_Parsing *parser,
-			     const char **attributeNamesAndValues);
-void clusti_parseOrientation(Clusti *instance, Clusti_State_Parsing *parser,
-			     const char **attributeNamesAndValues);
 
 
 
@@ -312,6 +273,16 @@ void clusti_parseVideoSource(Clusti *instance, Clusti_State_Parsing *parser,
 			assert((source->name) == NULL);
 			source->name = clusti_String_callocAndCopy(
 				attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("warpFileName",
+				   attributeNamesAndValues[i]) == 0)) {
+			assert((source->warpfileName) == NULL);
+			source->warpfileName = clusti_String_callocAndCopy(
+				attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("blendImageName",
+				   attributeNamesAndValues[i]) == 0)) {
+			assert((source->blendImageName) == NULL);
+			source->blendImageName = clusti_String_callocAndCopy(
+				attributeNamesAndValues[i + 1]);
 		} else if ((strcmp("testImageName",
 				   attributeNamesAndValues[i]) == 0)) {
 			assert((source->testImageName) == NULL);
@@ -320,7 +291,7 @@ void clusti_parseVideoSource(Clusti *instance, Clusti_State_Parsing *parser,
 		} else if ((strcmp("decklinkWorkaround_verticalOffset_pixels",
 				   attributeNamesAndValues[i]) == 0)) {
 			source->decklinkWorkaround_verticalOffset_pixels =
-				(float)atof(attributeNamesAndValues[i + 1]);
+				atoi(attributeNamesAndValues[i + 1]);
 		} else {
 
 			printf("unexpected xml attribute: %s\n",
@@ -331,34 +302,95 @@ void clusti_parseVideoSource(Clusti *instance, Clusti_State_Parsing *parser,
 }
 
 
-
-
-
 void clusti_parseWarping(Clusti *instance, Clusti_State_Parsing *parser,
 			 const char **attributeNamesAndValues)
 {
 	Clusti_Params_Warping warp = {.use = false,
-				      .type = "none", //"imageLUT2D",
-				      .invert = true,
-				      .warpfileBaseName = NULL};
+				      .type = CLUSTI_ENUM_WARPING_TYPE_none,
+				      .invert = true};
+
+	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
+		if ((strcmp("use", attributeNamesAndValues[i]) == 0)) {
+			warp.use = clusti_String_impliesTrueness(
+				attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("type", attributeNamesAndValues[i]) == 0)) {
+			if (strcmp("none", attributeNamesAndValues[i + 1]) ==
+			    0) {
+				warp.type = CLUSTI_ENUM_WARPING_TYPE_none;
+			} else if (strcmp("imageLUT2D",
+					  attributeNamesAndValues[i + 1]) ==
+				   0) {
+				warp.type = CLUSTI_ENUM_WARPING_TYPE_imageLUT2D;
+			} else if (strcmp("imageLUT3D",
+					  attributeNamesAndValues[i + 1]) ==
+				   0) {
+				warp.type = CLUSTI_ENUM_WARPING_TYPE_imageLUT3D;
+			} else if (strcmp("mesh2D",
+					  attributeNamesAndValues[i + 1]) ==
+				   0) {
+				warp.type = CLUSTI_ENUM_WARPING_TYPE_mesh2D;
+			} else if (strcmp("mesh3D",
+					  attributeNamesAndValues[i + 1]) ==
+				   0) {
+				warp.type = CLUSTI_ENUM_WARPING_TYPE_mesh3D;
+			} else  {
+				warp.type = CLUSTI_ENUM_WARPING_TYPE_none;
+
+				printf("unexpected warp type attribute: %s\n",
+				       attributeNamesAndValues[i +1]);
+				clusti_status_declareError(
+					"unexpected warp type attribute");
+			}
+		} else if ((strcmp("invert",
+				   attributeNamesAndValues[i]) == 0)) {
+			warp.invert = clusti_String_impliesTrueness(
+				attributeNamesAndValues[i + 1]);
+		} else {
+			printf("unexpected xml attribute: %s\n",
+			       attributeNamesAndValues[i]);
+			clusti_status_declareError("unexpected xml attribute");
+		}
+	}
+
+	instance->stitchingConfig.generalWarpParams = warp;
 
 
-	//TODO CONTINUE HERE; MAYBE USE SDS lib for strings! https://github.com/antirez/sds
+	//TODO test
+
+
+	// TODO general, if string hassle becomes too cumbersome:
+	// MAYBE USE SDS lib for strings! https://github.com/antirez/sds
 	// or strstr()
-
-	//instance->stitchingConfig.
-	//Clusti_Params_VideoSource *source =
-	//	&(instance->stitchingConfig
-	//		  .videoSources[parser->currentElementIndex]);
-	//source-> = vec;
-
-	//TODO
 }
 
 void clusti_parseBlending(Clusti *instance, Clusti_State_Parsing *parser,
 			  const char **attributeNamesAndValues)
 {
-	//TODO
+	Clusti_Params_Blending blend = {
+		.use = false, .autoGenerate = false, .fadingRange_pixels = 128};
+
+	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
+		if ((strcmp("use", attributeNamesAndValues[i]) == 0)) {
+			blend.use = clusti_String_impliesTrueness(
+				attributeNamesAndValues[i + 1]);
+		}  else if ((strcmp("autoGenerate", attributeNamesAndValues[i]) ==
+			    0)) {
+			blend.autoGenerate = clusti_String_impliesTrueness(
+				attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("fadingRange_pixels",
+				   attributeNamesAndValues[i]) == 0)) {
+			blend.fadingRange_pixels =
+				atoi(attributeNamesAndValues[i + 1]);
+		} else {
+			printf("unexpected xml attribute: %s\n",
+			       attributeNamesAndValues[i]);
+			clusti_status_declareError("unexpected xml attribute");
+		}
+	}
+
+	instance->stitchingConfig.generalBlendParams = blend;
+
+	//TODO test
 }
 
 
@@ -435,8 +467,10 @@ void clusti_parseResolution(Clusti *instance, Clusti_State_Parsing *parser,
 	//TODO test
 }
 
-void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
-			    const char **attributeNamesAndValues)
+
+// get projection from current parsing state and index
+Clusti_Params_Projection *
+clusti_Parser_getCurrentProjection(Clusti const *instance, Clusti_State_Parsing const *parser)
 {
 	Clusti_Params_Projection *proj = NULL;
 
@@ -460,6 +494,16 @@ void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
 
 	assert(proj);
 
+	return proj;
+}
+
+
+void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
+			    const char **attributeNamesAndValues)
+{
+	Clusti_Params_Projection *proj =
+		clusti_Parser_getCurrentProjection(instance, parser);
+
 	// do the parsing:
 	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
 		if ((strcmp("type", attributeNamesAndValues[i]) == 0)) {
@@ -478,7 +522,7 @@ void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
 				printf("(yet) unsupported projection type: %s\n",
 				       attributeNamesAndValues[i + 1]);
 				clusti_status_declareError(
-					"unsupported projection type in xml attribute");
+					"(yet) unsupported projection type in xml attribute");
 			}
 			//proj->type =
 		} else {
@@ -494,19 +538,105 @@ void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
 void clusti_parseFrustum(Clusti *instance, Clusti_State_Parsing *parser,
 			 const char **attributeNamesAndValues)
 {
-	//TODO
+	Clusti_Params_Projection *proj =
+		clusti_Parser_getCurrentProjection(instance, parser);
+
+	// nothing to parse here, just consistency check
+	assert(proj->type == CLUSTI_ENUM_PROJECTION_TYPE_PLANAR);
+
+	//TODO test
 }
 
-void clusti_parseFOV(Clusti *instance, Clusti_State_Parsing *parser,
+void clusti_parseFrustumFOV(Clusti *instance, Clusti_State_Parsing *parser,
 		     const char **attributeNamesAndValues)
 {
-	//TODO
+	Clusti_Params_Projection *proj =
+		clusti_Parser_getCurrentProjection(instance, parser);
+
+	//consistency check
+	assert(proj->type == CLUSTI_ENUM_PROJECTION_TYPE_PLANAR);
+
+
+	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
+		if ((strcmp("up", attributeNamesAndValues[i]) == 0)) {
+			proj->planar_FrustumFOV.up_degrees =
+				(float)atof(attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("down", attributeNamesAndValues[i]) == 0)) {
+			proj->planar_FrustumFOV.down_degrees =
+				(float)atof(attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("left", attributeNamesAndValues[i]) == 0)) {
+			proj->planar_FrustumFOV.left_degrees =
+				(float)atof(attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("right", attributeNamesAndValues[i]) == 0)) {
+			proj->planar_FrustumFOV.right_degrees =
+				(float)atof(attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("unit", attributeNamesAndValues[i]) == 0)) {
+			if (strcmp(attributeNamesAndValues[i + 1], "degree") != 0) {
+				printf("(yet) unsupported angle unit: %s\n",
+				       attributeNamesAndValues[i+1]);
+				clusti_status_declareError(
+					"(yet) unsupported angle unit");
+			}
+		} else {
+			printf("unexpected xml attribute: %s\n",
+			       attributeNamesAndValues[i]);
+			clusti_status_declareError("unexpected xml attribute");
+		}
+	}
+
+
+	//TODO test 
 }
 
 void clusti_parseOrientation(Clusti *instance, Clusti_State_Parsing *parser,
 			     const char **attributeNamesAndValues)
 {
-	//TODO
+	Clusti_Params_Projection *proj =
+		clusti_Parser_getCurrentProjection(instance, parser);
+
+	float yaw = 0.0f;
+	float pitch = 0.0f;
+	float roll = 0.0f;
+	//proj->orientation
+
+	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
+		if ((strcmp("type", attributeNamesAndValues[i]) == 0)) {
+			if (strcmp(attributeNamesAndValues[i + 1],
+				   "euler_static_zxy") != 0) {
+				printf("(yet) unsupported euler angle type: %s\n",
+				       attributeNamesAndValues[i + 1]);
+				clusti_status_declareError(
+					"(yet) unsupported euler angle type");
+			}
+		} else if ((strcmp("unit", attributeNamesAndValues[i]) == 0)) {
+			if (strcmp(attributeNamesAndValues[i + 1], "degree") !=
+			    0) {
+				printf("(yet) unsupported angle unit: %s\n",
+				       attributeNamesAndValues[i + 1]);
+				clusti_status_declareError(
+					"(yet) unsupported angle unit");
+			}
+		} else if ((strcmp("yaw", attributeNamesAndValues[i]) == 0)) {
+			yaw = (float)atof(attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("pitch", attributeNamesAndValues[i]) == 0)) {
+			pitch = (float)atof(attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("roll", attributeNamesAndValues[i]) == 0)) {
+			roll = (float)atof(attributeNamesAndValues[i + 1]);
+		} else {
+			printf("unexpected xml attribute: %s\n",
+			       attributeNamesAndValues[i]);
+			clusti_status_declareError("unexpected xml attribute");
+		}
+	}
+
+	// Create graphene structure from the parsed information
+	// GRAPHENE_EULER_ORDER_SZXY,
+	// as VIOSO and OpenSpace and ParaView have the euler angle convention
+	// "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
+	graphene_euler_init_with_order(&(proj->orientation), pitch, yaw, roll,
+				       GRAPHENE_EULER_ORDER_SZXY);
+
+	//TODO test
 }
 
 
@@ -571,7 +701,7 @@ void clusti_Parser_startElement_callback(void *userdata,
 	} else if (strcmp(elementName, "Frustum") == 0) {
 		clusti_parseFrustum(instance, parser, attributeNamesAndValues);
 	} else if (strcmp(elementName, "FOV") == 0) {
-		clusti_parseFOV(instance, parser, attributeNamesAndValues);
+		clusti_parseFrustumFOV(instance, parser, attributeNamesAndValues);
 	} else  {
 		printf("unexpected xml element: %s\n", elementName);
 		clusti_status_declareError("unexpected XML element");

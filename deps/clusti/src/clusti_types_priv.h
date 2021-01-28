@@ -97,10 +97,9 @@ typedef struct Clusti_Params_Projection Clusti_Params_Projection;
 //struct Clusti_Params_Projection_EquiAngularCubeMap;
 //typedef struct Clusti_Params_Projection_EquiAngularCubeMap
 //	Clusti_Params_Projection_EquiAngularCubeMap;
-
-
-struct Clusti_Params_Frustum;
-typedef struct Clusti_Params_Frustum Clusti_Params_Frustum;
+//
+//struct Clusti_Params_Frustum;
+//typedef struct Clusti_Params_Frustum Clusti_Params_Frustum;
 
 struct Clusti_Params_FrustumFOV;
 typedef struct Clusti_Params_FrustumFOV Clusti_Params_FrustumFOV;

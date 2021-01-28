@@ -10,6 +10,7 @@
 #include <stdlib.h> // calloc
 #include <stdio.h>  // printf
 #include <string.h> // strncpy_s
+
 #include <assert.h> // assert
 #include <stdbool.h> // bool
 // ----------------------------------------------------------------------------

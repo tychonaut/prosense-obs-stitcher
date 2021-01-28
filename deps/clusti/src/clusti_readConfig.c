@@ -1,6 +1,8 @@
 
 #include "clusti.h"
 
+#include "clusti_math.h"
+
 #include "clusti_status_priv.h"
 #include "clusti_types_priv.h"
 #include "clusti_mem_priv.h"
@@ -105,6 +107,25 @@ char* clusti_loadFileContents(const char* configPath) {
 }
 
 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// TODO outsource to clusti math files
+
+
+
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+
+
+
+
+
 void clusti_readConfig(Clusti *instance,
 				char const *configPath)
 {
@@ -134,6 +155,16 @@ void clusti_readConfig(Clusti *instance,
 	    XML_STATUS_ERROR) {
 		printf("Error: %s\n", XML_ErrorString(XML_GetErrorCode(parser)));
 	}
+
+	//------------------------------------
+	// create ViewProjectionMatrices
+	for (int i = 0; i < instance->stitchingConfig.numVideoSources; i++) {
+		clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(&(
+			instance->stitchingConfig.videoSources[i].projection));
+	}
+	//------------------------------------
+
+
 
 	clusti_free(fileContents);
 
@@ -633,6 +664,7 @@ void clusti_parseOrientation(Clusti *instance, Clusti_State_Parsing *parser,
 	// GRAPHENE_EULER_ORDER_SZXY,
 	// as VIOSO and OpenSpace and ParaView have the euler angle convention
 	// "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
+	// angles are in degrees: https://ebassi.github.io/graphene/docs/graphene-Euler.html
 	graphene_euler_init_with_order(&(proj->orientation), pitch, yaw, roll,
 				       GRAPHENE_EULER_ORDER_SZXY);
 

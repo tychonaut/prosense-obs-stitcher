@@ -47,6 +47,319 @@ extern "C" {
 
 
 
+// required functions
+void CreateVAO(GLuint &geoVAO, GLuint geoVBO);
+GLuint CreatePlane(GLuint &vbo, float sx, float sy);
+GLuint CreateScreenQuadNDC(GLuint &vbo);
+GLuint CreateCube(GLuint &vbo, float sx, float sy, float sz);
+std::string LoadFile(const std::string &filename);
+GLuint CreateShader(const char *vsCode, const char *psCode);
+GLuint LoadTexture(const std::string &filename);
+
+int test_expat(void);
+static bool graphene_test_matrix_near();
+
+
+
+const GLenum FBO_Buffers[] = {GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1,
+			      GL_COLOR_ATTACHMENT2,  GL_COLOR_ATTACHMENT3,
+			      GL_COLOR_ATTACHMENT4,  GL_COLOR_ATTACHMENT5,
+			      GL_COLOR_ATTACHMENT6,  GL_COLOR_ATTACHMENT7,
+			      GL_COLOR_ATTACHMENT8,  GL_COLOR_ATTACHMENT9,
+			      GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11,
+			      GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13,
+			      GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15};
+
+int main(int argc, char **argv)
+{
+	// ---------------------------------------------------------------------------
+	Clusti *stitcher = clusti_create();
+
+	clusti_readConfig(stitcher,
+			  "../../../testdata/calibration_viewfrusta.xml");
+
+
+
+
+	clusti_destroy(stitcher);
+	// ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+	test_expat();
+	graphene_test_matrix_near();
+
+	stbi_set_flip_vertically_on_load(1);
+
+	// init sdl2
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) < 0) {
+		printf("Failed to initialize SDL2\n");
+		return 0;
+	}
+
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+			    SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // double buffering
+
+	// open window
+	SDL_Window *wnd =
+		SDL_CreateWindow("ShaderProject", SDL_WINDOWPOS_CENTERED,
+				 SDL_WINDOWPOS_CENTERED, 800, 600,
+				 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+					 SDL_WINDOW_ALLOW_HIGHDPI);
+	SDL_SetWindowMinimumSize(wnd, 200, 200);
+
+	// get GL context
+	SDL_GLContext glContext = SDL_GL_CreateContext(wnd);
+	SDL_GL_MakeCurrent(wnd, glContext);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+
+	// init glew
+	glewExperimental = true;
+	if (glewInit() != GLEW_OK) {
+		printf("Failed to initialize GLEW\n");
+		return 0;
+	}
+
+	// required:
+	float sedWindowWidth = 800, sedWindowHeight = 600;
+	float sedMouseX = 0, sedMouseY = 0;
+
+	std::chrono::time_point<std::chrono::system_clock> timerStart =
+		std::chrono::system_clock::now();
+
+	// init
+
+	// shaders
+	std::string ShaderSource_frustumToEquirect_vert =
+		LoadFile("../../shaders/frustumToEquirect.vert");
+	std::string ShaderSource_frustumToEquirect_frag =
+		LoadFile("../../shaders/frustumToEquirect.glsl");
+
+	// system variables
+	float sysTime = 0.0f, sysTimeDelta = 0.0f;
+	unsigned int sysFrameIndex = 0;
+	glm::vec2 sysMousePosition(sedMouseX, sedMouseY);
+	glm::vec2 sysViewportSize(sedWindowWidth, sedWindowHeight);
+	glm::mat4 sysView(0.998291f, -0.000051f, 0.058435f, 0.000000f,
+			  0.000000f, 1.000000f, 0.000873f, 0.000000f,
+			  -0.058435f, -0.000871f, 0.998291f, 0.000000f,
+			  -0.038967f, 0.006246f, -7.157361f, 1.000000f);
+	glm::mat4 sysProjection = glm::perspective(
+		glm::radians(45.0f), sedWindowWidth / sedWindowHeight, 0.1f,
+		1000.0f);
+	glm::mat4 sysOrthographic = glm::ortho(
+		0.0f, sedWindowWidth, sedWindowHeight, 0.0f, 0.1f, 1000.0f);
+	glm::mat4 sysGeometryTransform = glm::mat4(1.0f);
+	glm::mat4 sysViewProjection = sysProjection * sysView;
+	glm::mat4 sysViewOrthographic = sysOrthographic * sysView;
+
+	// objects
+	// renderTarget render texture
+	GLuint renderTarget_Color, renderTarget_Depth;
+	glGenTextures(1, &renderTarget_Color);
+	glBindTexture(GL_TEXTURE_2D, renderTarget_Color);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8192, 4096, 0, GL_RGBA,
+		     GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glGenTextures(1, &renderTarget_Depth);
+	glBindTexture(GL_TEXTURE_2D, renderTarget_Depth);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 8192, 4096, 0,
+		     GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	GLuint earth = LoadTexture("../../../testData/RT001.png");
+
+	//GLuint domemaster_vioso_4096x4096 = LoadTexture("../../domemaster-vioso_4096x4096.jpg");
+
+	GLuint fisheye_180_bourke =
+		LoadTexture("../../../testData/fisheye_180_bourke.jpg");
+
+	GLuint fisheye_as_equirect_180_bourke = LoadTexture(
+		"../../../testData/fisheye_as_equirect_180_bourke.jpg");
+
+	GLuint frustumToEquirect_pass_SP =
+		CreateShader(ShaderSource_frustumToEquirect_vert.c_str(),
+			     ShaderSource_frustumToEquirect_frag.c_str());
+
+	GLuint fullscreenQuad_VAO, fullscreenQuad_VBO;
+	fullscreenQuad_VAO = CreateScreenQuadNDC(fullscreenQuad_VBO);
+
+	SDL_Event event;
+	bool run = true;
+	while (run) {
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT) {
+				run = false;
+			} else if (event.type == SDL_MOUSEMOTION) {
+				sedMouseX = (float)event.motion.x;
+				sedMouseY = (float)event.motion.y;
+				sysMousePosition = glm::vec2(
+					sedMouseX / sedWindowWidth,
+					1.f - (sedMouseY / sedWindowHeight));
+			} else if (event.type == SDL_WINDOWEVENT &&
+				   event.window.event ==
+					   SDL_WINDOWEVENT_RESIZED) {
+				sedWindowWidth = (float)event.window.data1;
+				sedWindowHeight = (float)event.window.data2;
+
+				sysViewportSize = glm::vec2(sedWindowWidth,
+							    sedWindowHeight);
+				sysProjection = glm::perspective(
+					glm::radians(45.0f),
+					sedWindowWidth / sedWindowHeight, 0.1f,
+					1000.0f);
+				sysOrthographic = glm::ortho(
+					0.0f, sedWindowWidth, sedWindowHeight,
+					0.0f, 0.1f, 1000.0f);
+				sysGeometryTransform = glm::mat4(1.0f);
+				sysViewProjection = sysProjection * sysView;
+				sysViewOrthographic = sysOrthographic * sysView;
+
+				glBindTexture(GL_TEXTURE_2D,
+					      renderTarget_Color);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8192,
+					     4096, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+					     NULL);
+				glBindTexture(GL_TEXTURE_2D,
+					      renderTarget_Depth);
+				glTexImage2D(GL_TEXTURE_2D, 0,
+					     GL_DEPTH24_STENCIL8, 8192, 4096, 0,
+					     GL_DEPTH_STENCIL,
+					     GL_UNSIGNED_INT_24_8, NULL);
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
+		}
+
+		if (!run)
+			break;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
+			GL_STENCIL_BUFFER_BIT);
+		glViewport(0, 0, (GLsizei)sedWindowWidth,
+			   (GLsizei)sedWindowHeight);
+
+		// RENDER
+
+		// frustumToEquirect_pass shader pass
+		glUseProgram(frustumToEquirect_pass_SP);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glActiveTexture(GL_TEXTURE0 + 0);
+		glBindTexture(GL_TEXTURE_2D, earth);
+		glUniform1i(glGetUniformLocation(frustumToEquirect_pass_SP,
+						 "currentPlanarRendering"),
+			    0);
+
+		glActiveTexture(GL_TEXTURE0 + 1);
+		glBindTexture(GL_TEXTURE_2D, fisheye_as_equirect_180_bourke);
+		glUniform1i(glGetUniformLocation(frustumToEquirect_pass_SP,
+						 "backgroundTexture"),
+			    1);
+
+		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
+						 "backgroundTexture"),
+			    0.000000f);
+		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
+						 "in_params.domeRadius"),
+			    300.000000f);
+		glUniform1f(
+			glGetUniformLocation(frustumToEquirect_pass_SP,
+					     "in_params.virtualScreenWidth"),
+			200.000000f);
+		glUniform1f(
+			glGetUniformLocation(frustumToEquirect_pass_SP,
+					     "in_params.virtualScreenHeight"),
+			199.199997f);
+		glUniform1f(
+			glGetUniformLocation(frustumToEquirect_pass_SP,
+					     "in_params.virtualScreenAzimuth"),
+			-37.689999f);
+		glUniform1f(glGetUniformLocation(
+				    frustumToEquirect_pass_SP,
+				    "in_params.virtualScreenElevation"),
+			    3.600000f);
+		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
+						 "in_params.domeAperture"),
+			    180.000000f);
+		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
+						 "in_params.domeTilt"),
+			    21.610001f);
+		glUniform1f(glGetUniformLocation(
+				    frustumToEquirect_pass_SP,
+				    "in_params.debug_previewScalefactor"),
+			    0.460000f);
+		glUniform2i(
+			glGetUniformLocation(
+				frustumToEquirect_pass_SP,
+				"in_params.renderTargetResolution_uncropped"),
+			8192, 4096);
+		glUniformMatrix4fv(
+			glGetUniformLocation(
+				frustumToEquirect_pass_SP,
+				"in_params.frustum_viewProjectionMatrix"),
+			1, GL_FALSE, glm::value_ptr(sysViewProjection));
+
+		sysGeometryTransform =
+			glm::translate(glm::mat4(1),
+				       glm::vec3(0.000000f, 0.000000f,
+						 0.000000f)) *
+			glm::yawPitchRoll(0.000000f, 0.000000f, 0.000000f) *
+			glm::scale(glm::mat4(1.0f),
+				   glm::vec3(1.000000f, 1.000000f, 1.000000f));
+		glUniformMatrix4fv(
+			glGetUniformLocation(frustumToEquirect_pass_SP,
+					     "modelMat"),
+			1, GL_FALSE, glm::value_ptr(sysGeometryTransform));
+		glBindVertexArray(fullscreenQuad_VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		float curTime =
+			std::chrono::duration_cast<std::chrono::microseconds>(
+				std::chrono::system_clock::now() - timerStart)
+				.count() /
+			1000000.0f;
+		sysTimeDelta = curTime - sysTime;
+		sysTime = curTime;
+		sysFrameIndex++;
+
+		SDL_GL_SwapWindow(wnd);
+	}
+
+	// sdl2
+	SDL_GL_DeleteContext(glContext);
+	SDL_DestroyWindow(wnd);
+	SDL_Quit();
+
+	return 0;
+}
+
+
+
+
+
+
+
 /* Custom matcher for near matrices */
 static bool graphene_test_matrix_near()
 {
@@ -201,214 +514,7 @@ int test_expat(void)
 
 
 
-// required functions
-void CreateVAO(GLuint& geoVAO, GLuint geoVBO);
-GLuint CreatePlane(GLuint& vbo, float sx, float sy);
-GLuint CreateScreenQuadNDC(GLuint& vbo);
-GLuint CreateCube(GLuint& vbo, float sx, float sy, float sz);
-std::string LoadFile(const std::string& filename);
-GLuint CreateShader(const char* vsCode, const char* psCode);
-GLuint LoadTexture(const std::string& filename);
 
-const GLenum FBO_Buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15 };
-
-int main(int argc, char **argv)
-{
-	Clusti *stitcher = clusti_create();
-
-	clusti_readConfig(
-		stitcher, "../../../testdata/calibration_viewfrusta.xml");
-
-
-
-
-
-	clusti_destroy(stitcher);
-
-
-
-
-
-
-	test_expat();
-	graphene_test_matrix_near();
-
-	stbi_set_flip_vertically_on_load(1);
-
-	// init sdl2
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) < 0) {
-		printf("Failed to initialize SDL2\n");
-		return 0;
-	}
-
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // double buffering
-
-	// open window
-	SDL_Window* wnd = SDL_CreateWindow("ShaderProject", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-	SDL_SetWindowMinimumSize(wnd, 200, 200);
-
-	// get GL context
-	SDL_GLContext glContext = SDL_GL_CreateContext(wnd);
-	SDL_GL_MakeCurrent(wnd, glContext);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
-
-	// init glew
-	glewExperimental = true;
-	if (glewInit() != GLEW_OK) {
-		printf("Failed to initialize GLEW\n");
-		return 0;
-	}
-
-	// required:
-	float sedWindowWidth = 800, sedWindowHeight = 600;
-	float sedMouseX = 0, sedMouseY = 0;
-
-	std::chrono::time_point<std::chrono::system_clock> timerStart = std::chrono::system_clock::now();
-
-	// init
-
-	// shaders
-	std::string ShaderSource_frustumToEquirect_vert = LoadFile("../../shaders/frustumToEquirect.vert");
-	std::string ShaderSource_frustumToEquirect_frag = LoadFile("../../shaders/frustumToEquirect.glsl");
-
-	// system variables
-	float sysTime = 0.0f, sysTimeDelta = 0.0f;
-	unsigned int sysFrameIndex = 0;
-	glm::vec2 sysMousePosition(sedMouseX, sedMouseY);
-	glm::vec2 sysViewportSize(sedWindowWidth, sedWindowHeight);
-	glm::mat4 sysView( 0.998291f, -0.000051f, 0.058435f, 0.000000f,
-		           0.000000f,  1.000000f, 0.000873f, 0.000000f,
-		          -0.058435f, -0.000871f, 0.998291f, 0.000000f,
-		          -0.038967f, 0.006246f, -7.157361f, 1.000000f);
-	glm::mat4 sysProjection = glm::perspective(glm::radians(45.0f), sedWindowWidth / sedWindowHeight, 0.1f, 1000.0f);
-	glm::mat4 sysOrthographic = glm::ortho(0.0f, sedWindowWidth, sedWindowHeight, 0.0f, 0.1f, 1000.0f);
-	glm::mat4 sysGeometryTransform = glm::mat4(1.0f);
-	glm::mat4 sysViewProjection = sysProjection * sysView;
-	glm::mat4 sysViewOrthographic = sysOrthographic * sysView;
-
-	// objects
-	// renderTarget render texture
-	GLuint renderTarget_Color, renderTarget_Depth;
-	glGenTextures(1, &renderTarget_Color);
-	glBindTexture(GL_TEXTURE_2D, renderTarget_Color);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8192, 4096, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glGenTextures(1, &renderTarget_Depth);
-	glBindTexture(GL_TEXTURE_2D, renderTarget_Depth);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 8192, 4096, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	GLuint earth = LoadTexture("../../../testData/RT001.png");
-
-	//GLuint domemaster_vioso_4096x4096 = LoadTexture("../../domemaster-vioso_4096x4096.jpg");
-
-	GLuint fisheye_180_bourke = LoadTexture("../../../testData/fisheye_180_bourke.jpg");
-
-	GLuint fisheye_as_equirect_180_bourke = LoadTexture("../../../testData/fisheye_as_equirect_180_bourke.jpg");
-
-	GLuint frustumToEquirect_pass_SP = CreateShader(ShaderSource_frustumToEquirect_vert.c_str(), ShaderSource_frustumToEquirect_frag.c_str());
-
-	GLuint fullscreenQuad_VAO, fullscreenQuad_VBO;
-	fullscreenQuad_VAO = CreateScreenQuadNDC(fullscreenQuad_VBO);
-
-
-		SDL_Event event;
-	bool run = true;
-	while (run) {
-		while (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT) {
-				run = false;
-			} else if (event.type == SDL_MOUSEMOTION) {
-				sedMouseX = (float) event.motion.x;
-				sedMouseY = (float) event.motion.y;
-				sysMousePosition = glm::vec2(sedMouseX / sedWindowWidth, 1.f - (sedMouseY / sedWindowHeight));
-			} else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
-				sedWindowWidth = (float) event.window.data1;
-				sedWindowHeight = (float) event.window.data2;
-
-
-							sysViewportSize = glm::vec2(sedWindowWidth, sedWindowHeight);
-				sysProjection = glm::perspective(glm::radians(45.0f), sedWindowWidth / sedWindowHeight, 0.1f, 1000.0f);
-				sysOrthographic = glm::ortho(0.0f, sedWindowWidth, sedWindowHeight, 0.0f, 0.1f, 1000.0f);
-				sysGeometryTransform = glm::mat4(1.0f);
-				sysViewProjection = sysProjection * sysView;
-				sysViewOrthographic = sysOrthographic * sysView;
-
-				glBindTexture(GL_TEXTURE_2D, renderTarget_Color);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,8192, 4096, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-				glBindTexture(GL_TEXTURE_2D, renderTarget_Depth);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 8192, 4096, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
-				glBindTexture(GL_TEXTURE_2D, 0);
-
-}
-		}
-
-		if (!run) break;
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		glViewport(0, 0, (GLsizei)sedWindowWidth,
-			   (GLsizei) sedWindowHeight);
-
-		// RENDER
-
-
-		// frustumToEquirect_pass shader pass
-		glUseProgram(frustumToEquirect_pass_SP);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		glActiveTexture(GL_TEXTURE0 + 0);
-		glBindTexture(GL_TEXTURE_2D, earth);
-		glUniform1i(glGetUniformLocation(frustumToEquirect_pass_SP, "currentPlanarRendering"), 0);
-
-		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, fisheye_as_equirect_180_bourke);
-		glUniform1i(glGetUniformLocation(frustumToEquirect_pass_SP, "backgroundTexture"), 1);
-
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "backgroundTexture"), 0.000000f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.domeRadius"), 300.000000f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.virtualScreenWidth"), 200.000000f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.virtualScreenHeight"), 199.199997f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.virtualScreenAzimuth"), -37.689999f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.virtualScreenElevation"), 3.600000f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.domeAperture"), 180.000000f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.domeTilt"), 21.610001f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.debug_previewScalefactor"), 0.460000f);
-		glUniform2i(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.renderTargetResolution_uncropped"), 8192, 4096);
-		glUniformMatrix4fv(glGetUniformLocation(frustumToEquirect_pass_SP, "in_params.frustum_viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(sysViewProjection));
-
-		sysGeometryTransform = glm::translate(glm::mat4(1), glm::vec3(0.000000f, 0.000000f, 0.000000f)) *glm::yawPitchRoll(0.000000f, 0.000000f, 0.000000f) * glm::scale(glm::mat4(1.0f), glm::vec3(1.000000f, 1.000000f, 1.000000f));
-		glUniformMatrix4fv(glGetUniformLocation(frustumToEquirect_pass_SP, "modelMat"), 1, GL_FALSE, glm::value_ptr(sysGeometryTransform));
-		glBindVertexArray(fullscreenQuad_VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
-			float curTime
-			= std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - timerStart).count() / 1000000.0f;
-		sysTimeDelta = curTime - sysTime;
-		sysTime = curTime;
-		sysFrameIndex++;
-
-		SDL_GL_SwapWindow(wnd);
-	}
-
-	// sdl2
-	SDL_GL_DeleteContext(glContext);
-	SDL_DestroyWindow(wnd);
-	SDL_Quit();
-
-	return 0;
-}
 
 void CreateVAO(GLuint& geoVAO, GLuint geoVBO)
 {

@@ -446,9 +446,9 @@ void clusti_parseRectangle(Clusti *instance, Clusti_State_Parsing *parser,
 	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
 		if ((strcmp("x_min", attributeNamesAndValues[i]) == 0)) {
 			rect.min.x = atoi(attributeNamesAndValues[i + 1]);
-		} else if((strcmp("x_max", attributeNamesAndValues[i]) == 0)){
+		} else if((strcmp("y_min", attributeNamesAndValues[i]) == 0)){
 			rect.min.y = atoi(attributeNamesAndValues[i + 1]);
-		} else if ((strcmp("y_min", attributeNamesAndValues[i]) == 0)) {
+		} else if ((strcmp("x_max", attributeNamesAndValues[i]) == 0)) {
 			rect.max.x = atoi(attributeNamesAndValues[i + 1]);
 		} else if ((strcmp("y_max", attributeNamesAndValues[i]) == 0)) {
 			rect.max.y = atoi(attributeNamesAndValues[i + 1]);

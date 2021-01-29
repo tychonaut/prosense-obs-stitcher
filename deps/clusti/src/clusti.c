@@ -9,6 +9,7 @@
 // clusti_mem_init, clusti_calloc, clusti_free, clusti_mem_deinit
 #include "clusti_mem_priv.h"
 
+#include <stdlib.h> // exit
 #include <assert.h> // assert
 
 

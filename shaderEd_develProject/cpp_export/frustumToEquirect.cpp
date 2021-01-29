@@ -29,9 +29,7 @@
 extern "C" {
 #endif
 
-
 #include <clusti.h>
-
 
 #ifdef __cplusplus
 }  /* end extern "C" */
@@ -49,6 +47,8 @@ extern "C" {
 // -----------------------------------------------------------------------------------
 // function forwards
 
+
+Clusti_State_Render createRenderState(Clusti const *stitcherConfig);
 
 
 void CreateVAO(GLuint &geoVAO, GLuint geoVBO);
@@ -79,17 +79,20 @@ const GLenum FBO_Buffers[] = {GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1,
 			      GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13,
 			      GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15};
 
-struct SDL_State;
-typedef struct SDL_State SDL_State;
-struct SDL_State {
-	SDL_Window *wnd;
-	SDL_GLContext glContext;
-};
 
 
-SDL_State create_SDL_State(Clusti const *stitcherConfig)
+
+Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 {
-	SDL_State state;
+	//{ some non-C variables thate hopefully turn out obsolete
+	//  for our purposes
+
+	std::chrono::time_point<std::chrono::system_clock> timerStart;
+	timerStart = std::chrono::system_clock::now();
+	//}
+
+
+	Clusti_State_Render renderState;
 
 
 	stbi_set_flip_vertically_on_load(1);
@@ -108,18 +111,39 @@ SDL_State create_SDL_State(Clusti const *stitcherConfig)
 
 	//clusti_getResolutionOfVideoSink();
 
-	// open window
-	state.wnd =
-		SDL_CreateWindow("ShaderProject", SDL_WINDOWPOS_CENTERED,
-				 SDL_WINDOWPOS_CENTERED, 800, 600,
-				 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
-					 SDL_WINDOW_ALLOW_HIGHDPI);
+	renderState.renderTargetRes = {
+		.x = (stitcherConfig->stitchingConfig.videoSinks[0]
+			      .cropRectangle.max.x -
+		      stitcherConfig->stitchingConfig.videoSinks[0]
+			      .cropRectangle.min.x),
+		.y = (stitcherConfig->stitchingConfig.videoSinks[0]
+			      .cropRectangle.max.y -
+		      stitcherConfig->stitchingConfig.videoSinks[0]
+			      .cropRectangle.min.y)
+	};
 
-	SDL_SetWindowMinimumSize(state.wnd, 200, 200);
+	float const debugRenderScale =
+		(stitcherConfig->stitchingConfig.videoSinks[0]
+			 .debug_renderScale);
+	graphene_vec2_init(
+		&(renderState.windowRes_f),
+		(float)(renderState.renderTargetRes.x) * debugRenderScale,
+		(float)(renderState.renderTargetRes.y) * debugRenderScale);
+
+	// open window
+	renderState.wnd = SDL_CreateWindow(
+		"Clusti_Standalone", SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_CENTERED,
+		(int)graphene_vec2_get_x(&(renderState.windowRes_f)),
+		(int)graphene_vec2_get_y(&(renderState.windowRes_f)),
+		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+			SDL_WINDOW_ALLOW_HIGHDPI);
+
+	SDL_SetWindowMinimumSize(renderState.wnd, 200, 200);
 
 	// get GL context
-	state.glContext = SDL_GL_CreateContext(state.wnd);
-	SDL_GL_MakeCurrent(state.wnd, state.glContext);
+	renderState.glContext = SDL_GL_CreateContext(renderState.wnd);
+	SDL_GL_MakeCurrent(renderState.wnd, renderState.glContext);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
 
@@ -131,91 +155,20 @@ SDL_State create_SDL_State(Clusti const *stitcherConfig)
 	}
 
 
-
-	return state;
-}
-
+	renderState.viewportRes_f = renderState.windowRes_f;
+	graphene_vec2_init(&renderState.mousePos_f, 0.0f, 0.0f);
 
 
 
 
+	// -----------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------
+	// start of to-refactor section
 
 
-// -----------------------------------------------------------------------------------
-// -----------------------------------------------------------------------------------
-int main(int argc, char **argv)
-{
-	// ---------------------------------------------------------------------------
-	Clusti *stitcher = clusti_create();
-
-	clusti_readConfig(stitcher,
-			  "../../../testdata/calibration_viewfrusta.xml");
-
-
-	SDL_State sdl_state = create_SDL_State(stitcher);
-
-
-
-
-	clusti_destroy(stitcher);
-	// ---------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-	//test_expat();
-	//graphene_test_matrix_near();
-
-	//stbi_set_flip_vertically_on_load(1);
-
-	//// init sdl2
-	//if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) < 0) {
-	//	printf("Failed to initialize SDL2\n");
-	//	return 0;
-	//}
-
-	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-	//		    SDL_GL_CONTEXT_PROFILE_CORE);
-	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-	//SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // double buffering
-
-	//// open window
-	//SDL_Window *wnd =
-	//	SDL_CreateWindow("ShaderProject", SDL_WINDOWPOS_CENTERED,
-	//			 SDL_WINDOWPOS_CENTERED, 800, 600,
-	//			 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
-	//				 SDL_WINDOW_ALLOW_HIGHDPI);
-	//SDL_SetWindowMinimumSize(wnd, 200, 200);
-
-	//// get GL context
-	//SDL_GLContext glContext = SDL_GL_CreateContext(wnd);
-	//SDL_GL_MakeCurrent(wnd, glContext);
-	//glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_STENCIL_TEST);
-
-	//// init glew
-	//glewExperimental = true;
-	//if (glewInit() != GLEW_OK) {
-	//	printf("Failed to initialize GLEW\n");
-	//	return 0;
-	//}
-
-	// required:
-	float sedWindowWidth = 800, sedWindowHeight = 600;
-	float sedMouseX = 0, sedMouseY = 0;
-
-	std::chrono::time_point<std::chrono::system_clock> timerStart =
-		std::chrono::system_clock::now();
+		// required:
+	//renderState.renderTargetResolution.x = 800, renderState.renderTargetResolution.y = 600;
+	
 
 	// init
 
@@ -228,17 +181,36 @@ int main(int argc, char **argv)
 	// system variables
 	float sysTime = 0.0f, sysTimeDelta = 0.0f;
 	unsigned int sysFrameIndex = 0;
-	glm::vec2 sysMousePosition(sedMouseX, sedMouseY);
-	glm::vec2 sysViewportSize(sedWindowWidth, sedWindowHeight);
+
+
+	//float sedMouseX = 0, sedMouseY = 0;
+	//glm::vec2 sysMousePosition(sedMouseX, sedMouseY);
+	glm::vec2 sysMousePosition(
+		graphene_vec2_get_x(&(renderState.mousePos_f)),
+		graphene_vec2_get_y(&(renderState.mousePos_f)));
+
+
+	//glm::vec2 sysViewportSize(renderState.renderTargetResolution.x,
+	//			  renderState.renderTargetResolution.y);
+	glm::vec2 sysViewportSize(
+		graphene_vec2_get_x(&(renderState.windowRes_f)),
+		graphene_vec2_get_y(&(renderState.windowRes_f)));
+
+
 	glm::mat4 sysView(0.998291f, -0.000051f, 0.058435f, 0.000000f,
 			  0.000000f, 1.000000f, 0.000873f, 0.000000f,
 			  -0.058435f, -0.000871f, 0.998291f, 0.000000f,
 			  -0.038967f, 0.006246f, -7.157361f, 1.000000f);
-	glm::mat4 sysProjection = glm::perspective(
-		glm::radians(45.0f), sedWindowWidth / sedWindowHeight, 0.1f,
-		1000.0f);
+	glm::mat4 sysProjection =
+		glm::perspective(glm::radians(45.0f),
+				graphene_vec2_get_x(&(renderState.windowRes_f)) /
+				graphene_vec2_get_y(&(renderState.windowRes_f)),
+				 0.1f, 1000.0f);
 	glm::mat4 sysOrthographic = glm::ortho(
-		0.0f, sedWindowWidth, sedWindowHeight, 0.0f, 0.1f, 1000.0f);
+		0.0f, graphene_vec2_get_x(&(renderState.windowRes_f)),
+		graphene_vec2_get_y(&(renderState.windowRes_f)), 0.0f, 0.1f,
+		1000.0f);
+
 	glm::mat4 sysGeometryTransform = glm::mat4(1.0f);
 	glm::mat4 sysViewProjection = sysProjection * sysView;
 	glm::mat4 sysViewOrthographic = sysOrthographic * sysView;
@@ -285,26 +257,56 @@ int main(int argc, char **argv)
 			if (event.type == SDL_QUIT) {
 				run = false;
 			} else if (event.type == SDL_MOUSEMOTION) {
-				sedMouseX = (float)event.motion.x;
-				sedMouseY = (float)event.motion.y;
+				//sedMouseX = (float)event.motion.x;
+				//sedMouseY = (float)event.motion.y;
+				graphene_vec2_init(&(renderState.mousePos_f),
+					(float)event.motion.x,
+					(float)event.motion.y);
 				sysMousePosition = glm::vec2(
-					sedMouseX / sedWindowWidth,
-					1.f - (sedMouseY / sedWindowHeight));
+					(graphene_vec2_get_x(
+						 &(renderState.mousePos_f)) /
+					 graphene_vec2_get_x(
+						 &(renderState.windowRes_f))),
+					1.0f - (graphene_vec2_get_y(&(
+							renderState.mousePos_f)) /
+						graphene_vec2_get_y(&(
+							renderState
+								.windowRes_f))));
+					//1.0f - (sedMouseY /
+					//       renderState
+					//	       .renderTargetResolution
+					//	       .y));
 			} else if (event.type == SDL_WINDOWEVENT &&
 				   event.window.event ==
 					   SDL_WINDOWEVENT_RESIZED) {
-				sedWindowWidth = (float)event.window.data1;
-				sedWindowHeight = (float)event.window.data2;
+				graphene_vec2_init(&(renderState.windowRes_f),
+						   (float)event.window.data1,
+						   (float)event.window.data2);
 
-				sysViewportSize = glm::vec2(sedWindowWidth,
-							    sedWindowHeight);
+				sysViewportSize = glm::vec2(
+					graphene_vec2_get_x(
+						&(renderState.windowRes_f)),
+					graphene_vec2_get_y(
+						&(renderState.windowRes_f)));
+
 				sysProjection = glm::perspective(
 					glm::radians(45.0f),
-					sedWindowWidth / sedWindowHeight, 0.1f,
-					1000.0f);
+					(graphene_vec2_get_x(
+						 &(renderState.windowRes_f)) /
+					 graphene_vec2_get_y(
+						 &(renderState.windowRes_f))),
+					0.1f, 1000.0f);
+
+
 				sysOrthographic = glm::ortho(
-					0.0f, sedWindowWidth, sedWindowHeight,
+					0.0f,
+					graphene_vec2_get_x(
+						&(renderState.windowRes_f)),
+					graphene_vec2_get_y(
+						&(renderState.windowRes_f)),
 					0.0f, 0.1f, 1000.0f);
+
+
 				sysGeometryTransform = glm::mat4(1.0f);
 				sysViewProjection = sysProjection * sysView;
 				sysViewOrthographic = sysOrthographic * sysView;
@@ -324,15 +326,19 @@ int main(int argc, char **argv)
 			}
 		}
 
-		if (!run)
+		if (!run) {
 			break;
+		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
 			GL_STENCIL_BUFFER_BIT);
-		glViewport(0, 0, (GLsizei)sedWindowWidth,
-			   (GLsizei)sedWindowHeight);
+		glViewport(0, 0,
+			   (GLsizei)graphene_vec2_get_x(
+				   &(renderState.windowRes_f)),
+			   (GLsizei)graphene_vec2_get_y(
+				   &(renderState.windowRes_f)));
 
 		// RENDER
 
@@ -419,13 +425,52 @@ int main(int argc, char **argv)
 		sysTime = curTime;
 		sysFrameIndex++;
 
-		SDL_GL_SwapWindow(sdl_state.wnd);
+		SDL_GL_SwapWindow(renderState.wnd);
 	}
 
 	// sdl2
-	SDL_GL_DeleteContext(sdl_state.glContext);
-	SDL_DestroyWindow(sdl_state.wnd);
+	SDL_GL_DeleteContext(renderState.glContext);
+	SDL_DestroyWindow(renderState.wnd);
 	SDL_Quit();
+
+	// end of to-refactor section
+	// -----------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------
+
+
+
+
+	return renderState;
+}
+
+
+
+
+
+
+
+// -----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+	// ---------------------------------------------------------------------------
+	Clusti *stitcher = clusti_create();
+
+	clusti_readConfig(stitcher,
+			  "../../../testdata/calibration_viewfrusta.xml");
+
+
+	Clusti_State_Render renderState = createRenderState(stitcher);
+
+
+
+
+	clusti_destroy(stitcher);
+	// ---------------------------------------------------------------------------
+
+
+	
+
 
 	return 0;
 }

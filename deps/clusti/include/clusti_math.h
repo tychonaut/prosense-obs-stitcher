@@ -23,7 +23,9 @@ float clusti_math_DegreesToRadians(float angle_degrees);
 // Calculate and assign Clusti_Params_Projection::planar_viewProjectionMatrix
 // from Clusti_Params_Projection::orientation and
 //      Clusti_Params_Projection::planar_FrustumFOV.
-// @return true on sucess, false otherwise
+// @return true on sucess, false otherwise (e.g. if the projection is
+//      not planar and th frustum is not symmetric
+//      (support for this is future work))
 bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	Clusti_Params_Projection *planarProjection_inOut);
 

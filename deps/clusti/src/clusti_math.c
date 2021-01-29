@@ -82,8 +82,6 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	}
 
 	
-	
-
 	// create viewProjection matrix: vpm = p * v;
 	// store it directlyy into the target struct
 	graphene_matrix_multiply(
@@ -96,46 +94,6 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	graphene_matrix_print(
 		&(planarProjection_inOut->planar_viewProjectionMatrix));
 
-	////------------------------------------
-	//// old and imcomplete code:
-	//graphene_matrix_t *viewMatrixPtr = graphene_matrix_alloc();
-	//graphene_matrix_t *projMatrixPtr = graphene_matrix_alloc();
-	//for (int i = 0; i < instance->stitchingConfig.numVideoSources; i++) {
-	//	//graphene_frustum_init_from_matrix
-	//	graphene_euler_t *eulerAnglesPtr =
-	//		&(instance->stitchingConfig.videoSources[i]
-	//			  .projection.orientation);
-
-	//	graphene_euler_to_matrix(eulerAnglesPtr, viewMatrixPtr);
-
-	//	assert(instance->stitchingConfig.videoSources[i]
-	//		       .projection.type ==
-	//	       CLUSTI_ENUM_PROJECTION_TYPE_PLANAR);
-	//	if (instance->stitchingConfig.videoSources[i].projection.type !=
-	//	    CLUSTI_ENUM_PROJECTION_TYPE_PLANAR) {
-	//		clusti_status_declareError(
-	//			"Only planar projection currently supported for video sources!");
-	//	}
-
-	//	Clusti_Params_FrustumFOV *fovs =
-	//		&(instance->stitchingConfig.videoSources[i]
-	//			  .projection.planar_FrustumFOV);
-
-	//	projMatrixPtr = graphene_matrix_init_identity(viewMatrixPtr);
-	//	//TODO extend this to asymmetric frusta when needed!
-
-	//	//grab pointer to target matrix in state struct
-	//	graphene_matrix_t *resultVPMatPtr =
-	//		&(instance->stitchingConfig.videoSources[i]
-	//			  .projection.planar_viewProjectionMatrix);
-
-	//	graphene_matrix_multiply(viewMatrixPtr, projMatrixPtr,
-	//				 resultVPMatPtr);
-	//}
-	//graphene_matrix_free(viewMatrixPtr);
-	//viewMatrixPtr = NULL;
-	//graphene_matrix_free(projMatrixPtr);
-	//projMatrixPtr = NULL;
 
 	return true;
 

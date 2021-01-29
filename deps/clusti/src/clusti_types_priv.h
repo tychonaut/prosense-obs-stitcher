@@ -1,31 +1,41 @@
 #ifndef CLUSTI_TYPES_PRIV_H
 #define CLUSTI_TYPES_PRIV_H
 
-#ifdef HAVE_EXPAT_CONFIG_H
-#include <expat_config.h>
-#endif
-#include <expat.h>
+
+#include "clusti_types.h"
 
 #include <graphene.h>
 
+
+
+//#ifdef HAVE_EXPAT_CONFIG_H
+//#include <expat_config.h>
+//#endif
+//#include <expat.h>
+
+
+
+
+struct Clusti_ivec2;
+typedef struct Clusti_ivec2 Clusti_ivec2;
 struct Clusti_ivec2 {
 
 	int x;
 	int y;
 };
-typedef struct Clusti_ivec2 Clusti_ivec2;
 
-/*
-	integer-valued rectangle
-	for e.g. image cropping
 
-*/
+
+// integer-valued rectangle
+// for e.g. image cropping
+struct Clusti_iRectangle;
+typedef struct Clusti_iRectangle Clusti_iRectangle;
 struct Clusti_iRectangle {
 
 	Clusti_ivec2 min;
 	Clusti_ivec2 max;
 };
-typedef struct Clusti_iRectangle Clusti_iRectangle;
+
 
 
 

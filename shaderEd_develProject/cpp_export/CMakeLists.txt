@@ -58,6 +58,7 @@ set(clusti_SOURCES_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/src")
 
 set(clusti_HEADERS_PUBLIC
     ${clusti_INCLUDE_DIR}/clusti.h
+    ${clusti_INCLUDE_DIR}/clusti_types.h
     ${clusti_INCLUDE_DIR}/clusti_math.h
 )
 

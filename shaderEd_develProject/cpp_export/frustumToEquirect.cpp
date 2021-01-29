@@ -46,8 +46,11 @@ extern "C" {
 #include <graphene.h>
 
 
+// -----------------------------------------------------------------------------------
+// function forwards
 
-// required functions
+
+
 void CreateVAO(GLuint &geoVAO, GLuint geoVBO);
 GLuint CreatePlane(GLuint &vbo, float sx, float sy);
 GLuint CreateScreenQuadNDC(GLuint &vbo);
@@ -56,8 +59,14 @@ std::string LoadFile(const std::string &filename);
 GLuint CreateShader(const char *vsCode, const char *psCode);
 GLuint LoadTexture(const std::string &filename);
 
+
 int test_expat(void);
 static bool graphene_test_matrix_near();
+// -----------------------------------------------------------------------------------
+
+
+
+
 
 
 
@@ -70,6 +79,70 @@ const GLenum FBO_Buffers[] = {GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1,
 			      GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13,
 			      GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15};
 
+struct SDL_State;
+typedef struct SDL_State SDL_State;
+struct SDL_State {
+	SDL_Window *wnd;
+	SDL_GLContext glContext;
+};
+
+
+SDL_State create_SDL_State(Clusti const *stitcherConfig)
+{
+	SDL_State state;
+
+
+	stbi_set_flip_vertically_on_load(1);
+
+	// init sdl2
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) < 0) {
+		printf("Failed to initialize SDL2\n");
+		exit(-1);
+	}
+
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+			    SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // double buffering
+
+	//clusti_getResolutionOfVideoSink();
+
+	// open window
+	state.wnd =
+		SDL_CreateWindow("ShaderProject", SDL_WINDOWPOS_CENTERED,
+				 SDL_WINDOWPOS_CENTERED, 800, 600,
+				 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+					 SDL_WINDOW_ALLOW_HIGHDPI);
+
+	SDL_SetWindowMinimumSize(state.wnd, 200, 200);
+
+	// get GL context
+	state.glContext = SDL_GL_CreateContext(state.wnd);
+	SDL_GL_MakeCurrent(state.wnd, state.glContext);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+
+	// init glew
+	glewExperimental = true;
+	if (glewInit() != GLEW_OK) {
+		printf("Failed to initialize GLEW\n");
+		exit(-1);
+	}
+
+
+
+	return state;
+}
+
+
+
+
+
+
+
+// -----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
 	// ---------------------------------------------------------------------------
@@ -77,6 +150,9 @@ int main(int argc, char **argv)
 
 	clusti_readConfig(stitcher,
 			  "../../../testdata/calibration_viewfrusta.xml");
+
+
+	SDL_State sdl_state = create_SDL_State(stitcher);
 
 
 
@@ -96,43 +172,43 @@ int main(int argc, char **argv)
 
 
 
-	test_expat();
-	graphene_test_matrix_near();
+	//test_expat();
+	//graphene_test_matrix_near();
 
-	stbi_set_flip_vertically_on_load(1);
+	//stbi_set_flip_vertically_on_load(1);
 
-	// init sdl2
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) < 0) {
-		printf("Failed to initialize SDL2\n");
-		return 0;
-	}
+	//// init sdl2
+	//if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) < 0) {
+	//	printf("Failed to initialize SDL2\n");
+	//	return 0;
+	//}
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-			    SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // double buffering
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+	//		    SDL_GL_CONTEXT_PROFILE_CORE);
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	//SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // double buffering
 
-	// open window
-	SDL_Window *wnd =
-		SDL_CreateWindow("ShaderProject", SDL_WINDOWPOS_CENTERED,
-				 SDL_WINDOWPOS_CENTERED, 800, 600,
-				 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
-					 SDL_WINDOW_ALLOW_HIGHDPI);
-	SDL_SetWindowMinimumSize(wnd, 200, 200);
+	//// open window
+	//SDL_Window *wnd =
+	//	SDL_CreateWindow("ShaderProject", SDL_WINDOWPOS_CENTERED,
+	//			 SDL_WINDOWPOS_CENTERED, 800, 600,
+	//			 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+	//				 SDL_WINDOW_ALLOW_HIGHDPI);
+	//SDL_SetWindowMinimumSize(wnd, 200, 200);
 
-	// get GL context
-	SDL_GLContext glContext = SDL_GL_CreateContext(wnd);
-	SDL_GL_MakeCurrent(wnd, glContext);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
+	//// get GL context
+	//SDL_GLContext glContext = SDL_GL_CreateContext(wnd);
+	//SDL_GL_MakeCurrent(wnd, glContext);
+	//glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_STENCIL_TEST);
 
-	// init glew
-	glewExperimental = true;
-	if (glewInit() != GLEW_OK) {
-		printf("Failed to initialize GLEW\n");
-		return 0;
-	}
+	//// init glew
+	//glewExperimental = true;
+	//if (glewInit() != GLEW_OK) {
+	//	printf("Failed to initialize GLEW\n");
+	//	return 0;
+	//}
 
 	// required:
 	float sedWindowWidth = 800, sedWindowHeight = 600;
@@ -343,12 +419,12 @@ int main(int argc, char **argv)
 		sysTime = curTime;
 		sysFrameIndex++;
 
-		SDL_GL_SwapWindow(wnd);
+		SDL_GL_SwapWindow(sdl_state.wnd);
 	}
 
 	// sdl2
-	SDL_GL_DeleteContext(glContext);
-	SDL_DestroyWindow(wnd);
+	SDL_GL_DeleteContext(sdl_state.glContext);
+	SDL_DestroyWindow(sdl_state.wnd);
 	SDL_Quit();
 
 	return 0;

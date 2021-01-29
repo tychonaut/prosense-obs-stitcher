@@ -2,13 +2,16 @@
 
 #include "clusti.h"
 
-#include "clusti_mem_priv.h"
-#include "clusti_status_priv.h"
 #include "clusti_types_priv.h"
+// clusti_status_declareInitialized, clusti_status_declareError,
+// clusti_status_declareDeinitialized
+#include "clusti_status_priv.h"
+// clusti_mem_init, clusti_calloc, clusti_free, clusti_mem_deinit
+#include "clusti_mem_priv.h"
 
 #include <assert.h> // assert
 
-/* private forwards*/
+
 
 Clusti *clusti_create()
 {
@@ -22,7 +25,7 @@ Clusti *clusti_create()
 	assert(instance != NULL);
 
 	if (instance == NULL) {
-		perror("Stitcher alloc failed!");
+		clusti_status_declareError("Stitcher alloc failed!");
 		exit(-1);
 	}
 

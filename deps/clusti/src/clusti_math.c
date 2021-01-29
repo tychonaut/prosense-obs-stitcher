@@ -1,9 +1,11 @@
 
+//-----------------------------------------------------------------------------
+// includes
 
-#include "clusti_math.h"
+#include "clusti_math.h" // clusti_math_FOVAnglesAreSymmetric
 
 #include "clusti_types_priv.h"
-
+#include "clusti_status_priv.h" // clusti_status_declareError
 
 #include <math.h> // sin, cos, tan, atan ...
 #include <stdio.h>  // printf
@@ -12,15 +14,8 @@
 #include <stdbool.h> // bool
 
 
-//-----------------------------------------------------------------------------
-// Macros
-
-#define CLUSTI_MATH_PI (3.14159265358979323846)
-
-#define CLUSTI_MATH_EPSILON (0.0001f)
 
 
-//-----------------------------------------------------------------------------
 
 
 

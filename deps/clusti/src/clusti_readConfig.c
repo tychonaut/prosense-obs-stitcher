@@ -1,17 +1,28 @@
 
 #include "clusti.h"
 
-#include "clusti_math.h"
+// clusti_math_ViewProjectionMatrixFromFrustumAndOrientation
+#include "clusti_math.h" 
 
-#include "clusti_status_priv.h"
 #include "clusti_types_priv.h"
-#include "clusti_mem_priv.h"
+// clusti_status_declareError
+#include "clusti_status_priv.h" 
+// clusti_calloc, clusti_free,
+// clusti_String_callocAndCopy, clusti_String_impliesTrueness
+#include "clusti_mem_priv.h" 
+
+
+#ifdef HAVE_EXPAT_CONFIG_H
+#include <expat_config.h>
+#endif
+#include <expat.h>
+
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h> // tolower
 
-#include <assert.h>
+#include <assert.h> // assert
 
 /* -------------------------------------------------------------------------- */
 /* Internal function  forward decls. */

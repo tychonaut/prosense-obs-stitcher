@@ -31,6 +31,54 @@
                 debug_backgroundImageName="fisheye_as_equirect_180_bourke.jpg"
             >
             
+
+                
+                <!-- alternative projections (not supported yet): 
+                     "fisheye", "equi-angular-cubemap" 
+                     (https://blog.google/products/google-ar-vr/bringing-pixels-front-and-center-vr-video/)
+                -->
+                <Projection
+                    type="equirectangular"
+                >
+                    <!-- 
+                        VIOSO has the euler angle convention 
+                        "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
+                        
+                        How to interpret this orientation:
+                        The goal is to re-parametrize the canvas of 
+                        a full-sphere projection, so that the sub-canvas
+                        filled by e.g. a 21°-tilted hemispheric dome
+                        fills the canvas in a way that has desireable 
+                        properties.
+                        To stick with the above example: If the full 
+                        spherical equirectangular canvas would have
+                        a (virtual) resolution of 8k*4k, and if we would
+                        encode  the dome image naively, 
+                        most of the bottom half of the image is black, 
+                        and the seam has a wave form due to the tilt.
+                        In order to use hardware encoding of Nvidia GPUs
+                        without issues (not all GPUs support more than
+                        4k*4k resolution) and to save bandwidth,
+                        the tilted dome could be encoded in the 
+                        "left 4k*4k half of the virtual 8k*4k canvas.
+                        Therefore, the whole scene (i.e. each frustum)
+                        needs to be rotated by 
+                        roll="90.0", pitch="0.0" yaw="21.0",
+                        in order to yield a "left-only" hemisphere
+                        only negative x values).
+                        
+                        *** IMPORTANT: The video *PLAYER* software needs
+                        to be aware of this transformation and undo it! ***
+                    -->
+                    <Orientation
+                        type="euler_static_zxy"
+                        unit="degree"
+                        roll="90.0"
+                        pitch="0.0"
+                        yaw="21.0"
+                    />
+                </Projection>
+                
                 <VirtualResolution
                     x="8192"
                     y="4096"
@@ -43,25 +91,6 @@
                     x_max="8192"
                     y_max="4096"
                 />
-                
-                <!-- alternative projections (not supported yet): 
-                     "fisheye", "equi-angular-cubemap" 
-                     (https://blog.google/products/google-ar-vr/bringing-pixels-front-and-center-vr-video/)
-                -->
-                <Projection
-                    type="equirectangular"
-                >
-                    <!-- VIOSO has the euler angle convention 
-                         "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
-                    -->
-                    <Orientation
-                        type="euler_static_zxy"
-                        unit="degree"
-                        yaw="0.0"
-                        pitch="0.0"
-                        roll="0.0"
-                    />
-                </Projection>
                 
             </VideoSink>
         
@@ -116,6 +145,39 @@
                             left="55.00000"
                             right="55.00000"
                         />
+                        
+                        <!--
+                        test/debug graphene:
+                        
+                        <Orientation
+                            type="euler_static_zxy"
+                            unit="degree"
+                            roll="45.0"
+                            pitch="0"
+                            yaw="0"
+                        />
+                        
+                        shall create a rotation matrix
+                        that projects to the camera basis vectors,
+                        where x' and y' are rotated 45° around z axis,
+                        and z' unchanged (0 0 1)^T:
+                        (x'^T 0.0)    (+0.7 +0.7 +0.0 +0.0)
+                        (y'^T 0.0) =  (-0.7 +0.7 +0.0 +0.0)
+                        (z'^T 0.0)    (+0.0 +0.0 +1.0 +0.0)
+                        (0 ^T 1.0)    (+0.0 +0.0 +0.0 +1.0) 
+                        
+                        (CHECK)
+                        
+                        In column major notation, the following float-array
+                        is expected:
+                        +0.7 -0.7 +0.0 +0.0 | +0.7 +0.7 +0.0 +0.0 | +0.0 +0.0 +1.0  +0.0 | +0.0 +0.0 +0.0  +1.0 
+                        
+                        (CHECK after writing converter function that 
+                        transposes row-major graphene matrix to 
+                        to column major matrix, then grabs this
+                        matrix as float array)
+                        -->
+                        
                         <Orientation
                             type="euler_static_zxy"
                             unit="degree"

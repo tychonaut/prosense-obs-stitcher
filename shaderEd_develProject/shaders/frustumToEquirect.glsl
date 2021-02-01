@@ -16,7 +16,9 @@
 
 
 
-
+// ============================================================================
+// ============================================================================
+// Macros and constants:
 
 // Workaround that may help integrating this shader
 // into the OBS Studio Effect-Framework.
@@ -30,7 +32,89 @@
  // debug brackground color
  const vec4 c_BgColor= vec4( 0, 0, 1, 0);
  
+ 
+ 
+// ============================================================================
+// ============================================================================
+// types:
 
+struct FS_SinkParams_in {
+    sampler2D backgroundTexture;
+    
+    int index;
+    float debug_renderScale;
+    
+    // resolution the whole 4pi steradian panorama image would have;
+    ivec2 resolution_virtual; 
+    ivec2 cropRectangle_min;
+    ivec2 cropRectangle_max;
+    //precalculated from cropRectangle
+    ivec2 resolution_effective;
+      
+    /*
+        How to interpret this orientation:
+        The goal is to re-parametrize the canvas of 
+        a full-sphere projection, so that the sub-canvas
+        filled by e.g. a 21°-tilted hemispheric dome
+        fills the canvas in a way that has desireable 
+        properties.
+        To stick with the above example: If the full 
+        spherical equirectangular canvas would have
+        a (virtual) resolution of 8k*4k, and if we would
+        encode  the dome image naively, 
+        most of the bottom half of the image is black, 
+        and the seam has a wave form due to the tilt.
+        In order to use hardware encoding of Nvidia GPUs
+        without issues (not all GPUs support more than
+        4k*4k resolution) and to save bandwidth,
+        the tilted dome could be encoded in the 
+        "left 4k*4k half of the virtual 8k*4k canvas.
+        Therefore, the whole scene (i.e. each frustum)
+        needs to be rotated by 
+        roll="90.0", pitch="0.0" yaw="21.0",
+        in order to yield a "left-only" hemisphere
+        only negative x values).
+        
+        *** IMPORTANT: The video *PLAYER* software needs
+        to be aware of this transformation and undo it! ***
+    */
+    //TODO setup in host data structures
+    bool useSceneRotationMatrix;
+    mat4 sceneRotationMatrix;
+};
+
+
+struct FS_SourceParams_in {
+    int index;
+    
+    sampler2D currentPlanarRendering;
+    
+    sampler2D backgroundTexture;
+    
+    int decklinkWorkaround_verticalOffset_pixels;
+    
+    mat4 frustum_viewProjectionMatrix;
+
+    // probably obsolete/queryable from sampler
+    //ivec2 resolution;
+    
+    
+    // currently unused; default false
+    bool doImageWarp;
+    // currently unused; default false
+    bool do3DImageWarp;
+    //n.b. warp inversion must be done on the host side
+    // by inverting the LUT.
+    // n.b. (inverse) mesh warping must be done
+    // as a preprocess: render warp mesh and input image
+    // to texture, then feed the resulting texture
+    // to this shader.
+    sampler2D warpLUT; //2D or 3D
+    
+    bool doBlending;
+    sampler2D blendMask;
+    
+};
 
 
 
@@ -66,7 +150,6 @@ struct OldCode_FS_input {
 	
 	//workaround for shaderEd development: scale preview;
 	float debug_previewScalefactor;
-	
 };
 
 

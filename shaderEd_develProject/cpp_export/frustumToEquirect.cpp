@@ -67,9 +67,6 @@ static bool graphene_test_matrix_near();
 
 
 
-
-
-
 const GLenum FBO_Buffers[] = {GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1,
 			      GL_COLOR_ATTACHMENT2,  GL_COLOR_ATTACHMENT3,
 			      GL_COLOR_ATTACHMENT4,  GL_COLOR_ATTACHMENT5,
@@ -78,6 +75,30 @@ const GLenum FBO_Buffers[] = {GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1,
 			      GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11,
 			      GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13,
 			      GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15};
+
+
+
+
+
+// -----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+	// ---------------------------------------------------------------------------
+	Clusti *stitcher = clusti_create();
+
+	clusti_readConfig(stitcher,
+			  "../../../testdata/calibration_viewfrusta.xml");
+
+	Clusti_State_Render renderState = createRenderState(stitcher);
+
+	clusti_destroy(stitcher);
+	// ---------------------------------------------------------------------------
+
+	return 0;
+}
+
+
 
 
 
@@ -450,34 +471,6 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 
 
 
-
-
-
-// -----------------------------------------------------------------------------------
-// -----------------------------------------------------------------------------------
-int main(int argc, char **argv)
-{
-	// ---------------------------------------------------------------------------
-	Clusti *stitcher = clusti_create();
-
-	clusti_readConfig(stitcher,
-			  "../../../testdata/calibration_viewfrusta.xml");
-
-
-	Clusti_State_Render renderState = createRenderState(stitcher);
-
-
-
-
-	clusti_destroy(stitcher);
-	// ---------------------------------------------------------------------------
-
-
-	
-
-
-	return 0;
-}
 
 
 

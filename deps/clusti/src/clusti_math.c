@@ -22,6 +22,24 @@
 //-----------------------------------------------------------------------------
 // Math function impls.
 
+
+float *
+clusti_math_grapheneMatrixToColumnMajorFloatArray(graphene_matrix_t const *in,
+						  float *out)
+{
+	assert(out);
+
+	graphene_matrix_t mat_transposed;
+	// graphene's row major to column major representation:
+	graphene_matrix_transpose(in, &mat_transposed);
+	graphene_matrix_to_float(&mat_transposed, out);
+
+	return out;
+}
+
+
+
+
 float clusti_math_DegreesToRadians(float angle_degrees)
 {
 	return angle_degrees * (float) (CLUSTI_MATH_PI / 180.0);
@@ -84,7 +102,15 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 		&(planarProjection_inOut->planar_viewProjectionMatrix));
 
 
+	//debug stuff:
 	graphene_matrix_print(&viewMatrix);
+	float viewMatAsFloat[16];
+	// returns row major matrix! my shader expacts column major matrix!
+	graphene_matrix_to_float(&viewMatrix, viewMatAsFloat);
+	// hence own converter function:
+	clusti_math_grapheneMatrixToColumnMajorFloatArray(&viewMatrix,
+							  viewMatAsFloat);
+
 	graphene_matrix_print(&projMatrix);
 	graphene_matrix_print(
 		&(planarProjection_inOut->planar_viewProjectionMatrix));

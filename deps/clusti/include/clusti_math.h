@@ -20,6 +20,11 @@ struct Clusti_Params_Projection;
 typedef struct Clusti_Params_Projection Clusti_Params_Projection;
 struct Clusti_Params_FrustumFOV;
 typedef struct Clusti_Params_FrustumFOV Clusti_Params_FrustumFOV;
+
+// needed for conversion functions
+struct _graphene_matrix_t;
+typedef struct _graphene_matrix_t graphene_matrix_t;
+
 //-----------------------------------------------------------------------------
 
 
@@ -38,6 +43,11 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	Clusti_Params_Projection *planarProjection_inOut);
 
 bool clusti_math_FOVAnglesAreSymmetric(Clusti_Params_FrustumFOV const *fovs);
+
+// out must be at least 16*fizeof(float)
+float *clusti_math_grapheneMatrixToColumnMajorFloatArray(graphene_matrix_t const* in,
+	float* out);
+
 //-----------------------------------------------------------------------------
 
 

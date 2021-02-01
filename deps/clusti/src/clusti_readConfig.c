@@ -24,16 +24,11 @@
 
 #include <assert.h> // assert
 
-/* -------------------------------------------------------------------------- */
-/* Internal function  forward decls. */
+// ----------------------------------------------------------------------------
+// Internal function  forward decls. 
 
 
-/**
- * @brief Read a file of arbitrary length from file into a buffer.
- * @param configPath 
- * @return 
-*/
-char *clusti_loadFileContents(const char *configPath);
+
 
 
 void clusti_Parser_startElement_callback(void *userdata,
@@ -79,43 +74,6 @@ void clusti_parseOrientation(Clusti *instance, Clusti_State_Parsing *parser,
 // ----------------------------------------------------------------------------
 // function impls.
 
-char* clusti_loadFileContents(const char* configPath) {
-
-	FILE *fp = NULL;
-	long lSize = 0L;
-	char *buffer = NULL;
-
-	//fp = fopen(configPath, "rb");
-	errno_t err = fopen_s(&fp, configPath, "rb");
-	if (!fp || (err != 0)  ) {
-		perror(configPath);
-		exit(1);
-	}
-
-	/* file length */
-	fseek(fp, 0L, SEEK_END);
-	lSize = ftell(fp);
-	rewind(fp);
-
-	/* allocate memory for entire content */
-	// buffer = calloc(1, (size_t)lSize + (size_t)1L);
-	buffer = clusti_calloc(1, (size_t)lSize + (size_t)1L);
-	if (!buffer)
-		fclose(fp), fputs("memory alloc fails", stderr), exit(1);
-
-	/* copy the file into the buffer */
-	if (1 != fread(buffer, lSize, 1, fp))
-		fclose(fp), free(buffer), fputs("entire read fails", stderr),
-			exit(1);
-
-
-	fclose(fp);
-
-	/* buffer is a string that contains the whole text */
-	return buffer;
-
-
-}
 
 
 

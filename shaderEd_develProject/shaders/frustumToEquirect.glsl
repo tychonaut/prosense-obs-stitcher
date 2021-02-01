@@ -192,6 +192,10 @@ vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords);
 // ============================================================================
 // ============================================================================
 //{ GLSL Fragment Shader data interface
+
+uniform FS_SinkParams_in sinkParams_in;
+uniform FS_SourceParams_in sourceParams_in;
+
 uniform OldCode_FS_input oldcode_in_params;
 
 in vec4 texcoord;

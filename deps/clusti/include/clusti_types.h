@@ -350,17 +350,37 @@ typedef void *SDL_GLContext;
 
 struct Clusti_State_Render;
 typedef struct Clusti_State_Render Clusti_State_Render;
+
+struct Clusti_State_Render_VideoSink;
+typedef struct Clusti_State_Render_VideoSink Clusti_State_Render_VideoSink;
+struct Clusti_State_Render_VideoSource;
+typedef struct Clusti_State_Render_VideoSource Clusti_State_Render_VideoSource;
+
+struct Clusti_State_Render_VideoSink {
+	int dummy;
+	//TODO clean up openGL handle litter
+};
+
+struct Clusti_State_Render_VideoSource {
+	int dummy;
+	//TODO clean up openGL handle litter
+};
+
+
 struct Clusti_State_Render {
 	SDL_Window *wnd;
 	SDL_GLContext glContext;
 
 	Clusti_ivec2 renderTargetRes;
 	graphene_vec2_t windowRes_f;
-	graphene_vec2_t viewportRes_f;
-	graphene_vec2_t mousePos_f;
+	// graphene_vec2_t viewportRes_f;
+	//graphene_vec2_t mousePos_f;
 
-	//probably obolete values, ported from ShaderEd export:
-	//std::chrono::time_point<std::chrono::system_clock> timerStart;
+	// render target(s)
+	Clusti_State_Render_VideoSink *videoSinks;
+
+	// video source(s)
+	Clusti_State_Render_VideoSource *videoSources;
 };
 
 

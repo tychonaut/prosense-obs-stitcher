@@ -2,6 +2,8 @@
 #define CLUSTI_MEM_PRIV_H
 
 
+#include "clusti.h"
+
 /*
    Two technical purposes of clusti_mem :
    1. Memory allocation, tracking and leak detection
@@ -44,28 +46,32 @@
 
 #include <stdbool.h> // bool
 
+//// (moved to clusti.h)
+//// ----------------------------------------------------------------------------
+//// public interface
+//
+//#define clusti_calloc(NUM_INSTANCES, NUM_BYTES_PER_INSTANCE)              \
+//	clusti_calloc_internal((NUM_INSTANCES), (NUM_BYTES_PER_INSTANCE), \
+//			       __FILE__, __LINE__, __FUNCTION__)
+//
+//void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
+//			     const char *file, int line, const char *func);
+//
+//#define clusti_free(PTR) \
+//	clusti_free_internal(PTR, __FILE__, __LINE__, __FUNCTION__)
+//
+//void clusti_free_internal(void *ptr, const char *file, int line,
+//			  const char *func);
+//// ----------------------------------------------------------------------------
+
 
 // ----------------------------------------------------------------------------
 // pure memory management forwards
 
 void clusti_mem_init();
 void clusti_mem_deinit();
-
-
-
-#define clusti_calloc(NUM_INSTANCES, NUM_BYTES_PER_INSTANCE)              \
-	clusti_calloc_internal((NUM_INSTANCES), (NUM_BYTES_PER_INSTANCE), \
-			       __FILE__, __LINE__, __FUNCTION__)
-
-void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
-			     const char *file, int line, const char *func);
-
-#define clusti_free(PTR) \
-	clusti_free_internal(PTR, __FILE__, __LINE__, __FUNCTION__)
-
-void clusti_free_internal(void *ptr, const char *file, int line,
-			  const char *func);
 // ----------------------------------------------------------------------------
+
 
 // ----------------------------------------------------------------------------
 // String related forwards

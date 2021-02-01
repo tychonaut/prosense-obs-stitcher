@@ -1,6 +1,6 @@
 #version 330
 
-uniform mat4 modelMat;
+//uniform mat4 modelMat;
 //uniform mat4 vp;
 
 layout(location = 0) in vec4 in_position;

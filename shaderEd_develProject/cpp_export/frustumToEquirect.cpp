@@ -211,6 +211,7 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 		graphene_vec2_get_y(&(renderState.windowRes_f)), 0.0f, 0.1f,
 		1000.0f);
 
+
 	glm::mat4 sysGeometryTransform = glm::mat4(1.0f);
 	glm::mat4 sysViewProjection = sysProjection * sysView;
 	glm::mat4 sysViewOrthographic = sysOrthographic * sysView;
@@ -350,56 +351,59 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 		glActiveTexture(GL_TEXTURE0 + 0);
 		glBindTexture(GL_TEXTURE_2D, earth);
 		glUniform1i(glGetUniformLocation(frustumToEquirect_pass_SP,
-						 "currentPlanarRendering"),
+						 "oldcode_in_params.currentPlanarRendering"),
 			    0);
 
 		glActiveTexture(GL_TEXTURE0 + 1);
 		glBindTexture(GL_TEXTURE_2D, fisheye_as_equirect_180_bourke);
 		glUniform1i(glGetUniformLocation(frustumToEquirect_pass_SP,
-						 "backgroundTexture"),
+						 "oldcode_in_params.backgroundTexture"),
 			    1);
 
+		//wftz auto generation ...?
+		//glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
+		//				 "oldcode_in_params.backgroundTexture"),
+		//	    0.000000f);
+
+
 		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
-						 "backgroundTexture"),
-			    0.000000f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
-						 "in_params.domeRadius"),
+						 "oldcode_in_params.domeRadius"),
 			    300.000000f);
 		glUniform1f(
 			glGetUniformLocation(frustumToEquirect_pass_SP,
-					     "in_params.virtualScreenWidth"),
+					     "oldcode_in_params.virtualScreenWidth"),
 			200.000000f);
 		glUniform1f(
 			glGetUniformLocation(frustumToEquirect_pass_SP,
-					     "in_params.virtualScreenHeight"),
+					     "oldcode_in_params.virtualScreenHeight"),
 			199.199997f);
 		glUniform1f(
 			glGetUniformLocation(frustumToEquirect_pass_SP,
-					     "in_params.virtualScreenAzimuth"),
+					     "oldcode_in_params.virtualScreenAzimuth"),
 			-37.689999f);
 		glUniform1f(glGetUniformLocation(
 				    frustumToEquirect_pass_SP,
-				    "in_params.virtualScreenElevation"),
+				    "oldcode_in_params.virtualScreenElevation"),
 			    3.600000f);
 		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
-						 "in_params.domeAperture"),
+						 "oldcode_in_params.domeAperture"),
 			    180.000000f);
 		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
-						 "in_params.domeTilt"),
+						 "oldcode_in_params.domeTilt"),
 			    21.610001f);
 		glUniform1f(glGetUniformLocation(
 				    frustumToEquirect_pass_SP,
-				    "in_params.debug_previewScalefactor"),
+				    "oldcode_in_params.debug_previewScalefactor"),
 			    0.460000f);
 		glUniform2i(
 			glGetUniformLocation(
 				frustumToEquirect_pass_SP,
-				"in_params.renderTargetResolution_uncropped"),
+				"oldcode_in_params.renderTargetResolution_uncropped"),
 			8192, 4096);
 		glUniformMatrix4fv(
 			glGetUniformLocation(
 				frustumToEquirect_pass_SP,
-				"in_params.frustum_viewProjectionMatrix"),
+				"oldcode_in_params.frustum_viewProjectionMatrix"),
 			1, GL_FALSE, glm::value_ptr(sysViewProjection));
 
 		sysGeometryTransform =
@@ -1554,7 +1558,7 @@ GLuint CreateShader(const char* vsCode, const char* psCode)
 	glGetShaderiv(ps, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(ps, 512, NULL, infoLog);
-		printf("Failed to compile the shader.\n");
+		printf("Failed to compile the shader:\n %s\n", infoLog);
 		return 0;
 	}
 

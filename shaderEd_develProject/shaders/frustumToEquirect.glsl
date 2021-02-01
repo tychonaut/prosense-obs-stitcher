@@ -1,31 +1,44 @@
 #version 330
 // **************************************
-// DOME FLAT TO GRID for WINGS RX
+// FRUSTUM TO EQUIRECT
 // **************************************
-// Dome-mapping for rectangular 2D content projected onto a dome (downgrade to classical cinema)
-// Rewritten from scratch by Markus Schlueter (GEOMAR)
-// version 2.0
-// date: 21.07.2020
+// Dome-mapping for rectangular 2D content
+// (defined by an oriented frustum, 
+// represented by a viewProjcetion matrix),
+// equirectangularly projected onto a canvas.
+// Doing this repeatedly stitches multiple
+// images into a panorama.
+//
+// Markus Schlueter (GEOMAR)
+// version 0.1.0
+// date: 2021/02/01
 
 
-// Some workarounds that hopefully help with the awkward undocumented implicit wings conventions
-// that aren't even compatible to modern OpenGL standard! 
-// (E.g. calling a function "texture" where this is a GLSL builtin function!)
+
+
+
+
+// Workaround that may help integrating this shader
+// into the OBS Studio Effect-Framework.
 #define DEVELOPMENT_CODE 1
 
-#define DOMESHADER_FUNCTION_NAME textureFun
 
  const float c_PI   =3.141592653589793238462643383279502884197169399375105820974944592308;
  const float c_PIH  =c_PI/2.0;
  const float c_2PI  =2.0*c_PI;
- const float c_G2R  =c_PI/180.0;
- const float c_G2RH =c_G2R/2.0;
+ 
+ // debug brackground color
  const vec4 c_BgColor= vec4( 0, 0, 1, 0);
+ 
 
-//@implements: sampler2D
-struct FS_input {
+
+
+
+struct OldCode_FS_input {
 
 	sampler2D currentPlanarRendering;
+    
+    sampler2D backgroundTexture;
 	
 	//@ label: "dome radius cm", editor: range,  min: 0, max: 10000, range_min: 0, range_max: 10000, range_default: 300
 	float domeRadius;
@@ -33,8 +46,7 @@ struct FS_input {
 	float domeAperture;
 	//@ label: "virtual screen azimuth", editor: range,  min: -180, max: 180, range_min: -180, range_max: 180, range_default: 0
 	
-	
-	
+
 	
 	float virtualScreenAzimuth;
 	//@ label: "virtual screen elevation", editor: range,  min: -90, max: 90, range_min: -90, range_max: 90, range_default: 35
@@ -59,10 +71,132 @@ struct FS_input {
 
 
 
+// ============================================================================
+// ============================================================================
+// function forwards
+
+//-------------------------------------
+// main: 
+void main();
+
+//-------------------------------------
+// little helpers:
+float angleToRadians(float angle);
+
+
+//-------------------------------------
+// Equirect subroutines:
+
+// TODO
+
+// old but reusable code:
+vec3 aziEleToCartesian3D(OldCode_FS_input s, vec2 aziEle_rads);
+
+//-------------------------------------
+// old and possibly obsolete code:
+vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc);
+vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords);
+// ----------------------------------------------------------------------------
+
+
+
+
+
+
+
+#if DEVELOPMENT_CODE
+
+// ============================================================================
+// ============================================================================
+//{ GLSL Fragment Shader data interface
+uniform OldCode_FS_input oldcode_in_params;
+
+in vec4 texcoord;
+
+layout(location = 0) out vec4 out_color;
+//} GLSL Fragment Shader data interface
+// ----------------------------------------------------------------------------
+
+
+
+
+// ============================================================================
+// ============================================================================
+// function implementations:
+
+
+
+// ----------------------------------------------------------------------------
+// main function impl.
+void main()
+{
+    vec2 tc = gl_FragCoord.xy / vec2(oldcode_in_params.renderTargetResolution_uncropped);
+
+    //debug/workaround
+    tc /= oldcode_in_params.debug_previewScalefactor;
+
+	if(tc.x > 1 || tc.y > 1 )
+	{
+		vec4 debugColor = vec4 (1,0,1,1);
+		out_color = debugColor;
+		return;
+	}
+
+	vec4 backGroundColor = vec4(texture(oldcode_in_params.backgroundTexture, tc).xyz,1);
+
+	vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldcode_in_params, tc);
+
+
+    out_color = screenPixelColor + backGroundColor;
+}
+
+#endif //DEVELOPMENT_CODE
+// ----------------------------------------------------------------------------
+
+
+
+
+
+// ----------------------------------------------------------------------------
+// Little helpers impl.
+
 float angleToRadians(float angle)
 {
 	return angle / 180.0f * c_PI ;
 }
+// ----------------------------------------------------------------------------
+
+
+
+
+
+// ----------------------------------------------------------------------------
+//takes a pixel's azi/ele and calculates a 3D coordinate corresponding 
+// to a point on the physical dome (dome radius is respected, dome tilt not,
+// because we want observer coordinates, not dome-local coordinates)
+// Coordinate system is described in comments to texCoordsToAziEle()
+vec3 aziEleToCartesian3D(OldCode_FS_input s, vec2 aziEle_rads)
+{
+	
+	// just for readability:
+	float r = s.domeRadius;
+	float azi = aziEle_rads.x;
+	float ele = aziEle_rads.y;
+	
+	//ele+= angleToRadians(s.domeTilt);
+	
+	vec3 ret = vec3(
+		        r * sin(ele) * cos(azi),
+		        r * cos(ele),
+		 1.0f * r * sin(ele) * sin(azi)
+	);
+	
+	return ret;
+}
+// ----------------------------------------------------------------------------
+
+
+
 
 
 // texture coords in [0..1]^2 to azimuth and elevation radians,
@@ -73,7 +207,7 @@ float angleToRadians(float angle)
 //      south (-z axis): 2pi  radians 
 // ele: top   (+y axis): 0 radians
 //      horizon (xz-plane): pi/2 radians
-vec2 texCoordsToAziEle_radians(FS_input s, vec2 tc)
+vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
 {
 	//[0..1]^2 --> [-1..-1]^2
 	vec2 tc_centered_0_1 = (tc - vec2(0.5f,0.5f)) * 2.0f;
@@ -100,34 +234,13 @@ vec2 texCoordsToAziEle_radians(FS_input s, vec2 tc)
 	return vec2(azi,ele);
 }
 
-//takes a pixel's azi/ele and calculates a 3D coordinate corresponding 
-// to a point on the physical dome (dome radius is respected, dome tilt not,
-// because we want observer coordinates, not dome-local coordinates)
-// Coordinate system is described in comments to texCoordsToAziEle()
-vec3 aziEleToCartesian3D(FS_input s, vec2 aziEle_rads)
-{
-	
-	// just for readability:
-	float r = s.domeRadius;
-	float azi = aziEle_rads.x;
-	float ele = aziEle_rads.y;
-	
-	//ele+= angleToRadians(s.domeTilt);
-	
-	vec3 ret = vec3(
-		        r * sin(ele) * cos(azi),
-		        r * cos(ele),
-		 1.0f * r * sin(ele) * sin(azi)
-	);
-	
-	return ret;
-}
 
 
 
 
 
-vec4 DOMESHADER_FUNCTION_NAME(FS_input s, vec2 tex_coords)
+
+vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords)
 {
 	const vec4 backgroundColor = vec4(0,0,0,0);
 	
@@ -147,7 +260,7 @@ vec4 DOMESHADER_FUNCTION_NAME(FS_input s, vec2 tex_coords)
 		);
 	vec3 virtualScreenCenterPos_cartesian = aziEleToCartesian3D(s,virtualScreenAziEle_radians);
 	
-	vec2 pixel_aziEle_radians = texCoordsToAziEle_radians(s, tex_coords);
+	vec2 pixel_aziEle_radians = oldCode_FishEyeTexCoordsToAziEle_radians(s, tex_coords);
 	vec3 pixelPos_cartesian_onWorld = aziEleToCartesian3D(s,pixel_aziEle_radians);
 	
 	
@@ -219,42 +332,3 @@ vec4 DOMESHADER_FUNCTION_NAME(FS_input s, vec2 tex_coords)
 
 
 
-#if DEVELOPMENT_CODE
-
-
-uniform FS_input in_params;
-
-uniform sampler2D backgroundTexture;
-//uniform sampler2D payloadTexture;
-//uniform vec2 tex_size;
-
-
-in vec4 texcoord;
-
-layout(location = 0) out vec4 out_color;
-
-void main()
-{
-
-
-    vec2 tc = gl_FragCoord.xy / vec2(in_params.renderTargetResolution_uncropped);
-
-    //debug/workaround
-    tc /= in_params.debug_previewScalefactor;
-
-	if(tc.x > 1 || tc.y > 1 )
-	{
-		vec4 debugColor = vec4 (1,0,1,1);
-		out_color = debugColor;
-		return;
-	}
-
-	vec4 backGroundColor = vec4(texture(backgroundTexture, tc).xyz,1);
-
-	vec4 screenPixelColor = DOMESHADER_FUNCTION_NAME(in_params, tc);
-
-
-    out_color = screenPixelColor + backGroundColor;
-}
-
-#endif //DEVELOPMENT_CODE

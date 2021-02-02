@@ -199,6 +199,9 @@ void createRenderState(Clusti *clusti)
 
 	renderState->quit = false;
 
+	renderState->leftMouseButtonDown = false;
+	
+
 	renderState->renderTargetRes = {
 		.x = (clusti->stitchingConfig.videoSinks[0]
 			      .cropRectangle.max.x -
@@ -213,6 +216,7 @@ void createRenderState(Clusti *clusti)
 	renderState->currentRenderScale =
 		(clusti->stitchingConfig.videoSinks[0]
 			 .debug_renderScale);
+	renderState->canvasViewPosition_pixels_lowerLeft = {0, 0};
 
 	// window can be smaller than render target
 	graphene_vec2_init(
@@ -419,6 +423,13 @@ void createRenderState(Clusti *clusti)
 				    renderState->textureViewerShaderProgram,
 				    "renderScale"),
 			    renderState->currentRenderScale);
+
+		glUniform2i(glGetUniformLocation(
+				    renderState->textureViewerShaderProgram,
+				    "offset_pixels"),
+			    renderState->canvasViewPosition_pixels_lowerLeft.x,
+			    renderState->canvasViewPosition_pixels_lowerLeft.y);
+		
 
 		// draw viewport-sized quad
 		glBindVertexArray(renderState->viewPortQuadNDC_vao);
@@ -643,7 +654,60 @@ void handleUserInput(Clusti_State_Render *renderState)
 			{
 				// ...
 			}
+
+
+			//
+		} else if (event.type == SDL_MOUSEBUTTONDOWN){
+			renderState->leftMouseButtonDown = true;
+			renderState->lastButtonDownMousePos = {
+				event.button.x,
+				// invert y axis
+				(int)graphene_vec2_get_y(
+					&renderState->windowRes_f) -
+					event.button.y};
+
+			printf("last mouse position: (%d, %d)\n",
+			       renderState->lastButtonDownMousePos.x,
+			       renderState->lastButtonDownMousePos.y);
+
+		} else if (event.type == SDL_MOUSEBUTTONUP) {
+			renderState->leftMouseButtonDown = false;
 		} else if (event.type == SDL_MOUSEMOTION) {
+
+			if (renderState->leftMouseButtonDown) {
+
+				int diff_x =
+					event.motion.x -
+					renderState->lastButtonDownMousePos.x;
+				int diff_y =
+					// invert y axis
+					((int)graphene_vec2_get_y(
+						 &renderState->windowRes_f) -
+					 event.motion.y) -
+					renderState->lastButtonDownMousePos.y;
+
+
+				renderState->canvasViewPosition_pixels_lowerLeft
+					.x += diff_x;
+				renderState->canvasViewPosition_pixels_lowerLeft
+					.y += diff_y;
+
+				printf("view texture lower left corner position: (%d, %d)\n",
+				       renderState
+					       ->canvasViewPosition_pixels_lowerLeft
+					       .x,
+				       renderState
+					       ->canvasViewPosition_pixels_lowerLeft
+					       .y);
+
+				//update last mous pos to current
+				renderState->lastButtonDownMousePos = {
+					event.button.x,
+					// invert y axis
+					(int)graphene_vec2_get_y(
+						&renderState->windowRes_f) -
+						event.button.y};
+			}
 
 			////sedMouseX = (float)event.motion.x;
 			////sedMouseY = (float)event.motion.y;

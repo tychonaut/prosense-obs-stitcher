@@ -20,9 +20,13 @@
 struct Clusti_ivec2;
 typedef struct Clusti_ivec2 Clusti_ivec2;
 struct Clusti_ivec2 {
-
-	int x;
-	int y;
+	union {
+		int values[2];
+		struct {
+			int x;
+			int y;
+		};
+	};
 };
 
 // integer-valued rectangle
@@ -426,8 +430,18 @@ struct Clusti_State_Render {
 	// video source(s)
 	Clusti_State_Render_VideoSource *videoSources;
 
+
+	//{ User IO hacky state:
 	bool quit;
+
+	bool leftMouseButtonDown;
+	Clusti_ivec2 lastButtonDownMousePos;
+
 	float currentRenderScale;
+	// for interactively panning through a big offscreen texture_
+	Clusti_ivec2 canvasViewPosition_pixels_lowerLeft;
+
+	//}
 };
 
 

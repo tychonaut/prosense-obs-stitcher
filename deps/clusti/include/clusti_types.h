@@ -383,10 +383,12 @@ struct Clusti_State_Render_VideoSource {
 
 	GLuint sourceTexture;
 
-	GLuint warpTexture;
-
-
+	// for later use
 	GLuint blendTexture;
+
+	// for later use
+	GLuint warpTexture;
+	GLuint warpMeshVAO;
 };
 
 
@@ -423,14 +425,15 @@ struct Clusti_State_Render {
 	// for one-channel blend map generation, resolution of video source
 	GLuint renderTargetTexture_Graymap;
 
-
 	// render target(s)
+	GLuint numVideoSinks;
 	Clusti_State_Render_VideoSink *videoSinks;
 
 	// video source(s)
+	GLuint numVideoSources;
 	Clusti_State_Render_VideoSource *videoSources;
 
-
+	// -----------------------------------
 	//{ User IO hacky state:
 	bool quit;
 
@@ -440,7 +443,6 @@ struct Clusti_State_Render {
 	float currentRenderScale;
 	// for interactively panning through a big offscreen texture_
 	Clusti_ivec2 canvasViewPosition_pixels_lowerLeft;
-
 	//}
 };
 

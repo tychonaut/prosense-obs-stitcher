@@ -86,6 +86,23 @@ void clusti_mem_printItem(int index, int numTotalItems,
 //-----------------------------------------------------------------------------
 // function implementations (string helpers & string memory management)
 
+// must be clusti_free()'d
+char *clusti_String_concat(const char *s1, const char *s2)
+{
+	// https://stackoverflow.com/questions/8465006/how-do-i-concatenate-two-strings-in-c
+
+	const size_t len1 = strlen(s1);
+	const size_t len2 = strlen(s2);
+	char *result = clusti_calloc(1, (size_t)(len1 + len2 + 1) * sizeof(char)); // +1 for the null-terminator
+	assert(result);
+
+	memcpy(result, s1, len1);
+	memcpy(result + len1, s2, len2 + 1); // +1 to copy the null-terminator
+
+	return result;
+}
+
+
 // returned string must be freed
 char *clusti_String_lowerCase(char const *str)
 {
@@ -317,9 +334,7 @@ void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
 	void *p = calloc(numInstances, numBytesPerInstance);
 
 	if (p == NULL) {
-
-		//g_clustiStatus.currentStatusType = CLUSTI_STATUS_error;
-		//perror("calloc failed!");
+		clusti_status_declareError("calloc failed!");
 	}
 
 	printf("Allocated = %s, %i, %s, %p[%lli]\n", file, line, func, p,

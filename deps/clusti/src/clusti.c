@@ -46,23 +46,25 @@ void clusti_destroy(Clusti *instance)
 
 	//TODO free stichter's pointer members
 	for (int i = 0; i < instance->stitchingConfig.numVideoSinks; i++) {
-		Clusti_Params_VideoSink *sink =
+		Clusti_Params_VideoSink *sink_config =
 			&(instance->stitchingConfig.videoSinks[i]);
-		clusti_free(sink->name);
-		clusti_free(sink->debug_backgroundImageName);
+		clusti_free(sink_config->name);
+		clusti_free(sink_config->debug_backgroundImageName);
 	}
 	for (int i = 0; i < instance->stitchingConfig.numVideoSources; i++) {
-		Clusti_Params_VideoSource *source =
+		Clusti_Params_VideoSource *source_config =
 			&(instance->stitchingConfig.videoSources[i]);
-		clusti_free(source->name);
-		clusti_free(source->warpfileName);
-		clusti_free(source->blendImageName);
-		clusti_free(source->testImageName);
+		clusti_free(source_config->name);
+		clusti_free(source_config->warpfileName);
+		clusti_free(source_config->blendImageName);
+		clusti_free(source_config->testImageName);
 	}
-
 
 	clusti_free(instance->stitchingConfig.videoSinks);
 	clusti_free(instance->stitchingConfig.videoSources);
+
+	clusti_free(instance->renderState.videoSinks);
+	clusti_free(instance->renderState.videoSources);
 
 	// Free parsing stuff:
 	//TODO better free at end of parsing;

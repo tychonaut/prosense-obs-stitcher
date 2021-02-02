@@ -39,18 +39,19 @@
 // types:
 
 struct FS_SinkParams_in {
-    sampler2D backgroundTexture;
-    
     int index;
-    // float debug_renderScale;
-    
+    sampler2D backgroundTexture;
+    //KISS for first iteration:
+    ivec2 resolution; 
+
+    // rest of this struct is unused yet
     // resolution the whole 4pi steradian panorama image would have;
     ivec2 resolution_virtual; 
     ivec2 cropRectangle_min;
     ivec2 cropRectangle_max;
     //precalculated from cropRectangle
     ivec2 resolution_effective;
-      
+    
     /*
         How to interpret this orientation:
         The goal is to re-parametrize the canvas of 
@@ -86,18 +87,11 @@ struct FS_SinkParams_in {
 
 struct FS_SourceParams_in {
     int index;
-    
     sampler2D currentPlanarRendering;
-    
-    sampler2D backgroundTexture;
-    
+    mat4 frustum_viewProjectionMatrix;
     int decklinkWorkaround_verticalOffset_pixels;
     
-    mat4 frustum_viewProjectionMatrix;
-
-    // probably obsolete/queryable from sampler
-    //ivec2 resolution;
-    
+    // rest of this struct is unused yet
     
     // currently unused; default false
     bool doImageWarp;
@@ -113,7 +107,6 @@ struct FS_SourceParams_in {
     
     bool doBlending;
     sampler2D blendMask;
-    
 };
 
 

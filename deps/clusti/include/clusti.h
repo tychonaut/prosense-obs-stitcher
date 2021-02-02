@@ -29,6 +29,9 @@ void clusti_readConfig(Clusti *instance, char const *configPath);
 /// @return string with contents; must be clusti_free()'d.
 char *clusti_loadFileContents(char const *configPath);
 
+// must be clusti_free()'d
+char *clusti_String_concat(const char *s1, const char *s2);
+
 
 // ----------------------------------------------------------------------------
 // public memory interface:

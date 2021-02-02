@@ -61,6 +61,8 @@ GLuint CreateShader(const char *vsCode, const char *psCode);
 
 void handleUserInput(Clusti_State_Render *renderState);
 
+void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
+				 int videoSourceIndex);
 
 
 // -----------------------------------------------------------------------------------
@@ -166,12 +168,76 @@ void createFBO(Clusti_State_Render *renderState)
 
 
 
+void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
+				 int videoSourceIndex)
+{
+	Clusti_State_Render const *renderState = &(clusti->renderState);
+	Clusti_Params_Stitching const *config = &(clusti->stitchingConfig);
+
+	Clusti_Params_VideoSink const *sink_config =
+		&config->videoSinks[videoSinkIndex];
+	Clusti_Params_VideoSource const *source_config =
+		&config->videoSources[videoSourceIndex];
+
+	Clusti_State_Render_VideoSink const *sink_render =
+		&renderState->videoSinks[videoSinkIndex]; 
+	Clusti_State_Render_VideoSource const *source_render =
+		&renderState->videoSources[videoSourceIndex];
+
+
+
+	// old uniforms:
+	glActiveTexture(GL_TEXTURE0 + 0);
+	//glBindTexture(GL_TEXTURE_2D, currentVideoSourceTexture);
+	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
+	glUniform1i(glGetUniformLocation(
+			    renderState->stitchShaderProgram,
+			    "oldcode_in_params.currentPlanarRendering"),
+		    0);
+
+	glActiveTexture(GL_TEXTURE0 + 1);
+	//glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+	glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
+	glUniform1i(glGetUniformLocation(renderState->stitchShaderProgram,
+					 "oldcode_in_params.backgroundTexture"),
+		    1);
+
+	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
+					 "oldcode_in_params.domeRadius"),
+		    300.000000f);
+	glUniform1f(
+		glGetUniformLocation(renderState->stitchShaderProgram,
+				     "oldcode_in_params.virtualScreenWidth"),
+		200.000000f);
+	glUniform1f(
+		glGetUniformLocation(renderState->stitchShaderProgram,
+				     "oldcode_in_params.virtualScreenHeight"),
+		199.199997f);
+	glUniform1f(
+		glGetUniformLocation(renderState->stitchShaderProgram,
+				     "oldcode_in_params.virtualScreenAzimuth"),
+		-37.689999f);
+	glUniform1f(glGetUniformLocation(
+			    renderState->stitchShaderProgram,
+			    "oldcode_in_params.virtualScreenElevation"),
+		    3.600000f);
+	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
+					 "oldcode_in_params.domeAperture"),
+		    180.000000f);
+	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
+					 "oldcode_in_params.domeTilt"),
+		    21.610001f);
+	glUniform2i(
+		glGetUniformLocation(
+			renderState->stitchShaderProgram,
+			"oldcode_in_params.renderTargetResolution_uncropped"),
+		8192, 4096);
+}
+
 
 void createRenderState(Clusti *clusti)
 {
 	Clusti_State_Render* renderState = &(clusti->renderState);
-
-
 
 
 	// -----------------------------------------------------------------------------------
@@ -254,12 +320,6 @@ void createRenderState(Clusti *clusti)
 	// -----------------------------------------------------------------------------------
 	// Framebuffer stuff:
 	createFBO(renderState);
-
-
-
-	// -----------------------------------------------------------------------------------
-	// -----------------------------------------------------------------------------------
-	// start of to-refactor section
 	
 
 	// -----------------------------------------------------------------------------------
@@ -282,21 +342,65 @@ void createRenderState(Clusti *clusti)
 		CreateShader(ShaderSource_textureViewer_vert,
 			     ShaderSource_textureViewer_frag);
 
-
-
-	GLuint backgroundTexture = LoadTexture(
-		"../../../testData/fisheye_as_equirect_180_bourke.jpg");
-
-	GLuint currentVideoSourceTexture = LoadTexture("../../../testData/RT001.png");
-
-
 	// -----------------------------------------------------------------------------------
 	// Full screen quad geometry
-
-	//GLuint fullscreenQuad_VAO, fullscreenQuad_VBO;
-	//fullscreenQuad_VAO = CreateScreenQuadNDC(fullscreenQuad_VBO);
-
 	CreateScreenQuadNDC(renderState);
+
+	// -----------------------------------------------------------------------------------
+	// load video source and sink textures
+
+	char const *dataDirectory = "../../../testData/";
+	char *finalFilePath = NULL;
+
+	renderState->numVideoSinks = clusti->stitchingConfig.numVideoSinks;
+	renderState->videoSinks = (Clusti_State_Render_VideoSink *)
+		clusti_calloc(renderState->numVideoSinks,
+			      sizeof(Clusti_State_Render_VideoSink));
+	for (int i = 0; i < (int) renderState->numVideoSinks; i++) {
+
+		finalFilePath = clusti_String_concat(
+			dataDirectory, clusti->stitchingConfig.videoSinks[i].debug_backgroundImageName);
+
+		Clusti_State_Render_VideoSink *currentSink =
+			&(renderState->videoSinks[i]);
+
+		//load and assign background texture to render state
+		currentSink->backgroundTexture = LoadTexture(finalFilePath);
+		assert(currentSink->backgroundTexture);
+
+		clusti_free(finalFilePath);
+		finalFilePath = NULL;
+	}
+
+
+	renderState->numVideoSources = clusti->stitchingConfig.numVideoSources;
+	renderState->videoSources =
+		(Clusti_State_Render_VideoSource *)clusti_calloc(
+			renderState->numVideoSources,
+			sizeof(Clusti_State_Render_VideoSource));
+	for (int i = 0; i < (int) renderState->numVideoSources; i++) {
+		finalFilePath = clusti_String_concat(
+			dataDirectory, clusti->stitchingConfig.videoSources[i]
+					       .testImageName);
+
+		Clusti_State_Render_VideoSource *currentSource =
+			&(renderState->videoSources[i]);
+
+		//load and assign background texture to render state
+		currentSource->sourceTexture = LoadTexture(finalFilePath);
+		assert(currentSource->sourceTexture);
+
+		clusti_free(finalFilePath);
+		finalFilePath = NULL;
+
+		// TODO warp and blend
+	}
+
+	//GLuint backgroundTexture = LoadTexture(
+	//	"../../../testData/fisheye_as_equirect_180_bourke.jpg");
+
+	//GLuint currentVideoSourceTexture =
+	//	LoadTexture("../../../testData/RT001.png");
 
 
 
@@ -312,12 +416,9 @@ void createRenderState(Clusti *clusti)
 		}
 
 
-		// RENDER
+		// RENDER -----------------------------------------------------
 
-
-		//TODO change from render-to-windo to render-to-FBO
-
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// render stitching to offscreen texture:
 		glBindFramebuffer(GL_FRAMEBUFFER, renderState->fbo);
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -327,76 +428,24 @@ void createRenderState(Clusti *clusti)
 			   renderState->renderTargetRes.x,
 			   renderState->renderTargetRes.y);
 
+		// use stitching shader
 		glUseProgram(renderState->stitchShaderProgram);
 
-		// frustumToEquirect_pass shader pass
-		glUseProgram(renderState->stitchShaderProgram);
+		for (int i = 0; i < (int)renderState->numVideoSources; i++) {
+			// hardcode to sink 0 for now
+			setupStichingShaderUniforms(clusti, 0, i);
+			// draw viewport-sized quad
+			glBindVertexArray(renderState->viewPortQuadNDC_vao);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
 
-
-
-		glActiveTexture(GL_TEXTURE0 + 0);
-		glBindTexture(GL_TEXTURE_2D, currentVideoSourceTexture);
-		glUniform1i(glGetUniformLocation(
-				    renderState->stitchShaderProgram,
-				    "oldcode_in_params.currentPlanarRendering"),
-			    0);
-
-		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-		glUniform1i(glGetUniformLocation(
-				    renderState->stitchShaderProgram,
-				    "oldcode_in_params.backgroundTexture"),
-			    1);
-
-
-		glUniform1f(
-			glGetUniformLocation(renderState->stitchShaderProgram,
-						 "oldcode_in_params.domeRadius"),
-			    300.000000f);
-		glUniform1f(glGetUniformLocation(
-				    renderState->stitchShaderProgram,
-					     "oldcode_in_params.virtualScreenWidth"),
-			200.000000f);
-		glUniform1f(glGetUniformLocation(
-				    renderState->stitchShaderProgram,
-					     "oldcode_in_params.virtualScreenHeight"),
-			199.199997f);
-		glUniform1f(glGetUniformLocation(
-				    renderState->stitchShaderProgram,
-					     "oldcode_in_params.virtualScreenAzimuth"),
-			-37.689999f);
-		glUniform1f(glGetUniformLocation(
-				    renderState->stitchShaderProgram,
-				    "oldcode_in_params.virtualScreenElevation"),
-			    3.600000f);
-		glUniform1f(
-			glGetUniformLocation(renderState->stitchShaderProgram,
-						 "oldcode_in_params.domeAperture"),
-			    180.000000f);
-		glUniform1f(
-			glGetUniformLocation(renderState->stitchShaderProgram,
-						 "oldcode_in_params.domeTilt"),
-			    21.610001f);
-		glUniform2i(
-			glGetUniformLocation(
-				renderState->stitchShaderProgram,
-				"oldcode_in_params.renderTargetResolution_uncropped"),
-			8192, 4096);
-
-
-		// draw viewport-sized quad
-		glBindVertexArray(renderState->viewPortQuadNDC_vao);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
+		// make sure the texture is written before showing
 		glFlush();
-		//TODO show offscreen rendered texture to window
+
 
 
 		// -----------------------------------------------------------------------------------
-		// render offscreen texture scaled to window:
-
-
+		// render offscreen texture to window, scale and pan enabled:
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -418,7 +467,6 @@ void createRenderState(Clusti *clusti)
 				    renderState->textureViewerShaderProgram,
 				    "textureToShow"),
 			    0);
-
 		glUniform1f(glGetUniformLocation(
 				    renderState->textureViewerShaderProgram,
 				    "renderScale"),
@@ -430,14 +478,13 @@ void createRenderState(Clusti *clusti)
 			    renderState->canvasViewPosition_pixels_lowerLeft.x,
 			    renderState->canvasViewPosition_pixels_lowerLeft.y);
 		
-
 		// draw viewport-sized quad
 		glBindVertexArray(renderState->viewPortQuadNDC_vao);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glUseProgram(0);
-
 		glFlush();
+
 
 
 		// show image on screen

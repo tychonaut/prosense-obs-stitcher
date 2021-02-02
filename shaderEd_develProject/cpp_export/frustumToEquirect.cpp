@@ -247,44 +247,47 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
 	glUniform1i(glGetUniformLocation(
 			    renderState->stitchShaderProgram,
-			    "oldcode_in_params.currentPlanarRendering"),
+			    "oldParams_in_planarRend"),
+			    //"oldParams_in.currentPlanarRendering"),
 		    0);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
-	glUniform1i(glGetUniformLocation(renderState->stitchShaderProgram,
-					 "oldcode_in_params.backgroundTexture"),
+	glUniform1i(
+		glGetUniformLocation(renderState->stitchShaderProgram,
+				     //"oldParams_in.backgroundTexture"),
+				     "oldParams_in_bgt"),
 		    1);
 
 	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
-					 "oldcode_in_params.domeRadius"),
+					 "oldParams_in.domeRadius"),
 		    300.000000f);
 	glUniform1f(
 		glGetUniformLocation(renderState->stitchShaderProgram,
-				     "oldcode_in_params.virtualScreenWidth"),
+				     "oldParams_in.virtualScreenWidth"),
 		600.000000f);
 	glUniform1f(
 		glGetUniformLocation(renderState->stitchShaderProgram,
-				     "oldcode_in_params.virtualScreenHeight"),
+				     "oldParams_in.virtualScreenHeight"),
 		199.199997f);
 	glUniform1f(
 		glGetUniformLocation(renderState->stitchShaderProgram,
-				     "oldcode_in_params.virtualScreenAzimuth"),
+				     "oldParams_in.virtualScreenAzimuth"),
 		-37.689999f);
 	glUniform1f(glGetUniformLocation(
 			    renderState->stitchShaderProgram,
-			    "oldcode_in_params.virtualScreenElevation"),
+			    "oldParams_in.virtualScreenElevation"),
 		    3.600000f);
 	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
-					 "oldcode_in_params.domeAperture"),
+					 "oldParams_in.domeAperture"),
 		    180.000000f);
 	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
-					 "oldcode_in_params.domeTilt"),
+					 "oldParams_in.domeTilt"),
 		    21.610001f);
 	glUniform2i(
 		glGetUniformLocation(
 			renderState->stitchShaderProgram,
-			"oldcode_in_params.renderTargetResolution_uncropped"),
+			"oldParams_in.renderTargetResolution_uncropped"),
 		8192, 4096);
 }
 

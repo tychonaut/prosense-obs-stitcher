@@ -13,111 +13,29 @@
 // version 0.1.0
 // date: 2021/02/01
 
-
-
-
 // ============================================================================
 // ============================================================================
-// Macros and constants:
-
-// Workaround that may help integrating this shader
-// into the OBS Studio Effect-Framework.
-#define DEVELOPMENT_CODE 1
+//{ GLSL Fragment Shader data interface
 
 
- const float c_PI   =3.141592653589793238462643383279502884197169399375105820974944592308;
- const float c_PIH  =c_PI/2.0;
- const float c_2PI  =2.0*c_PI;
- 
- // debug brackground color
- const vec4 c_BgColor= vec4( 0, 0, 1, 0);
- 
- 
- 
-// ============================================================================
-// ============================================================================
-// types:
 
-struct FS_SinkParams_in {
-    int index;
-    sampler2D backgroundTexture;
-    //KISS for first iteration:
-    ivec2 resolution; 
+//{
+// a bug in ShaderEd demands sampler uniforms on top and outside of structs :C
+uniform sampler2D oldParams_in_bgt;
+uniform sampler2D oldParams_in_planarRend;
 
 
-    // rest of this struct is unused yet
-    // resolution the whole 4pi steradian panorama image would have;
-    ivec2 resolution_virtual; 
-    ivec2 cropRectangle_min;
-    ivec2 cropRectangle_max;
-    //precalculated from cropRectangle
-    ivec2 resolution_effective;
-    
-    /*
-        How to interpret this orientation:
-        The goal is to re-parametrize the canvas of 
-        a full-sphere projection, so that the sub-canvas
-        filled by e.g. a 21°-tilted hemispheric dome
-        fills the canvas in a way that has desireable 
-        properties.
-        To stick with the above example: If the full 
-        spherical equirectangular canvas would have
-        a (virtual) resolution of 8k*4k, and if we would
-        encode  the dome image naively, 
-        most of the bottom half of the image is black, 
-        and the seam has a wave form due to the tilt.
-        In order to use hardware encoding of Nvidia GPUs
-        without issues (not all GPUs support more than
-        4k*4k resolution) and to save bandwidth,
-        the tilted dome could be encoded in the 
-        "left 4k*4k half of the virtual 8k*4k canvas.
-        Therefore, the whole scene (i.e. each frustum)
-        needs to be rotated by 
-        roll="90.0", pitch="0.0" yaw="21.0",
-        in order to yield a "left-only" hemisphere
-        only negative x values).
-        
-        *** IMPORTANT: The video *PLAYER* software needs
-        to be aware of this transformation and undo it! ***
-    */
-    //TODO setup in host data structures
-    bool useSceneRotationMatrix;
-    mat4 sceneRotationMatrix;
-};
+uniform sampler2D sinkParams_in_backgroundTexture;
 
-
-struct FS_SourceParams_in {
-    int index;
-    sampler2D currentPlanarRendering;
-    mat4 frustum_viewProjectionMatrix;
-    int decklinkWorkaround_verticalOffset_pixels;
-    
-    // rest of this struct is unused yet
-    
-    // currently unused; default false
-    bool doImageWarp;
-    // currently unused; default false
-    bool do3DImageWarp;
-    //n.b. warp inversion must be done on the host side
-    // by inverting the LUT.
-    // n.b. (inverse) mesh warping must be done
-    // as a preprocess: render warp mesh and input image
-    // to texture, then feed the resulting texture
-    // to this shader.
-    sampler2D warpLUT; //2D or 3D
-    
-    bool doBlending;
-    sampler2D blendMask;
-};
+uniform sampler2D sourceParams_in_currentPlanarRendering;
+uniform sampler2D sourceParams_in_warpLUT;
+uniform sampler2D sourceParams_in_blendMask;
+//}
 
 
 
 struct OldCode_FS_input {
 
-	sampler2D currentPlanarRendering;
-    
-    sampler2D backgroundTexture;
-	
 	//@ label: "dome radius cm", editor: range,  min: 0, max: 10000, range_min: 0, range_max: 10000, range_default: 300
 	float domeRadius;
 	//@ label: "dome aperture degrees", editor: range,  min: 0, max: 360, range_min: 0, range_max: 360, range_default: 180
@@ -145,6 +63,125 @@ struct OldCode_FS_input {
 	//workaround for shaderEd development: scale preview;
 	//float debug_previewScalefactor;
 };
+
+uniform OldCode_FS_input oldParams_in; //oldcode_in_params;
+
+
+
+struct FS_SinkParams_in {
+    int index;
+    //sampler2D backgroundTexture;
+    //KISS for first iteration:
+    ivec2 resolution; 
+
+
+    // rest of this struct is unused yet
+    // resolution the whole 4pi steradian panorama image would have;
+    ivec2 resolution_virtual; 
+    ivec2 cropRectangle_min;
+    ivec2 cropRectangle_max;
+    //precalculated from cropRectangle
+    ivec2 resolution_effective;
+    
+    
+    // How to interpret this orientation:
+    // The goal is to re-parametrize the canvas of 
+    // a full-sphere projection, so that the sub-canvas
+    // filled by e.g. a 21°-tilted hemispheric dome
+    // fills the canvas in a way that has desireable 
+    // properties.
+    // To stick with the above example: If the full 
+    // spherical equirectangular canvas would have
+    // a (virtual) resolution of 8k*4k, and if we would
+    // encode  the dome image naively, 
+    // most of the bottom half of the image is black, 
+    // and the seam has a wave form due to the tilt.
+    // In order to use hardware encoding of Nvidia GPUs
+    // without issues (not all GPUs support more than
+    // 4k*4k resolution) and to save bandwidth,
+    // the tilted dome could be encoded in the 
+    // left 4kx4k half of the virtual 8kx4k canvas.
+    // Therefore, the whole scene (i.e. each frustum)
+    // needs to be rotated by 
+    // roll=90.0, pitch=0.0 yaw=21.0,
+    // in order to yield a left-only hemisphere
+    // only negative x values).
+    // 
+    // IMPORTANT: The video *PLAYER* software needs
+    // to be aware of this transformation and undo it
+    
+    //TODO setup in host data structures
+    bool useSceneRotationMatrix;
+    mat4 sceneRotationMatrix;
+};
+
+uniform FS_SinkParams_in     sinkParams_in;
+
+
+struct FS_SourceParams_in {
+    int index;
+    //sampler2D currentPlanarRendering;
+    mat4 frustum_viewProjectionMatrix;
+    int decklinkWorkaround_verticalOffset_pixels;
+    
+    // rest of this struct is unused yet
+    
+    // currently unused; default false
+    bool doImageWarp;
+    // currently unused; default false
+    bool do3DImageWarp;
+    //n.b. warp inversion must be done on the host side
+    // by inverting the LUT.
+    // n.b. (inverse) mesh warping must be done
+    // as a preprocess: render warp mesh and input image
+    // to texture, then feed the resulting texture
+    // to this shader.
+    //sampler2D warpLUT; //2D or 3D
+    
+    bool doBlending;
+    //sampler2D blendMask;
+};
+
+uniform FS_SourceParams_in   sourceParams_in;
+
+
+
+//} GLSL Fragment Shader data interface
+// ----------------------------------------------------------------------------
+
+
+
+// ============================================================================
+// ============================================================================
+// Macros and constants:
+
+// Workaround that may help integrating this shader
+// into the OBS Studio Effect-Framework.
+#define DEVELOPMENT_CODE 1
+
+
+ const float c_PI   =3.141592653589793238462643383279502884197169399375105820974944592308;
+ const float c_PIH  =c_PI/2.0;
+ const float c_2PI  =2.0*c_PI;
+ 
+ // debug brackground color
+ const vec4 c_BgColor= vec4( 0, 0, 1, 0);
+ 
+ 
+ 
+// ============================================================================
+// ============================================================================
+// types:
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -184,22 +221,10 @@ vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords);
 
 #if DEVELOPMENT_CODE
 
-// ============================================================================
-// ============================================================================
-//{ GLSL Fragment Shader data interface
-
-uniform FS_SinkParams_in sinkParams_in;
-uniform FS_SourceParams_in sourceParams_in;
-
-uniform OldCode_FS_input oldcode_in_params;
 
 in vec4 texcoord;
 
 layout(location = 0) out vec4 out_color;
-//} GLSL Fragment Shader data interface
-// ----------------------------------------------------------------------------
-
-
 
 
 // ============================================================================
@@ -212,6 +237,7 @@ layout(location = 0) out vec4 out_color;
 // main function impl.
 void main()
 {
+    /*
     float azi_0_1 = gl_FragCoord.x / sinkParams_in.resolution.x;
     float ele_0_1 = gl_FragCoord.y / sinkParams_in.resolution.y;
     
@@ -223,11 +249,12 @@ void main()
     float ele_pmPih = (ele_0_1 * c_PI) - c_PIH;
     
     vec2 aziEle = vec2(azi_0_2pi, ele_pmPih);
+    */
 
     
     // old code --------------------------
     
-    vec2 tc = gl_FragCoord.xy / vec2(oldcode_in_params.renderTargetResolution_uncropped);
+    vec2 tc = gl_FragCoord.xy / vec2(oldParams_in.renderTargetResolution_uncropped);
 
     //debug/workaround
     //tc /= oldcode_in_params.debug_previewScalefactor;
@@ -239,11 +266,22 @@ void main()
 		return;
 	}
 
-	vec4 backGroundColor = vec4(texture(oldcode_in_params.backgroundTexture, tc).xyz,1);
+	vec4 backGroundColor = vec4(texture(oldParams_in_bgt, tc).xyz,1);
 
-	vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldcode_in_params, tc);
+	vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, tc);
 
     out_color = screenPixelColor + backGroundColor;
+    
+    
+    //debug multiple samplers (shaderEd bug); works
+   /*
+   out_color.r += vec4(texture(sinkParams_in_backgroundTexture, tc).xyz,1).r; 
+   out_color.r += vec4(texture(sourceParams_in_currentPlanarRendering, tc).xyz,1).r; 
+   out_color.r += vec4(texture(sourceParams_in_warpLUT, tc).xyz,1).r; 
+   out_color.r += vec4(texture(sourceParams_in_blendMask, tc).xyz,1).r; 
+   out_color.r /= 6.0;
+   */
+
 }
 
 #endif //DEVELOPMENT_CODE
@@ -422,7 +460,7 @@ vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords)
 		return backgroundColor;
 	}
 	
-	return vec4(texture(s.currentPlanarRendering,localTexCoords).xyz,1);
+	return vec4(texture(oldParams_in_planarRend,localTexCoords).xyz,1);
 }
 
 

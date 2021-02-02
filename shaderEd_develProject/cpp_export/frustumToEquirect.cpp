@@ -225,6 +225,8 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	graphene_matrix_to_float(
 		&source_config->projection.planar_viewProjectionMatrix,
 		matBuff);
+	graphene_matrix_print(
+		&source_config->projection.planar_viewProjectionMatrix);
 	glUniformMatrix4fv(currULoc, 1, GL_TRUE, matBuff);
 	//int 
 	currULoc = glGetUniformLocation(

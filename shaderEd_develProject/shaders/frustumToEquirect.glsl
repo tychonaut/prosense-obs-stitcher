@@ -267,7 +267,12 @@ void main()
 	}
 
 	vec4 backGroundColor = vec4(texture(oldParams_in_bgt, tc).xyz,1);
-
+    // vec4 backGroundColor = vec4(texture(oldParams_in_bgt, tc).xyzw);
+    if(all(lessThan(backGroundColor.xyz, vec3(0.1))))
+    {
+        backGroundColor.xyz = vec3(0.0,0.25,0.0);
+    }
+    
 	vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, tc);
 
     out_color = screenPixelColor + backGroundColor;
@@ -375,7 +380,7 @@ vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
 
 vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords)
 {
-	const vec4 backgroundColor = vec4(0,0,0,0);
+	const vec4 backgroundColor = vec4(0.25,0,0,0);
 	
 	// azimuth param shift by 270 degrees,
 	//  so that 0 degrees represents the front of the dome for the user;

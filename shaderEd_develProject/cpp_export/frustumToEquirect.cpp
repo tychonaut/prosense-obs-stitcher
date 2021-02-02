@@ -184,11 +184,66 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	Clusti_State_Render_VideoSource const *source_render =
 		&renderState->videoSources[videoSourceIndex];
 
+	GLuint currProg = renderState->stitchShaderProgram;
 
+	GLint currULoc = 0;
 
-	// old uniforms:
+	// -----------------------------------
+	//int
+	currULoc = glGetUniformLocation(currProg, "sinkParams_in.index");
+	glUniform1i(currULoc, videoSinkIndex);
+
+	//sampler2D
+	currULoc = glGetUniformLocation(currProg,
+					"sinkParams_in.backgroundTexture");
 	glActiveTexture(GL_TEXTURE0 + 0);
-	//glBindTexture(GL_TEXTURE_2D, currentVideoSourceTexture);
+	glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
+	glUniform1i(currULoc, 0);
+
+	//ivec2
+	// TODO adapt
+	currULoc = glGetUniformLocation(currProg, "sinkParams_in.resolution");
+	glUniform2i(currULoc, sink_config->virtualResolution.x,
+		    sink_config->virtualResolution.y);
+
+
+	//int 
+	currULoc = glGetUniformLocation(currProg, "sourceParams_in.index");
+	glUniform1i(currULoc, videoSourceIndex);
+
+	//sampler2D 
+	currULoc = glGetUniformLocation(
+		currProg, "sourceParams_in.currentPlanarRendering");
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
+	glUniform1i(currULoc, 1);
+
+	//mat4
+	currULoc = glGetUniformLocation(
+		currProg, "sourceParams_in.frustum_viewProjectionMatrix");
+	GLfloat matBuff[16];
+	graphene_matrix_to_float(
+		&source_config->projection.planar_viewProjectionMatrix,
+		matBuff);
+	glUniformMatrix4fv(currULoc, 1, GL_TRUE, matBuff);
+	//int 
+	currULoc = glGetUniformLocation(
+		currProg,
+		"sourceParams_in.decklinkWorkaround_verticalOffset_pixels");
+	glUniform1i(currULoc, source_config->decklinkWorkaround_verticalOffset_pixels);
+
+	
+
+
+
+
+
+
+
+
+
+	// old uniforms: -----------------------------------
+	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
 	glUniform1i(glGetUniformLocation(
 			    renderState->stitchShaderProgram,
@@ -196,7 +251,6 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 		    0);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
-	//glBindTexture(GL_TEXTURE_2D, backgroundTexture);
 	glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
 	glUniform1i(glGetUniformLocation(renderState->stitchShaderProgram,
 					 "oldcode_in_params.backgroundTexture"),

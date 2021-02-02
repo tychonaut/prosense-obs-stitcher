@@ -44,6 +44,7 @@ struct FS_SinkParams_in {
     //KISS for first iteration:
     ivec2 resolution; 
 
+
     // rest of this struct is unused yet
     // resolution the whole 4pi steradian panorama image would have;
     ivec2 resolution_virtual; 

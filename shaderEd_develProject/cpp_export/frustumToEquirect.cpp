@@ -48,14 +48,18 @@ extern "C" {
 // function forwards
 
 
-Clusti_State_Render createRenderState(Clusti const *stitcherConfig);
+void createRenderState(Clusti *clusti);
+
+void createFBO(Clusti_State_Render *renderState);
 
 //generate VAO and VBO
-GLuint CreateScreenQuadNDC(GLuint &vbo);
+void CreateScreenQuadNDC(Clusti_State_Render *renderState);
 
 GLuint LoadTexture(const std::string &filename);
 
 GLuint CreateShader(const char *vsCode, const char *psCode);
+
+void handleUserInput(Clusti_State_Render *renderState);
 
 
 
@@ -87,7 +91,9 @@ int main(int argc, char **argv)
 	clusti_readConfig(stitcher,
 			  "../../../testdata/calibration_viewfrusta.xml");
 
-	Clusti_State_Render renderState = createRenderState(stitcher);
+	createRenderState(stitcher);
+
+	//TODO extract render lopp that is currently within createRenderState()...
 
 	clusti_destroy(stitcher);
 	// ---------------------------------------------------------------------------
@@ -97,16 +103,79 @@ int main(int argc, char **argv)
 
 
 
-
-
-
-
-
-Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
+void createFBO(Clusti_State_Render *renderState)
 {
+	//generate offscreen render target (FBO)
+	glGenFramebuffers(1, &(renderState->fbo));
 
-	Clusti_State_Render renderState;
+	// render to offscreen render target
+	glBindFramebuffer(GL_FRAMEBUFFER, renderState->fbo);
 
+	//if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+	//    GL_FRAMEBUFFER_COMPLETE) {
+	//	printf("framebuffer incomplete");
+	//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//	glDeleteFramebuffers(1, &(renderState->fbo));
+	//	exit(-1);
+	//}
+
+
+	// create, bind, alloc mem for and unbind color texture
+	glGenTextures(1, &(renderState->renderTargetTexture_Color));
+
+	glBindTexture(GL_TEXTURE_2D, renderState->renderTargetTexture_Color);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, renderState->renderTargetRes.x,
+		     renderState->renderTargetRes.y, 0, GL_RGBA,
+		     GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// bind color texture to FBO
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			       GL_TEXTURE_2D,
+			       renderState->renderTargetTexture_Color, 0);  
+
+
+	// create, bind, alloc mem for and unbind depth render buffer (RBO)
+	glGenRenderbuffers(1, &(renderState->renderTargetRBO_Depth));
+
+	glBindRenderbuffer(GL_RENDERBUFFER, renderState->renderTargetRBO_Depth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
+			      renderState->renderTargetRes.x,
+			      renderState->renderTargetRes.y);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	// bind depth RBO to FBO
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+				  GL_RENDERBUFFER,
+				  renderState->renderTargetRBO_Depth);
+
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		printf("framebuffer incomplete");
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &(renderState->fbo));
+		exit(-1);
+	}
+
+
+	//render to window again
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
+
+
+void createRenderState(Clusti *clusti)
+{
+	Clusti_State_Render* renderState = &(clusti->renderState);
+
+
+
+
+	// -----------------------------------------------------------------------------------
+	// Create SDL window and OpenGL context
 
 	stbi_set_flip_vertically_on_load(1);
 
@@ -122,47 +191,51 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // double buffering
 
-	if (stitcherConfig->stitchingConfig.numVideoSinks != 1) {
+	if (clusti->stitchingConfig.numVideoSinks != 1) {
 		printf("Only one video sink currently supported.\n");
 		exit(-1);
 
 	}
 
-	renderState.renderTargetRes = {
-		.x = (stitcherConfig->stitchingConfig.videoSinks[0]
+	renderState->quit = false;
+
+	renderState->renderTargetRes = {
+		.x = (clusti->stitchingConfig.videoSinks[0]
 			      .cropRectangle.max.x -
-		      stitcherConfig->stitchingConfig.videoSinks[0]
+		      clusti->stitchingConfig.videoSinks[0]
 			      .cropRectangle.min.x),
-		.y = (stitcherConfig->stitchingConfig.videoSinks[0]
+		.y = (clusti->stitchingConfig.videoSinks[0]
 			      .cropRectangle.max.y -
-		      stitcherConfig->stitchingConfig.videoSinks[0]
+		      clusti->stitchingConfig.videoSinks[0]
 			      .cropRectangle.min.y)
 	};
 
-	float debugRenderScale =
-		(stitcherConfig->stitchingConfig.videoSinks[0]
+	renderState->currentRenderScale =
+		(clusti->stitchingConfig.videoSinks[0]
 			 .debug_renderScale);
 
 	// window can be smaller than render target
 	graphene_vec2_init(
-		&(renderState.windowRes_f),
-		(float)(renderState.renderTargetRes.x) * debugRenderScale,
-		(float)(renderState.renderTargetRes.y) * debugRenderScale);
+		&(renderState->windowRes_f),
+			   (float)(renderState->renderTargetRes.x) *
+				   renderState->currentRenderScale,
+			   (float)(renderState->renderTargetRes.y) *
+				   renderState->currentRenderScale);
 
 	// open window
-	renderState.wnd = SDL_CreateWindow(
+	renderState->wnd = SDL_CreateWindow(
 		"Clusti_Standalone", SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		(int)graphene_vec2_get_x(&(renderState.windowRes_f)),
-		(int)graphene_vec2_get_y(&(renderState.windowRes_f)),
+		(int)graphene_vec2_get_x(&(renderState->windowRes_f)),
+		(int)graphene_vec2_get_y(&(renderState->windowRes_f)),
 		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
 			SDL_WINDOW_ALLOW_HIGHDPI);
 
-	SDL_SetWindowMinimumSize(renderState.wnd, 200, 200);
+	SDL_SetWindowMinimumSize(renderState->wnd, 200, 200);
 
 	// get GL context
-	renderState.glContext = SDL_GL_CreateContext(renderState.wnd);
-	SDL_GL_MakeCurrent(renderState.wnd, renderState.glContext);
+	renderState->glContext = SDL_GL_CreateContext(renderState->wnd);
+	SDL_GL_MakeCurrent(renderState->wnd, renderState->glContext);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
 
@@ -174,164 +247,68 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 	}
 
 
-	//renderState.viewportRes_f = renderState.windowRes_f;
-	//graphene_vec2_init(&renderState.mousePos_f, 0.0f, 0.0f);
+	// -----------------------------------------------------------------------------------
+	// Framebuffer stuff:
+	createFBO(renderState);
 
 
- 
 
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
 	// start of to-refactor section
 	
 
-	// init
-
+	// -----------------------------------------------------------------------------------
 	// shaders
-	//std::string ShaderSource_frustumToEquirect_vert =
-	//	LoadFile("../../shaders/frustumToEquirect.vert");
-	//std::string ShaderSource_frustumToEquirect_frag =
-	//	LoadFile("../../shaders/frustumToEquirect.glsl");
-
-
-
 	char *ShaderSource_frustumToEquirect_vert = clusti_loadFileContents(
 		"../../shaders/frustumToEquirect.vert");
 	char *ShaderSource_frustumToEquirect_frag =
 		clusti_loadFileContents("../../shaders/frustumToEquirect.glsl");
-
-
-	////float sedMouseX = 0, sedMouseY = 0;
-	////glm::vec2 sysMousePosition(sedMouseX, sedMouseY);
-	//glm::vec2 sysMousePosition(
-	//	graphene_vec2_get_x(&(renderState.mousePos_f)),
-	//	graphene_vec2_get_y(&(renderState.mousePos_f)));
-
-
-	////glm::vec2 sysViewportSize(renderState.renderTargetResolution.x,
-	////			  renderState.renderTargetResolution.y);
-	//glm::vec2 sysViewportSize(
-	//	graphene_vec2_get_x(&(renderState.windowRes_f)),
-	//	graphene_vec2_get_y(&(renderState.windowRes_f)));
-
-
-	// objects
-	// renderTarget render texture
-	GLuint renderTarget_Color, renderTarget_Depth;
-	glGenTextures(1, &renderTarget_Color);
-	glBindTexture(GL_TEXTURE_2D, renderTarget_Color);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8192, 4096, 0, GL_RGBA,
-		     GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glGenTextures(1, &renderTarget_Depth);
-	glBindTexture(GL_TEXTURE_2D, renderTarget_Depth);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 8192, 4096, 0,
-		     GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	GLuint earth = LoadTexture("../../../testData/RT001.png");
-
-	//GLuint domemaster_vioso_4096x4096 = LoadTexture("../../domemaster-vioso_4096x4096.jpg");
-
-	GLuint fisheye_180_bourke =
-		LoadTexture("../../../testData/fisheye_180_bourke.jpg");
-
-	GLuint fisheye_as_equirect_180_bourke = LoadTexture(
-		"../../../testData/fisheye_as_equirect_180_bourke.jpg");
-
 	//GLuint frustumToEquirect_pass_SP =
-	//	CreateShader(ShaderSource_frustumToEquirect_vert.c_str(),
-	//		     ShaderSource_frustumToEquirect_frag.c_str());
-
-	GLuint frustumToEquirect_pass_SP =
+	renderState->stitchShaderProgram =
 		CreateShader(ShaderSource_frustumToEquirect_vert,
 			     ShaderSource_frustumToEquirect_frag);
 
-	GLuint fullscreenQuad_VAO, fullscreenQuad_VBO;
-	fullscreenQuad_VAO = CreateScreenQuadNDC(fullscreenQuad_VBO);
 
-	SDL_Event event;
-	bool run = true;
-	while (run) {
-		while (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT) {
-				run = false;
-			} else if (event.type == SDL_MOUSEWHEEL) {
-				const float zoomSpeed = 1.1f;
-				if (event.wheel.y > 0) // scroll up
-				{
-					// zoom in: enlarge scale
-					debugRenderScale *= zoomSpeed;
-					
-				} else if (event.wheel.y < 0) // scroll down
-				{
-					// Put code for handling "scroll down" here!
-					// zoom out: reduce scale
-					debugRenderScale /= zoomSpeed;
-				}
-
-				printf("renderScale: %f\n", debugRenderScale);
-
-				if (event.wheel.x > 0) // scroll right
-				{
-					// ...
-				} else if (event.wheel.x < 0) // scroll left
-				{
-					// ...
-				}
-			} else if (event.type == SDL_MOUSEMOTION) {
-				////sedMouseX = (float)event.motion.x;
-				////sedMouseY = (float)event.motion.y;
-				//graphene_vec2_init(&(renderState.mousePos_f),
-				//	(float)event.motion.x,
-				//	(float)event.motion.y);
-				//sysMousePosition = glm::vec2(
-				//	(graphene_vec2_get_x(
-				//		 &(renderState.mousePos_f)) /
-				//	 graphene_vec2_get_x(
-				//		 &(renderState.windowRes_f))),
-				//	1.0f - (graphene_vec2_get_y(&(
-				//			renderState.mousePos_f)) /
-				//		graphene_vec2_get_y(&(
-				//			renderState
-				//				.windowRes_f))));
-
-			} else if (event.type == SDL_WINDOWEVENT &&
-				   event.window.event ==
-					   SDL_WINDOWEVENT_RESIZED) {
-				graphene_vec2_init(&(renderState.windowRes_f),
-						   (float)event.window.data1,
-						   (float)event.window.data2);
-
-				//sysViewportSize = glm::vec2(
-				//	graphene_vec2_get_x(
-				//		&(renderState.windowRes_f)),
-				//	graphene_vec2_get_y(
-				//		&(renderState.windowRes_f)));
+	char *ShaderSource_textureViewer_vert =
+		clusti_loadFileContents("../../shaders/viewTexture.vert");
+	char *ShaderSource_textureViewer_frag =
+		clusti_loadFileContents("../../shaders/viewTexture.frag");
+	renderState->textureViewerShaderProgram =
+		CreateShader(ShaderSource_textureViewer_vert,
+			     ShaderSource_textureViewer_frag);
 
 
-				glBindTexture(GL_TEXTURE_2D,
-					      renderTarget_Color);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8192,
-					     4096, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-					     NULL);
-				glBindTexture(GL_TEXTURE_2D,
-					      renderTarget_Depth);
-				glTexImage2D(GL_TEXTURE_2D, 0,
-					     GL_DEPTH24_STENCIL8, 8192, 4096, 0,
-					     GL_DEPTH_STENCIL,
-					     GL_UNSIGNED_INT_24_8, NULL);
-				glBindTexture(GL_TEXTURE_2D, 0);
-			}
-		}
 
-		if (!run) {
+	GLuint backgroundTexture = LoadTexture(
+		"../../../testData/fisheye_as_equirect_180_bourke.jpg");
+
+	GLuint currentVideoSourceTexture = LoadTexture("../../../testData/RT001.png");
+
+
+	// -----------------------------------------------------------------------------------
+	// Full screen quad geometry
+
+	//GLuint fullscreenQuad_VAO, fullscreenQuad_VBO;
+	//fullscreenQuad_VAO = CreateScreenQuadNDC(fullscreenQuad_VBO);
+
+	CreateScreenQuadNDC(renderState);
+
+
+
+	// -----------------------------------------------------------------------------------
+	// render loop
+	// TODO outsource to own function renderLoop() to be called by main()
+	while (!renderState->quit) {
+
+		handleUserInput(renderState);
+
+		if (renderState->quit) {
 			break;
 		}
+
+
+		//TODO change from render-to-windo to render-to-FBO
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -339,96 +316,140 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 			GL_STENCIL_BUFFER_BIT);
 		glViewport(0, 0,
 			   (GLsizei)graphene_vec2_get_x(
-				   &(renderState.windowRes_f)),
+				   &(renderState->windowRes_f)),
 			   (GLsizei)graphene_vec2_get_y(
-				   &(renderState.windowRes_f)));
+				   &(renderState->windowRes_f)));
+
+		glUseProgram(renderState->stitchShaderProgram);
+
 
 		// RENDER
 
 		// frustumToEquirect_pass shader pass
-		glUseProgram(frustumToEquirect_pass_SP);
+		glUseProgram(renderState->stitchShaderProgram);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glActiveTexture(GL_TEXTURE0 + 0);
-		glBindTexture(GL_TEXTURE_2D, earth);
-		glUniform1i(glGetUniformLocation(frustumToEquirect_pass_SP,
-						 "oldcode_in_params.currentPlanarRendering"),
+		glBindTexture(GL_TEXTURE_2D, currentVideoSourceTexture);
+		glUniform1i(glGetUniformLocation(
+				    renderState->stitchShaderProgram,
+				    "oldcode_in_params.currentPlanarRendering"),
 			    0);
 
 		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, fisheye_as_equirect_180_bourke);
-		glUniform1i(glGetUniformLocation(frustumToEquirect_pass_SP,
-						 "oldcode_in_params.backgroundTexture"),
+		glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+		glUniform1i(glGetUniformLocation(
+				    renderState->stitchShaderProgram,
+				    "oldcode_in_params.backgroundTexture"),
 			    1);
 
 
-
-
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
+		glUniform1f(
+			glGetUniformLocation(renderState->stitchShaderProgram,
 						 "oldcode_in_params.domeRadius"),
 			    300.000000f);
-		glUniform1f(
-			glGetUniformLocation(frustumToEquirect_pass_SP,
+		glUniform1f(glGetUniformLocation(
+				    renderState->stitchShaderProgram,
 					     "oldcode_in_params.virtualScreenWidth"),
 			200.000000f);
-		glUniform1f(
-			glGetUniformLocation(frustumToEquirect_pass_SP,
+		glUniform1f(glGetUniformLocation(
+				    renderState->stitchShaderProgram,
 					     "oldcode_in_params.virtualScreenHeight"),
 			199.199997f);
-		glUniform1f(
-			glGetUniformLocation(frustumToEquirect_pass_SP,
+		glUniform1f(glGetUniformLocation(
+				    renderState->stitchShaderProgram,
 					     "oldcode_in_params.virtualScreenAzimuth"),
 			-37.689999f);
 		glUniform1f(glGetUniformLocation(
-				    frustumToEquirect_pass_SP,
+				    renderState->stitchShaderProgram,
 				    "oldcode_in_params.virtualScreenElevation"),
 			    3.600000f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
+		glUniform1f(
+			glGetUniformLocation(renderState->stitchShaderProgram,
 						 "oldcode_in_params.domeAperture"),
 			    180.000000f);
-		glUniform1f(glGetUniformLocation(frustumToEquirect_pass_SP,
+		glUniform1f(
+			glGetUniformLocation(renderState->stitchShaderProgram,
 						 "oldcode_in_params.domeTilt"),
 			    21.610001f);
 		glUniform1f(glGetUniformLocation(
-				    frustumToEquirect_pass_SP,
+				renderState->stitchShaderProgram,
 				    "oldcode_in_params.debug_previewScalefactor"),
 			    0.5f);
 		glUniform2i(
 			glGetUniformLocation(
-				frustumToEquirect_pass_SP,
+				renderState->stitchShaderProgram,
 				"oldcode_in_params.renderTargetResolution_uncropped"),
 			8192, 4096);
 
 
-
-
-
-		glBindVertexArray(fullscreenQuad_VAO);
+		// draw viewport-sized quad
+		glBindVertexArray(renderState->viewPortQuadNDC_vao);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
-		SDL_GL_SwapWindow(renderState.wnd);
+		glFlush();
+		//TODO show offscreen rendered texture to window
+
+
+		// -----------------------------------------------------------------------------------
+		// render offscreen texture scaled to window:
+
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
+			GL_STENCIL_BUFFER_BIT);
+
+		glViewport(0, 0,
+			   (GLsizei)graphene_vec2_get_x(
+				   &(renderState->windowRes_f)),
+			   (GLsizei)graphene_vec2_get_y(
+				   &(renderState->windowRes_f)));
+
+		glUseProgram(renderState->textureViewerShaderProgram);
+
+		glActiveTexture(GL_TEXTURE0 + 0);
+		glBindTexture(GL_TEXTURE_2D, currentVideoSourceTexture);
+		glUniform1i(glGetUniformLocation(
+				    renderState->textureViewerShaderProgram,
+				    "textureToShow"),
+			    0);
+
+		glUniform1f(glGetUniformLocation(
+				    renderState->textureViewerShaderProgram,
+				    "renderScale"),
+			    renderState->currentRenderScale);
+
+		// draw viewport-sized quad
+		glBindVertexArray(renderState->viewPortQuadNDC_vao);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glFlush();
+
+
+		// show image on screen
+		SDL_GL_SwapWindow(renderState->wnd);
 	}
 
 	//clusti
 	clusti_free(ShaderSource_frustumToEquirect_vert);
 	clusti_free(ShaderSource_frustumToEquirect_frag);
 
+	clusti_free(ShaderSource_textureViewer_vert);
+	clusti_free(ShaderSource_textureViewer_frag);
+
 
 	// sdl2
-	SDL_GL_DeleteContext(renderState.glContext);
-	SDL_DestroyWindow(renderState.wnd);
+	SDL_GL_DeleteContext(renderState->glContext);
+	SDL_DestroyWindow(renderState->wnd);
 	SDL_Quit();
 
 	// end of to-refactor section
 	// -----------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------
-
-
-
-
-	return renderState;
 }
 
 
@@ -450,44 +471,22 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 
 
 
-GLuint CreateScreenQuadNDC(GLuint& vbo)
+void CreateScreenQuadNDC(Clusti_State_Render *renderState)
 {
 	GLfloat sqData[] = {
-		-1,
-		-1,
-		0.0f,
-		0.0f,
-		1,
-		-1,
-		1.0f,
-		0.0f,
-		1,
-		1,
-		1.0f,
-		1.0f,
-		-1,
-		-1,
-		0.0f,
-		0.0f,
-		1,
-		1,
-		1.0f,
-		1.0f,
-		-1,
-		1,
-		0.0f,
-		1.0f,
+		-1, -1, 0.0f, 0.0f, 1, -1, 1.0f, 0.0f, 1,  1, 1.0f, 1.0f,
+		-1, -1, 0.0f, 0.0f, 1, 1,  1.0f, 1.0f, -1, 1, 0.0f, 1.0f,
 	};
 
-	GLuint vao;
+	//GLuint vao;
 
 	// create vao
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	glGenVertexArrays(1, &(renderState->viewPortQuadNDC_vao));
+	glBindVertexArray(renderState->viewPortQuadNDC_vao);
 
 	// create vbo
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glGenBuffers(1, &(renderState->viewPortQuadNDC_vbo));
+	glBindBuffer(GL_ARRAY_BUFFER, renderState->viewPortQuadNDC_vbo);
 
 	// vbo data
 	glBufferData(GL_ARRAY_BUFFER, 6 * 4 * sizeof(GLfloat), sqData, GL_STATIC_DRAW);
@@ -502,8 +501,6 @@ GLuint CreateScreenQuadNDC(GLuint& vbo)
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	return vao;
 }
 
 
@@ -544,7 +541,7 @@ GLuint CreateShader(const char* vsCode, const char* psCode)
 	glGetProgramiv(retShader, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(retShader, 512, NULL, infoLog);
-		printf("Failed to create the shader.\n");
+		printf("Failed to create the shader:\n %s\n", infoLog);
 		return 0;
 	}
 
@@ -613,3 +610,75 @@ GLuint LoadTexture(const std::string& file)
 
 
 
+
+
+
+
+void handleUserInput(Clusti_State_Render *renderState)
+{
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT) {
+			renderState->quit = true;
+		} else if (event.type == SDL_MOUSEWHEEL) {
+			const float zoomSpeed = 1.1f;
+			if (event.wheel.y > 0) // scroll up
+			{
+				// zoom in: enlarge scale
+				renderState->currentRenderScale *= zoomSpeed;
+
+			} else if (event.wheel.y < 0) // scroll down
+			{
+				// Put code for handling "scroll down" here!
+				// zoom out: reduce scale
+				renderState->currentRenderScale /= zoomSpeed;
+			}
+
+			printf("renderScale: %f\n",
+			       renderState->currentRenderScale);
+
+			if (event.wheel.x > 0) // scroll right
+			{
+				// ...
+			} else if (event.wheel.x < 0) // scroll left
+			{
+				// ...
+			}
+		} else if (event.type == SDL_MOUSEMOTION) {
+			////sedMouseX = (float)event.motion.x;
+			////sedMouseY = (float)event.motion.y;
+			//graphene_vec2_init(&(renderState.mousePos_f),
+			//	(float)event.motion.x,
+			//	(float)event.motion.y);
+			//sysMousePosition = glm::vec2(
+			//	(graphene_vec2_get_x(
+			//		 &(renderState.mousePos_f)) /
+			//	 graphene_vec2_get_x(
+			//		 &(renderState.windowRes_f))),
+			//	1.0f - (graphene_vec2_get_y(&(
+			//			renderState.mousePos_f)) /
+			//		graphene_vec2_get_y(&(
+			//			renderState
+			//				.windowRes_f))));
+
+		} else if (event.type == SDL_WINDOWEVENT &&
+			   event.window.event == SDL_WINDOWEVENT_RESIZED) {
+
+			graphene_vec2_init(&(renderState->windowRes_f),
+					   (float)event.window.data1,
+					   (float)event.window.data2);
+
+			//probably obsolete
+			//glBindTexture(GL_TEXTURE_2D,
+			//	      renderState->renderTargetTexture_Color);
+			//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8192, 4096, 0,
+			//	     GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+			//glBindTexture(GL_TEXTURE_2D,
+			//	      renderState->renderTargetTexture_Depth);
+			//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8,
+			//	     8192, 4096, 0, GL_DEPTH_STENCIL,
+			//	     GL_UNSIGNED_INT_24_8, NULL);
+			//glBindTexture(GL_TEXTURE_2D, 0);
+		}
+	}
+}

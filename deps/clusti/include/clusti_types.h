@@ -323,19 +323,6 @@ struct Clusti_State_Parsing {
 	///* rest t.b.d.*/
 };
 
-/**
- * @brief Main object containing all the relevant data
-*/
-struct Clusti {
-	Clusti_State_Parsing parsingState;
-
-	Clusti_Params_Stitching stitchingConfig;
-
-	//  t.b.d.
-};
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -417,24 +404,48 @@ struct Clusti_State_Render {
 
 	// GL geometry for drawing a "full screen quad"
 	GLuint viewPortQuadNDC_vao;
-	GLuint viewPortQuadNCD_vbo;
+	GLuint viewPortQuadNDC_vbo;
 
 	// For later use:
 	// offscreen rendertarget for blend mask generation:
 	GLuint fbo;
-	//probably unused:
+	//canvas to render full resolution independently from window sizes
 	GLuint renderTargetTexture_Color;
+	// not sure if needed for this purpose, but better safe than sorry
+	GLuint renderTargetRBO_Depth;
+	// coverage map: single channel unsigned int
+	// TODO evaluate fragment vs compute shader options
+	GLuint renderTargetTexture_Integer;
+	// for one-channel blend map generation, resolution of video source
 	GLuint renderTargetTexture_Graymap;
-	GLuint computeIntBuffer;
-	// not sure if needed for this purpose
-	GLuint renderTargetTexture_Depth;
+
 
 	// render target(s)
 	Clusti_State_Render_VideoSink *videoSinks;
 
 	// video source(s)
 	Clusti_State_Render_VideoSource *videoSources;
+
+	bool quit;
+	float currentRenderScale;
 };
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/// @brief Main object containing all the relevant data
+struct Clusti {
+	Clusti_State_Parsing parsingState;
+
+	Clusti_Params_Stitching stitchingConfig;
+
+	Clusti_State_Render renderState;
+
+	//  t.b.d.
+};
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 
 

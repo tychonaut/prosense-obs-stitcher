@@ -1,12 +1,12 @@
 #version 330
 
 layout(location = 0) in vec4 in_position;
-layout(location = 1) in vec4 in_texcoords;
+layout(location = 1) in vec4 in_texCoords;
 
-out vec4 texcoords;
+out vec4 texCoords;
 
 void main()
 {
     gl_Position =  in_position;
-    texcoords = in_texcoords;
+    texCoords = in_texCoords;
 }

@@ -42,13 +42,13 @@ char *clusti_loadFileContents(char const *configPath);
 			       __FILE__, __LINE__, __FUNCTION__)
 
 void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
-			     const char *file, int line, const char *func);
+			     char const *file, int line, const char *func);
 
 #define clusti_free(PTR) \
 	clusti_free_internal(PTR, __FILE__, __LINE__, __FUNCTION__)
 
 void clusti_free_internal(void *ptr, const char *file, int line,
-			  const char *func);
+			  char const *func);
 // ----------------------------------------------------------------------------
 
 #endif //CLUSTI_H

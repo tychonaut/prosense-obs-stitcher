@@ -10,6 +10,7 @@
 #include <stdlib.h> // calloc
 #include <stdio.h>  // printf
 #include <string.h> // strncpy_s
+#include <ctype.h>  // tolower
 
 #include <assert.h> // assert
 #include <stdbool.h> // bool
@@ -43,6 +44,7 @@ typedef struct Clusti_DoublyLinkedMemoryChunkListItem
 struct Clusti_MemoryRegistry {
 	long numAllocations;
 	long totalUsedCPUMemory;
+
 	Clusti_DoublyLinkedMemoryChunkListItem *firstMemoryItem;
 	Clusti_DoublyLinkedMemoryChunkListItem *lastMemoryItem;
 };
@@ -50,7 +52,8 @@ struct Clusti_MemoryRegistry {
 struct Clusti_MemoryChunk {
 	void *data;
 	long sizeInBytes;
-	//char *info;
+	char const *filename;
+	int lineNumber;
 };
 
 struct Clusti_DoublyLinkedMemoryChunkListItem {
@@ -65,7 +68,8 @@ struct Clusti_DoublyLinkedMemoryChunkListItem {
 // internal function  forwards
 
 
-void clusti_mem_registerNewAllocation(void *ptr, size_t sizeInBytes);
+void clusti_mem_registerNewAllocation(void *ptr, size_t sizeInBytes,
+				      const char *file, int line);
 void clusti_mem_unregisterAllocation(void *ptr);
 
 // Helper to maintain doubly linked list that tracks allocations;
@@ -185,6 +189,7 @@ void clusti_mem_deinit()
 
 	assert(g_clustiStatus.memoryRegistry->numAllocations == 0);
 	assert(g_clustiStatus.memoryRegistry->totalUsedCPUMemory == 0);
+
 	assert(g_clustiStatus.memoryRegistry->firstMemoryItem == NULL);
 	assert(g_clustiStatus.memoryRegistry->lastMemoryItem == NULL);
 
@@ -194,12 +199,14 @@ void clusti_mem_deinit()
 	assert(g_clustiStatus.memoryRegistry == NULL);
 }
 
-void clusti_mem_registerNewAllocation(void *ptr, size_t sizeInBytes)
+void clusti_mem_registerNewAllocation(void *ptr, size_t sizeInBytes,
+				      const char *file, int line)
 {
 	assert(sizeInBytes > 0);
 	assert("mem inited" && g_clustiStatus.memoryRegistry != NULL);
-	g_clustiStatus.memoryRegistry->numAllocations += 1;
-	g_clustiStatus.memoryRegistry->totalUsedCPUMemory += sizeInBytes;
+	g_clustiStatus.memoryRegistry->numAllocations += (long) 1;
+	g_clustiStatus.memoryRegistry->totalUsedCPUMemory += (long) sizeInBytes;
+
 
 	Clusti_DoublyLinkedMemoryChunkListItem *newItem =
 		calloc(1, sizeof(Clusti_DoublyLinkedMemoryChunkListItem));
@@ -213,7 +220,9 @@ void clusti_mem_registerNewAllocation(void *ptr, size_t sizeInBytes)
 	assert(newItem->next == NULL);
 
 	newItem->memoryChunk.data = ptr;
-	newItem->memoryChunk.sizeInBytes = sizeInBytes;
+	newItem->memoryChunk.sizeInBytes = (long) sizeInBytes;
+	newItem->memoryChunk.filename = file;
+	newItem->memoryChunk.lineNumber = line;
 
 	Clusti_DoublyLinkedMemoryChunkListItem *first =
 		g_clustiStatus.memoryRegistry->firstMemoryItem;
@@ -303,7 +312,7 @@ Clusti_DoublyLinkedMemoryChunkListItem *clusti_findMemoryItem(void *ptr)
 }
 
 void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
-			     const char *file, int line, const char *func)
+			     char const *file, int line, const char *func)
 {
 	void *p = calloc(numInstances, numBytesPerInstance);
 
@@ -317,8 +326,9 @@ void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
 	       (long long)numBytesPerInstance * (long long)numInstances);
 
 	/*Link List functionality goes in here*/
-	clusti_mem_registerNewAllocation(p, (long)numBytesPerInstance *
-						    (long)numInstances);
+	clusti_mem_registerNewAllocation(
+		p, (size_t)numBytesPerInstance * (size_t)numInstances, file,
+		line);
 
 	clusti_mem_printSummary();
 
@@ -326,7 +336,7 @@ void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
 }
 
 void clusti_free_internal(void *ptr, const char *file, int line,
-			  const char *func)
+			  char const *func)
 {
 	if (ptr == NULL) {
 		return; // nothing to free
@@ -345,13 +355,14 @@ void clusti_mem_printItem(int index, int numTotalItems,
 {
 	assert(item);
 
-	printf("Item #%d/%d: num bytes allocated: %d;\n", index, numTotalItems,
-	       item->memoryChunk.sizeInBytes);
+	printf("Item #%d/%d: num bytes allocated: %d; Alloc'ed in %s, line %d;\n", index, numTotalItems,
+	       item->memoryChunk.sizeInBytes, item->memoryChunk.filename, item->memoryChunk.lineNumber);
 }
 
 void clusti_mem_printSummary()
 {
 	assert(g_clustiStatus.memoryRegistry);
+	printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 	printf("Clusti Memory summary:\n");
 	printf("Total allocated items: %d;\n",
 	       g_clustiStatus.memoryRegistry->numAllocations);
@@ -371,4 +382,6 @@ void clusti_mem_printSummary()
 		index += 1;
 		current = current->next;
 	}
+	printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+
 }

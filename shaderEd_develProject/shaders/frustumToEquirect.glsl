@@ -21,15 +21,17 @@
 
 //{
 // a bug in ShaderEd demands sampler uniforms on top and outside of structs :C
-uniform sampler2D oldParams_in_bgt;
-uniform sampler2D oldParams_in_planarRend;
-
 
 uniform sampler2D sinkParams_in_backgroundTexture;
-
 uniform sampler2D sourceParams_in_currentPlanarRendering;
+
 uniform sampler2D sourceParams_in_warpLUT;
 uniform sampler2D sourceParams_in_blendMask;
+
+// even commented this screws up ShaderEd's parser
+//uniform sampler2D oldParams_in_bgt;
+//uniform sampler2D oldParams_in_planarRend;
+
 //}
 
 
@@ -115,7 +117,7 @@ struct FS_SinkParams_in {
     mat4 sceneRotationMatrix;
 };
 
-uniform FS_SinkParams_in     sinkParams_in;
+uniform FS_SinkParams_in sinkParams_in;
 
 
 struct FS_SourceParams_in {
@@ -142,7 +144,7 @@ struct FS_SourceParams_in {
     //sampler2D blendMask;
 };
 
-uniform FS_SourceParams_in   sourceParams_in;
+uniform FS_SourceParams_in sourceParams_in;
 
 
 
@@ -237,7 +239,20 @@ layout(location = 0) out vec4 out_color;
 // main function impl.
 void main()
 {
-    /*
+    vec2 textCoord_backGroundTexture = gl_FragCoord.xy / sinkParams_in.resolution.xy;
+    
+    vec4 backGroundColor = 
+        vec4(texture(sinkParams_in_backgroundTexture,
+                     textCoord_backGroundTexture.xy).xyz, 1.0);
+    // some non-black debug background color to spot black bars:
+    if(all(lessThan(backGroundColor.xyz, vec3(0.1))))
+    {
+        backGroundColor.xyz = vec3(0.0,0.25,0.0);
+    }
+    
+    
+    
+    
     float azi_0_1 = gl_FragCoord.x / sinkParams_in.resolution.x;
     float ele_0_1 = gl_FragCoord.y / sinkParams_in.resolution.y;
     
@@ -249,36 +264,24 @@ void main()
     float ele_pmPih = (ele_0_1 * c_PI) - c_PIH;
     
     vec2 aziEle = vec2(azi_0_2pi, ele_pmPih);
-    */
-
+    
+    vec3 dir_cartesian = aziEleToCartesian3D(aziEle);
+    
+    vec4 texCoords_projected = sourceParams_in.frustum_viewProjectionMatrix 
+        * vec4(dir_cartesian.xyz, 1.0);
+        
+    // Div by W coord
+    //vec4 texCoords_NDC = texCoords_projected
+    
+    
     
     // old code --------------------------
-    
-    vec2 tc = gl_FragCoord.xy / vec2(oldParams_in.renderTargetResolution_uncropped);
 
-    //debug/workaround
-    //tc /= oldcode_in_params.debug_previewScalefactor;
-
-	if(tc.x > 1 || tc.y > 1 )
-	{
-		vec4 debugColor = vec4 (1,0,1,1);
-		out_color = debugColor;
-		return;
-	}
-
-	vec4 backGroundColor = vec4(texture(oldParams_in_bgt, tc).xyz,1);
-    // vec4 backGroundColor = vec4(texture(oldParams_in_bgt, tc).xyzw);
-    if(all(lessThan(backGroundColor.xyz, vec3(0.1))))
-    {
-        backGroundColor.xyz = vec3(0.0,0.25,0.0);
-    }
-    
-	vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, tc);
-
+    vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, textCoord_backGroundTexture);
     out_color = screenPixelColor + backGroundColor;
     
     
-    //debug multiple samplers (shaderEd bug); works
+   //debug multiple samplers (shaderEd bug); works
    /*
    out_color.r += vec4(texture(sinkParams_in_backgroundTexture, tc).xyz,1).r; 
    out_color.r += vec4(texture(sourceParams_in_currentPlanarRendering, tc).xyz,1).r; 
@@ -465,7 +468,7 @@ vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords)
 		return backgroundColor;
 	}
 	
-	return vec4(texture(oldParams_in_planarRend,localTexCoords).xyz,1);
+	return vec4(texture(sourceParams_in_currentPlanarRendering,localTexCoords).xyz,1);
 }
 
 

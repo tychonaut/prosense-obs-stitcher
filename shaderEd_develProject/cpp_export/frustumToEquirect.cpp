@@ -195,7 +195,8 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 
 	//sampler2D
 	currULoc = glGetUniformLocation(currProg,
-					"sinkParams_in.backgroundTexture");
+					//"sinkParams_in.backgroundTexture");
+					"sinkParams_in_backgroundTexture");
 	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
 	glUniform1i(currULoc, 0);
@@ -213,7 +214,10 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 
 	//sampler2D 
 	currULoc = glGetUniformLocation(
-		currProg, "sourceParams_in.currentPlanarRendering");
+		currProg,
+		//"sourceParams_in.currentPlanarRendering");
+		"sourceParams_in_currentPlanarRendering");
+
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
 	glUniform1i(currULoc, 1);
@@ -245,21 +249,22 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 
 
 	// old uniforms: -----------------------------------
-	glActiveTexture(GL_TEXTURE0 + 0);
-	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
-	glUniform1i(glGetUniformLocation(
-			    renderState->stitchShaderProgram,
-			    "oldParams_in_planarRend"),
-			    //"oldParams_in.currentPlanarRendering"),
-		    0);
 
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
-	glUniform1i(
-		glGetUniformLocation(renderState->stitchShaderProgram,
-				     //"oldParams_in.backgroundTexture"),
-				     "oldParams_in_bgt"),
-		    1);
+	//glActiveTexture(GL_TEXTURE0 + 0);
+	//glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
+	//glUniform1i(glGetUniformLocation(
+	//		    renderState->stitchShaderProgram,
+	//		    "oldParams_in_planarRend"),
+	//		    //"oldParams_in.currentPlanarRendering"),
+	//	    0);
+
+	//glActiveTexture(GL_TEXTURE0 + 1);
+	//glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
+	//glUniform1i(
+	//	glGetUniformLocation(renderState->stitchShaderProgram,
+	//			     //"oldParams_in.backgroundTexture"),
+	//			     "oldParams_in_bgt"),
+	//	    1);
 
 	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
 					 "oldParams_in.domeRadius"),

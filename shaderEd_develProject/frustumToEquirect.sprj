@@ -250,21 +250,13 @@
 		<object type="texture" path="..\testData\RT001.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
 			<bind slot="1" name="frustumToEquirect_pass" />
 		</object>
-		<object type="rendertexture" name="frustumToEquirectRenTex" fsize="8192,4096" clear="true" r="0.556862772" g="0.125490203">
+		<object type="rendertexture" name="frustumToEquirectRenTex" fsize="8192,4096" clear="true">
 			<bind slot="0" name="showResultPass" />
 		</object>
-		<object type="texture" path="..\testData\RT002.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
-			<bind slot="2" name="frustumToEquirect_pass" />
-		</object>
-		<object type="texture" path="..\testData\RT003.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
-			<bind slot="3" name="frustumToEquirect_pass" />
-		</object>
-		<object type="texture" path="..\testData\RT004.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
-			<bind slot="4" name="frustumToEquirect_pass" />
-		</object>
-		<object type="texture" path="..\testData\RT005.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
-			<bind slot="5" name="frustumToEquirect_pass" />
-		</object>
+		<object type="texture" path="..\testData\RT002.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+		<object type="texture" path="..\testData\RT003.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+		<object type="texture" path="..\testData\RT004.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+		<object type="texture" path="..\testData\RT005.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
 	</objects>
 	<cameras>
 		<camera name="Frustum0">
@@ -296,6 +288,7 @@
 		</camera>
 	</cameras>
 	<settings>
+		<entry type="property" name="frustumToEquirectRenTex" item="rt" />
 		<entry type="file" name="frustumToEquirect_pass" shader="vs" />
 		<entry type="file" name="frustumToEquirect_pass" shader="ps" />
 		<entry type="file" name="showResultPass" shader="vs" />
@@ -326,9 +319,9 @@
 		<entry type="pinned" name="sourceParams_in.do3DImageWarp" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.doBlending" owner="frustumToEquirect_pass" />
 		<entry type="camera" fp="true">
-			<positionX>3.57413554</positionX>
-			<positionY>2.79636788</positionY>
-			<positionZ>22.4188614</positionZ>
+			<positionX>3.60522914</positionX>
+			<positionY>2.82433009</positionY>
+			<positionZ>22.570343</positionZ>
 			<yaw>11.6000004</yaw>
 			<pitch>-10.25</pitch>
 		</entry>
@@ -346,8 +339,10 @@
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="174" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="84" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="130" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="505" use_cond="false" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="504" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="527" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="526" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="525" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="524" use_cond="false" cond="" enabled="true" />
 	</settings>
 	<plugindata />
 </project>

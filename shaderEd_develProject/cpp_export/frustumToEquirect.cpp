@@ -13,11 +13,11 @@
 #include <GL/gl.h>
 #endif
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/euler_angles.hpp>
+//#include <glm/glm.hpp>
+//#include <glm/gtc/matrix_transform.hpp>
+//#include <glm/gtc/type_ptr.hpp>
+//#define GLM_ENABLE_EXPERIMENTAL
+//#include <glm/gtx/euler_angles.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -50,30 +50,28 @@ extern "C" {
 
 Clusti_State_Render createRenderState(Clusti const *stitcherConfig);
 
+//generate VAO and VBO
+GLuint CreateScreenQuadNDC(GLuint &vbo);
 
 GLuint LoadTexture(const std::string &filename);
 
-void CreateVAO(GLuint &geoVAO, GLuint geoVBO);
 GLuint CreateShader(const char *vsCode, const char *psCode);
-GLuint CreateScreenQuadNDC(GLuint &vbo);
 
 
-//GLuint CreatePlane(GLuint &vbo, float sx, float sy);
-//GLuint CreateCube(GLuint &vbo, float sx, float sy, float sz);
 
 // -----------------------------------------------------------------------------------
 
 
 
 
-const GLenum FBO_Buffers[] = {GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1,
-			      GL_COLOR_ATTACHMENT2,  GL_COLOR_ATTACHMENT3,
-			      GL_COLOR_ATTACHMENT4,  GL_COLOR_ATTACHMENT5,
-			      GL_COLOR_ATTACHMENT6,  GL_COLOR_ATTACHMENT7,
-			      GL_COLOR_ATTACHMENT8,  GL_COLOR_ATTACHMENT9,
-			      GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11,
-			      GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13,
-			      GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15};
+//const GLenum FBO_Buffers[] = {GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1,
+//			      GL_COLOR_ATTACHMENT2,  GL_COLOR_ATTACHMENT3,
+//			      GL_COLOR_ATTACHMENT4,  GL_COLOR_ATTACHMENT5,
+//			      GL_COLOR_ATTACHMENT6,  GL_COLOR_ATTACHMENT7,
+//			      GL_COLOR_ATTACHMENT8,  GL_COLOR_ATTACHMENT9,
+//			      GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11,
+//			      GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13,
+//			      GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15};
 
 
 
@@ -106,13 +104,6 @@ int main(int argc, char **argv)
 
 Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 {
-	//{ some non-C variables thate hopefully turn out obsolete
-	//  for our purposes
-
-	//std::chrono::time_point<std::chrono::system_clock> timerStart;
-	//timerStart = std::chrono::system_clock::now();
-	//}
-
 
 	Clusti_State_Render renderState;
 
@@ -146,6 +137,7 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 	float const debugRenderScale =
 		(stitcherConfig->stitchingConfig.videoSinks[0]
 			 .debug_renderScale);
+
 	graphene_vec2_init(
 		&(renderState.windowRes_f),
 		(float)(renderState.renderTargetRes.x) * debugRenderScale,
@@ -381,10 +373,10 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 
 
 
+
+
 		glBindVertexArray(fullscreenQuad_VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
 
 
 		SDL_GL_SwapWindow(renderState.wnd);
@@ -427,31 +419,6 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 
 
 
-
-void CreateVAO(GLuint& geoVAO, GLuint geoVBO)
-{
-	if (geoVAO != 0)
-		glDeleteVertexArrays(1, &geoVAO);
-
-	glGenVertexArrays(1, &geoVAO);
-	glBindVertexArray(geoVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, geoVBO);
-
-	// POSITION
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 18 * sizeof(float), (void*)(0 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(0);
-
-	// NORMAL
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 18 * sizeof(float), (void*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-
-	// TEXCOORD
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 18 * sizeof(float), (void*)(6 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(2);
-
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
 
 
 GLuint CreateScreenQuadNDC(GLuint& vbo)

@@ -342,10 +342,30 @@ struct Clusti {
 // RenderState
 
 
-// forwards to omit dependency to SDL
+//{ HACK: forwards to omit dependency to SDL
+//  TODO remove this stuff from library when giong to OBS
 struct SDL_Window;
 typedef struct SDL_Window SDL_Window;
 typedef void *SDL_GLContext;
+//}
+
+
+//{ HACK: forwards to omit dependency to OpenGL
+//  TODO link clusti against OpenGL and GLEW
+//typedef unsigned int GLenum;
+//typedef unsigned int GLbitfield;
+typedef unsigned int GLuint;
+//typedef int GLint;
+typedef int GLsizei;
+typedef unsigned char GLboolean;
+//typedef signed char GLbyte;
+//typedef short GLshort;
+//typedef unsigned char GLubyte;
+//typedef unsigned short GLushort;
+//typedef unsigned long GLulong;
+typedef float GLfloat;
+typedef double GLdouble;
+//}
 
 
 struct Clusti_State_Render;
@@ -357,24 +377,56 @@ struct Clusti_State_Render_VideoSource;
 typedef struct Clusti_State_Render_VideoSource Clusti_State_Render_VideoSource;
 
 struct Clusti_State_Render_VideoSink {
-	int dummy;
-	//TODO clean up openGL handle litter
+
+	GLuint backgroundTexture;
+
+
+	// For later use:
+	// for blend mask generation:
+	// Integer Texture encoding canvas coverage as bit mask;
+	// Implemented as compute shader, t.b.d;
+	GLuint videoSourceCoverageTexture;
 };
 
 struct Clusti_State_Render_VideoSource {
-	int dummy;
-	//TODO clean up openGL handle litter
+
+	GLuint sourceTexture;
+
+	GLuint warpTexture;
+
+
+	GLuint blendTexture;
 };
 
 
 struct Clusti_State_Render {
+
 	SDL_Window *wnd;
 	SDL_GLContext glContext;
 
-	Clusti_ivec2 renderTargetRes;
+	Clusti_ivec2 renderTargetRes; 
 	graphene_vec2_t windowRes_f;
-	// graphene_vec2_t viewportRes_f;
+	//graphene_vec2_t viewportRes_f;
 	//graphene_vec2_t mousePos_f;
+
+
+	GLuint stitchShaderProgram;
+	// For later use:
+	GLuint blendMaskGenShaderProgram;
+
+	// GL geometry for drawing a "full screen quad"
+	GLuint viewPortQuadNDC_vao;
+	GLuint viewPortQuadNCD_vbo;
+
+	// For later use:
+	// offscreen rendertarget for blend mask generation:
+	GLuint fbo;
+	//probably unused:
+	GLuint renderTargetTexture_Color;
+	GLuint renderTargetTexture_Graymap;
+	GLuint computeIntBuffer;
+	// not sure if needed for this purpose
+	GLuint renderTargetTexture_Depth;
 
 	// render target(s)
 	Clusti_State_Render_VideoSink *videoSinks;

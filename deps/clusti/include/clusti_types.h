@@ -405,12 +405,13 @@ struct Clusti_State_Render {
 	SDL_GLContext glContext;
 
 	Clusti_ivec2 renderTargetRes; 
-	graphene_vec2_t windowRes_f;
+	graphene_vec2_t windowRes_f; 
 	//graphene_vec2_t viewportRes_f;
 	//graphene_vec2_t mousePos_f;
 
 
 	GLuint stitchShaderProgram;
+	GLuint textureViewerShaderProgram;
 	// For later use:
 	GLuint blendMaskGenShaderProgram;
 

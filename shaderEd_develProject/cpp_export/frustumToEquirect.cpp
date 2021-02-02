@@ -122,6 +122,11 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // double buffering
 
+	if (stitcherConfig->stitchingConfig.numVideoSinks != 1) {
+		printf("Only one video sink currently supported.\n");
+		exit(-1);
+
+	}
 
 	renderState.renderTargetRes = {
 		.x = (stitcherConfig->stitchingConfig.videoSinks[0]
@@ -134,10 +139,11 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 			      .cropRectangle.min.y)
 	};
 
-	float const debugRenderScale =
+	float debugRenderScale =
 		(stitcherConfig->stitchingConfig.videoSinks[0]
 			 .debug_renderScale);
 
+	// window can be smaller than render target
 	graphene_vec2_init(
 		&(renderState.windowRes_f),
 		(float)(renderState.renderTargetRes.x) * debugRenderScale,
@@ -254,6 +260,29 @@ Clusti_State_Render createRenderState(Clusti const *stitcherConfig)
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_QUIT) {
 				run = false;
+			} else if (event.type == SDL_MOUSEWHEEL) {
+				const float zoomSpeed = 1.1f;
+				if (event.wheel.y > 0) // scroll up
+				{
+					// zoom in: enlarge scale
+					debugRenderScale *= zoomSpeed;
+					
+				} else if (event.wheel.y < 0) // scroll down
+				{
+					// Put code for handling "scroll down" here!
+					// zoom out: reduce scale
+					debugRenderScale /= zoomSpeed;
+				}
+
+				printf("renderScale: %f\n", debugRenderScale);
+
+				if (event.wheel.x > 0) // scroll right
+				{
+					// ...
+				} else if (event.wheel.x < 0) // scroll left
+				{
+					// ...
+				}
 			} else if (event.type == SDL_MOUSEMOTION) {
 				////sedMouseX = (float)event.motion.x;
 				////sedMouseY = (float)event.motion.y;

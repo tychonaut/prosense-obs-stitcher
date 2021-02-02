@@ -39,9 +39,7 @@ struct Clusti_Status {
 
 
 void clusti_status_declareInitialized();
-// pass only "constant" strings here, no malloc'ed, else mem leak!
-// (Reason: if the message were to be copied internally, this could result
-// in an infinite descent of error raising in allocation function!)
+// moved to public interface (clusti.h)
 void clusti_status_declareError(char const *message);
 void clusti_status_declareDeinitialized();
 

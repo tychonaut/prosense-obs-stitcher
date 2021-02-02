@@ -159,6 +159,7 @@ void main();
 //-------------------------------------
 // little helpers:
 float angleToRadians(float angle);
+vec3  aziEleToCartesian3D(vec2 aziEle_rads);
 
 
 //-------------------------------------
@@ -166,8 +167,8 @@ float angleToRadians(float angle);
 
 // TODO
 
-// old but reusable code:
-vec3 aziEleToCartesian3D(OldCode_FS_input s, vec2 aziEle_rads);
+
+
 
 //-------------------------------------
 // old and possibly obsolete code:
@@ -211,6 +212,21 @@ layout(location = 0) out vec4 out_color;
 // main function impl.
 void main()
 {
+    float azi_0_1 = gl_FragCoord.x / sinkParams_in.resolution.x;
+    float ele_0_1 = gl_FragCoord.y / sinkParams_in.resolution.y;
+    
+    float azi_0_2pi = azi_0_1 * c_2PI;
+    // elevation in [-pi/2 .. +pi/2]
+    // elevation == +pi/2 --> north or +y axis, respectively
+    // elevation ==  0    --> equator
+    // elevation == -pi/2 --> south or -y axis, respectively
+    float ele_pmPih = (ele_0_1 * c_PI) - c_PIH;
+    
+    vec2 aziEle = vec2(azi_0_2pi, ele_pmPih);
+
+    
+    // old code --------------------------
+    
     vec2 tc = gl_FragCoord.xy / vec2(oldcode_in_params.renderTargetResolution_uncropped);
 
     //debug/workaround
@@ -226,7 +242,6 @@ void main()
 	vec4 backGroundColor = vec4(texture(oldcode_in_params.backgroundTexture, tc).xyz,1);
 
 	vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldcode_in_params, tc);
-
 
     out_color = screenPixelColor + backGroundColor;
 }
@@ -252,15 +267,14 @@ float angleToRadians(float angle)
 
 
 // ----------------------------------------------------------------------------
-//takes a pixel's azi/ele and calculates a 3D coordinate corresponding 
-// to a point on the physical dome (dome radius is respected, dome tilt not,
-// because we want observer coordinates, not dome-local coordinates)
+//takes a pixel's azi/ele and calculates unit length 3D coordinate 
 // Coordinate system is described in comments to texCoordsToAziEle()
-vec3 aziEleToCartesian3D(OldCode_FS_input s, vec2 aziEle_rads)
+vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 {
 	
 	// just for readability:
-	float r = s.domeRadius;
+	// float r = s.domeRadius;
+    float r = 1.0f;
 	float azi = aziEle_rads.x;
 	float ele = aziEle_rads.y;
 	
@@ -339,10 +353,10 @@ vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords)
 			angleToRadians(virtualScreenAzimuth_shifted),
 			angleToRadians(virtualScreenElevation_shifted)
 		);
-	vec3 virtualScreenCenterPos_cartesian = aziEleToCartesian3D(s,virtualScreenAziEle_radians);
+	vec3 virtualScreenCenterPos_cartesian = aziEleToCartesian3D(virtualScreenAziEle_radians);
 	
 	vec2 pixel_aziEle_radians = oldCode_FishEyeTexCoordsToAziEle_radians(s, tex_coords);
-	vec3 pixelPos_cartesian_onWorld = aziEleToCartesian3D(s,pixel_aziEle_radians);
+	vec3 pixelPos_cartesian_onWorld = aziEleToCartesian3D(pixel_aziEle_radians);
 	
 	
 	

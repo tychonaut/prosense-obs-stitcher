@@ -262,7 +262,7 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	glUniform1f(
 		glGetUniformLocation(renderState->stitchShaderProgram,
 				     "oldcode_in_params.virtualScreenWidth"),
-		200.000000f);
+		600.000000f);
 	glUniform1f(
 		glGetUniformLocation(renderState->stitchShaderProgram,
 				     "oldcode_in_params.virtualScreenHeight"),

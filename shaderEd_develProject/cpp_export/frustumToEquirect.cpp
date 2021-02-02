@@ -308,27 +308,27 @@ void createRenderState(Clusti *clusti)
 		}
 
 
+		// RENDER
+
+
 		//TODO change from render-to-windo to render-to-FBO
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, renderState->fbo);
+
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
 			GL_STENCIL_BUFFER_BIT);
 		glViewport(0, 0,
-			   (GLsizei)graphene_vec2_get_x(
-				   &(renderState->windowRes_f)),
-			   (GLsizei)graphene_vec2_get_y(
-				   &(renderState->windowRes_f)));
+			   renderState->renderTargetRes.x,
+			   renderState->renderTargetRes.y);
 
 		glUseProgram(renderState->stitchShaderProgram);
-
-
-		// RENDER
 
 		// frustumToEquirect_pass shader pass
 		glUseProgram(renderState->stitchShaderProgram);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
 		glActiveTexture(GL_TEXTURE0 + 0);
 		glBindTexture(GL_TEXTURE_2D, currentVideoSourceTexture);
@@ -373,10 +373,6 @@ void createRenderState(Clusti *clusti)
 			glGetUniformLocation(renderState->stitchShaderProgram,
 						 "oldcode_in_params.domeTilt"),
 			    21.610001f);
-		glUniform1f(glGetUniformLocation(
-				renderState->stitchShaderProgram,
-				    "oldcode_in_params.debug_previewScalefactor"),
-			    0.5f);
 		glUniform2i(
 			glGetUniformLocation(
 				renderState->stitchShaderProgram,
@@ -412,7 +408,8 @@ void createRenderState(Clusti *clusti)
 		glUseProgram(renderState->textureViewerShaderProgram);
 
 		glActiveTexture(GL_TEXTURE0 + 0);
-		glBindTexture(GL_TEXTURE_2D, currentVideoSourceTexture);
+		//glBindTexture(GL_TEXTURE_2D, currentVideoSourceTexture);
+		glBindTexture(GL_TEXTURE_2D, renderState->renderTargetTexture_Color);
 		glUniform1i(glGetUniformLocation(
 				    renderState->textureViewerShaderProgram,
 				    "textureToShow"),
@@ -426,6 +423,8 @@ void createRenderState(Clusti *clusti)
 		// draw viewport-sized quad
 		glBindVertexArray(renderState->viewPortQuadNDC_vao);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glUseProgram(0);
 
 		glFlush();
 
@@ -645,6 +644,7 @@ void handleUserInput(Clusti_State_Render *renderState)
 				// ...
 			}
 		} else if (event.type == SDL_MOUSEMOTION) {
+
 			////sedMouseX = (float)event.motion.x;
 			////sedMouseY = (float)event.motion.y;
 			//graphene_vec2_init(&(renderState.mousePos_f),

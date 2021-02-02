@@ -42,7 +42,7 @@ struct FS_SinkParams_in {
     sampler2D backgroundTexture;
     
     int index;
-    float debug_renderScale;
+    // float debug_renderScale;
     
     // resolution the whole 4pi steradian panorama image would have;
     ivec2 resolution_virtual; 
@@ -149,7 +149,7 @@ struct OldCode_FS_input {
 	
 	
 	//workaround for shaderEd development: scale preview;
-	float debug_previewScalefactor;
+	//float debug_previewScalefactor;
 };
 
 
@@ -220,7 +220,7 @@ void main()
     vec2 tc = gl_FragCoord.xy / vec2(oldcode_in_params.renderTargetResolution_uncropped);
 
     //debug/workaround
-    tc /= oldcode_in_params.debug_previewScalefactor;
+    //tc /= oldcode_in_params.debug_previewScalefactor;
 
 	if(tc.x > 1 || tc.y > 1 )
 	{

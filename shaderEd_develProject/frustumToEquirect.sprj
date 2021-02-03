@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project version="2">
 	<pipeline>
-		<pass name="showResultPass" type="shader" active="true">
+		<pass name="showResultPass" type="shader" active="false">
 			<shader type="vs" path="shaders\viewTexture.vert" entry="main" />
 			<shader type="ps" path="shaders\viewTexture.frag" entry="main" />
 			<inputlayout>
@@ -288,11 +288,11 @@
 		</camera>
 	</cameras>
 	<settings>
-		<entry type="property" name="frustumToEquirectRenTex" item="rt" />
-		<entry type="file" name="frustumToEquirect_pass" shader="vs" />
-		<entry type="file" name="frustumToEquirect_pass" shader="ps" />
+		<entry type="property" name="frustumToEquirect_pass" item="pipe" />
 		<entry type="file" name="showResultPass" shader="vs" />
 		<entry type="file" name="showResultPass" shader="ps" />
+		<entry type="file" name="frustumToEquirect_pass" shader="vs" />
+		<entry type="file" name="frustumToEquirect_pass" shader="ps" />
 		<entry type="pinned" name="offset_pixels" owner="showResultPass" />
 		<entry type="pinned" name="renderScale" owner="showResultPass" />
 		<entry type="pinned" name="oldParams_in.domeRadius" owner="frustumToEquirect_pass" />
@@ -339,10 +339,23 @@
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="174" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="84" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="130" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="527" use_cond="false" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="526" use_cond="false" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="525" use_cond="false" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="524" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="629" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="349" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="628" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="348" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="627" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="347" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="626" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="346" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="625" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="345" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="624" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="344" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="623" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="343" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="622" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="621" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="342" use_cond="false" cond="" enabled="true" />
 	</settings>
 	<plugindata />
 </project>

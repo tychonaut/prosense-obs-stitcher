@@ -345,7 +345,7 @@ void *clusti_calloc_internal(size_t numInstances, size_t numBytesPerInstance,
 		p, (size_t)numBytesPerInstance * (size_t)numInstances, file,
 		line);
 
-	clusti_mem_printSummary();
+	//clusti_mem_printSummary();
 
 	return p;
 }
@@ -359,7 +359,7 @@ void clusti_free_internal(void *ptr, const char *file, int line,
 
 	clusti_mem_unregisterAllocation(ptr);
 
-	clusti_mem_printSummary();
+	//clusti_mem_printSummary();
 
 	free(ptr);
 }

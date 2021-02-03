@@ -176,11 +176,13 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 
 	Clusti_Params_VideoSink const *sink_config =
 		&config->videoSinks[videoSinkIndex];
+
 	Clusti_Params_VideoSource const *source_config =
 		&config->videoSources[videoSourceIndex];
 
 	Clusti_State_Render_VideoSink const *sink_render =
-		&renderState->videoSinks[videoSinkIndex]; 
+		&renderState->videoSinks[videoSinkIndex];
+
 	Clusti_State_Render_VideoSource const *source_render =
 		&renderState->videoSources[videoSourceIndex];
 
@@ -222,16 +224,39 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
 	glUniform1i(currULoc, 1);
 
-	//mat4
+	//mat4's
+	GLfloat matBuff[16];
+
 	currULoc = glGetUniformLocation(
 		currProg, "sourceParams_in.frustum_viewProjectionMatrix");
-	GLfloat matBuff[16];
 	graphene_matrix_to_float(
 		&source_config->projection.planar_viewProjectionMatrix,
 		matBuff);
-	graphene_matrix_print(
-		&source_config->projection.planar_viewProjectionMatrix);
-	glUniformMatrix4fv(currULoc, 1, GL_TRUE, matBuff);
+	glUniformMatrix4fv(currULoc, 1, GL_FALSE, matBuff);
+	//graphene_matrix_print(
+	//	&source_config->projection.planar_viewProjectionMatrix);
+	// funny glitch-islands when transposing:
+	//glUniformMatrix4fv(currULoc, 1, GL_TRUE, matBuff);
+	
+	//mat4
+	currULoc = glGetUniformLocation(
+		currProg, "sourceParams_in.frustum_viewMatrix");
+
+	graphene_matrix_to_float(
+		&source_config->projection.planar_viewMatrix,
+		matBuff);
+	glUniformMatrix4fv(currULoc, 1, GL_FALSE, matBuff);
+
+	//mat4
+	currULoc = glGetUniformLocation(currProg,
+					"sourceParams_in.frustum_projectionMatrix");
+
+	graphene_matrix_to_float(&source_config->projection.planar_projectionMatrix,
+				 matBuff);
+	glUniformMatrix4fv(currULoc, 1, GL_FALSE, matBuff);
+
+
+
 	//int 
 	currULoc = glGetUniformLocation(
 		currProg,
@@ -460,11 +485,6 @@ void createRenderState(Clusti *clusti)
 		// TODO warp and blend
 	}
 
-	//GLuint backgroundTexture = LoadTexture(
-	//	"../../../testData/fisheye_as_equirect_180_bourke.jpg");
-
-	//GLuint currentVideoSourceTexture =
-	//	LoadTexture("../../../testData/RT001.png");
 
 
 
@@ -472,6 +492,8 @@ void createRenderState(Clusti *clusti)
 	// render loop
 	// TODO outsource to own function renderLoop() to be called by main()
 	while (!renderState->quit) {
+
+
 
 		handleUserInput(renderState);
 
@@ -485,12 +507,20 @@ void createRenderState(Clusti *clusti)
 		// render stitching to offscreen texture:
 		glBindFramebuffer(GL_FRAMEBUFFER, renderState->fbo);
 
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+		glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
 			GL_STENCIL_BUFFER_BIT);
 		glViewport(0, 0,
 			   renderState->renderTargetRes.x,
 			   renderState->renderTargetRes.y);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnablei(GL_BLEND, 0);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnablei(GL_BLEND, 1);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
 		// use stitching shader
 		glUseProgram(renderState->stitchShaderProgram);
@@ -501,6 +531,10 @@ void createRenderState(Clusti *clusti)
 			// draw viewport-sized quad
 			glBindVertexArray(renderState->viewPortQuadNDC_vao);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
+
+			//debug for blending
+			glFlush();
+			glFinish();
 		}
 
 		// make sure the texture is written before showing
@@ -755,8 +789,8 @@ void handleUserInput(Clusti_State_Render *renderState)
 				renderState->currentRenderScale /= zoomSpeed;
 			}
 
-			printf("renderScale: %f\n",
-			       renderState->currentRenderScale);
+			/*printf("renderScale: %f\n",
+			       renderState->currentRenderScale);*/
 
 			if (event.wheel.x > 0) // scroll right
 			{
@@ -803,13 +837,13 @@ void handleUserInput(Clusti_State_Render *renderState)
 				renderState->canvasViewPosition_pixels_lowerLeft
 					.y += diff_y;
 
-				printf("view texture lower left corner position: (%d, %d)\n",
-				       renderState
-					       ->canvasViewPosition_pixels_lowerLeft
-					       .x,
-				       renderState
-					       ->canvasViewPosition_pixels_lowerLeft
-					       .y);
+				//printf("view texture lower left corner position: (%d, %d)\n",
+				//       renderState
+				//	       ->canvasViewPosition_pixels_lowerLeft
+				//	       .x,
+				//       renderState
+				//	       ->canvasViewPosition_pixels_lowerLeft
+				//	       .y);
 
 				//update last mous pos to current
 				renderState->lastButtonDownMousePos = {

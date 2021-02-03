@@ -173,6 +173,10 @@ struct Clusti_Params_Projection {
 	// (Don't wanna hassle with too much pointer de/alloc and keep XML parsing simple).
 
 	Clusti_Params_FrustumFOV planar_FrustumFOV;
+
+	graphene_matrix_t planar_viewMatrix;
+	graphene_matrix_t planar_projectionMatrix;
+
 	// Redundant: calculated from the above data;
 	// passed to and used in shader in shadowmapping-style
 	graphene_matrix_t planar_viewProjectionMatrix;

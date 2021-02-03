@@ -123,7 +123,13 @@ uniform FS_SinkParams_in sinkParams_in;
 struct FS_SourceParams_in {
     int index;
     //sampler2D currentPlanarRendering;
+    
+    mat4 frustum_viewMatrix;
+    mat4 frustum_projectionMatrix;
+
+    
     mat4 frustum_viewProjectionMatrix;
+    
     int decklinkWorkaround_verticalOffset_pixels;
     
     // rest of this struct is unused yet
@@ -239,6 +245,8 @@ layout(location = 0) out vec4 out_color;
 // main function impl.
 void main()
 {
+    //out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
+
     vec2 textCoord_backGroundTexture = gl_FragCoord.xy / sinkParams_in.resolution.xy;
     
     vec4 backGroundColor = 
@@ -247,7 +255,7 @@ void main()
     // some non-black debug background color to spot black bars:
     if(all(lessThan(backGroundColor.xyz, vec3(0.1))))
     {
-        backGroundColor.xyz = vec3(0.0,0.25,0.0);
+        backGroundColor.xyz = vec3(0.25, 0.0, 0.0);
     }
     
     
@@ -261,24 +269,89 @@ void main()
     // elevation == +pi/2 --> north or +y axis, respectively
     // elevation ==  0    --> equator
     // elevation == -pi/2 --> south or -y axis, respectively
-    float ele_pmPih = (ele_0_1 * c_PI) - c_PIH;
+    //float ele_pmPih = (ele_0_1 * c_PI) - c_PIH;
+    //vec2 aziEle = vec2(azi_0_2pi, ele_pmPih);
     
-    vec2 aziEle = vec2(azi_0_2pi, ele_pmPih);
+    // elevation in [0 .. +pi]
+    // elevation ==  0  --> north or +y axis, respectively
+    // elevation ==  pi/2    --> equator
+    // elevation == -pi --> south or -y axis, respectively    
+    float ele_0_pi = (1.0 - ele_0_1) * c_PI;
+    vec2 aziEle = vec2(azi_0_2pi, ele_0_pi);
+    
     
     vec3 dir_cartesian = aziEleToCartesian3D(aziEle);
     
-    vec4 texCoords_projected = sourceParams_in.frustum_viewProjectionMatrix 
-        * vec4(dir_cartesian.xyz, 1.0);
+    
+    vec4 dir_frustumCamCoords = sourceParams_in.frustum_viewMatrix
+        *   vec4(dir_cartesian.xyz, 1.0);
         
-    // Div by W coord
-    //vec4 texCoords_NDC = texCoords_projected
+    // filter geometry behind frustum    
+    if(dir_frustumCamCoords.z < 0.01)
+    {  
+        discard;
+        return;
+    }
+    
+       
+    
+    vec4 texCoords_projected = 
+        sourceParams_in.frustum_projectionMatrix
+        * vec4(dir_frustumCamCoords.xyz, 1.0);
+        
+    // Div by W coord    
+    //vec4 texCoords_NDC = texCoords_projected.xyzw / texCoords_projected.z;
+    vec3 texCoords_NDC = texCoords_projected.xyz / texCoords_projected.w;
     
     
+    //DEBUG:
+    //texCoords_NDC = texCoords_projected.xyz / texCoords_projected.z;
+    
+    
+    
+    
+    
+        
+    vec2 texCoords_0_1 =  texCoords_NDC.xy * 0.5 + vec2(0.5, 0.5);
+    
+    
+    if( any( greaterThan( texCoords_0_1, vec2( 1.0, 1.0) ) )
+        || 
+        any( lessThan( texCoords_0_1, vec2( 0.0, 0.0) ) )
+    )
+    {
+        //out_color.xyz=vec3(0.5, 0.0, 0.0);
+        //out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
+        discard;
+        return;        
+        //out_color = backGroundColor;
+    }
+    else
+    
+    {
+        vec4 screenPixelColor = texture(sourceParams_in_currentPlanarRendering,
+                                        texCoords_0_1);
+                                        
+        vec4 debugColor[5] ;
+        debugColor[0] = vec4(1.0, 0.0, 0.0, 0.0);
+        debugColor[1] = vec4(0.0, 1.0, 0.0, 0.0);
+        debugColor[2] = vec4(0.0, 0.0, 1.0, 0.0);
+        debugColor[3] = vec4(1.0, 1.0, 0.0, 0.0);
+        debugColor[4] = vec4(1.0, 0.0, 1.0, 0.0);
+        //screenPixelColor = vec4(1.0);                                        
+        out_color = screenPixelColor ; // + backGroundColor + debugColor[sourceParams_in.index] ;
+        
+         out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
+        //out_color.a = 0.75;
+        
+    }
+    
+    return;
     
     // old code --------------------------
 
-    vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, textCoord_backGroundTexture);
-    out_color = screenPixelColor + backGroundColor;
+    //vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, textCoord_backGroundTexture);
+    //out_color = screenPixelColor + backGroundColor;
     
     
    //debug multiple samplers (shaderEd bug); works
@@ -320,7 +393,7 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 	
 	// just for readability:
 	// float r = s.domeRadius;
-    float r = 1.0f;
+    float r = 100.0f;
 	float azi = aziEle_rads.x;
 	float ele = aziEle_rads.y;
 	
@@ -329,7 +402,7 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 	vec3 ret = vec3(
 		        r * sin(ele) * cos(azi),
 		        r * cos(ele),
-		 1.0f * r * sin(ele) * sin(azi)
+		        r * sin(ele) * sin(azi)
 	);
 	
 	return ret;

@@ -69,29 +69,61 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	// create view matrix from euler angles
 	graphene_euler_t *eulerAnglesPtr =
 		&(planarProjection_inOut->orientation);
+
 	graphene_matrix_t viewMatrix;
 	graphene_euler_to_matrix(eulerAnglesPtr, &viewMatrix);
+
+	planarProjection_inOut->planar_viewMatrix = viewMatrix;
+
+
+	//graphene_matrix_t viewMatrix_T;
+	//graphene_matrix_transpose(&viewMatrix, &viewMatrix_T);
+	//viewMatrix = viewMatrix_T;
+
 
 	// create projection matrix from frustum opening angles
 	// (currently only symmetric frusta, asymmetric frusta
 	// need mor trig code that is not needed for a first prototype)
 	Clusti_Params_FrustumFOV *fovs =
 		&(planarProjection_inOut->planar_FrustumFOV);
+
 	graphene_matrix_t projMatrix;
 	// init not nececcary, but good style
 	graphene_matrix_init_identity(&projMatrix);
+
 	if (!clusti_math_FOVAnglesAreSymmetric(fovs)) {
 		clusti_status_declareError("Frustum is not symmetric."
 			"Only symmetric frusta are supported yet, sorry!");
 		return false;
 	} else {
-		float hFOV_rad_symm = clusti_math_DegreesToRadians(fovs->left_degrees);
+		float hFOV_rad_symm =
+			clusti_math_DegreesToRadians(fovs->left_degrees);
 		float vFOV_rad_symm =
 			clusti_math_DegreesToRadians(fovs->up_degrees);
-		float aspectRatio_symm = tanf(hFOV_rad_symm) / tanf(vFOV_rad_symm);
+		float aspectRatio_symm =
+			tanf(hFOV_rad_symm) / tanf(vFOV_rad_symm);
 
-		graphene_matrix_init_perspective(&projMatrix, vFOV_rad_symm,
-						 aspectRatio_symm, 0.01f, 100.0f);
+		/*graphene_matrix_init_perspective(&projMatrix, vFOV_rad_symm,
+						 aspectRatio_symm, 0.01f,
+						 100.0f);*/
+
+		//graphene_matrix_init_perspective(&projMatrix,
+		//				 1.0f * fovs->up_degrees,
+		//				 aspectRatio_symm, 0.1f, 1000.0f);
+
+		//maybe double the half angle FOV
+		graphene_matrix_init_perspective(&projMatrix,
+						 2.0f * fovs->up_degrees,
+						 //2.0 * fovs->left_degrees,
+						 aspectRatio_symm, 0.1f, 1000.0f);
+
+		planarProjection_inOut->planar_projectionMatrix = projMatrix;
+
+		//DEBUG
+		/*graphene_matrix_t tmp;
+		graphene_matrix_transpose(&projMatrix,&tmp);
+		projMatrix = tmp;*/
+
 	}
 
 	
@@ -100,6 +132,10 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	graphene_matrix_multiply(
 		&projMatrix, &viewMatrix,
 		&(planarProjection_inOut->planar_viewProjectionMatrix));
+
+	//graphene_matrix_multiply(
+	//	&projMatrix, &projMatrix,
+	//	&(planarProjection_inOut->planar_viewProjectionMatrix));
 
 
 	//debug stuff:

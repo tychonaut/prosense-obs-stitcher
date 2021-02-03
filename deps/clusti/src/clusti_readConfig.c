@@ -634,8 +634,14 @@ void clusti_parseOrientation(Clusti *instance, Clusti_State_Parsing *parser,
 	// as VIOSO and OpenSpace and ParaView have the euler angle convention
 	// "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
 	// angles are in degrees: https://ebassi.github.io/graphene/docs/graphene-Euler.html
-	graphene_euler_init_with_order(&(proj->orientation), pitch, yaw, roll,
+	graphene_euler_init_with_order(&(proj->orientation),
+					pitch, yaw, roll,
+					//orig:
 				       GRAPHENE_EULER_ORDER_SZXY);
+				       //test:
+				       //GRAPHENE_EULER_ORDER_SYXZ);
+					//test2:
+				       //GRAPHENE_EULER_ORDER_SZXY);
 
 	//TODO test
 }

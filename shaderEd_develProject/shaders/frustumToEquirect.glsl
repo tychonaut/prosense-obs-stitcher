@@ -262,9 +262,13 @@ void main()
     
     
     float azi_0_1 = gl_FragCoord.x / sinkParams_in.resolution.x;
+    // this undoes the mirroring; TODO find out why there 
+    // are so many sign, transpose, invert and ordering issues!
+    azi_0_1 = (1.0 - azi_0_1);    
     float ele_0_1 = gl_FragCoord.y / sinkParams_in.resolution.y;
     
     float azi_0_2pi = azi_0_1 * c_2PI;
+    
     // elevation in [-pi/2 .. +pi/2]
     // elevation == +pi/2 --> north or +y axis, respectively
     // elevation ==  0    --> equator
@@ -288,7 +292,7 @@ void main()
     vec4 dir_frustumCamCoords = 
         //orig
         //sourceParams_in.frustum_viewMatrix
-        //DEBUG
+        // WTF THIS WORKS! WHY!
         transpose(sourceParams_in.frustum_viewMatrix)
         * vec4(dir_cartesian.xyz, 1.0);
         
@@ -335,14 +339,18 @@ void main()
     else
     {
         vec2 tc_offset = vec2(0.0, 
-                              28.0 / textureSize(sourceParams_in_currentPlanarRendering, 0).y );
+                               //float(sourceParams_in.decklinkWorkaround_verticalOffset_pixels)
+                              29.0 
+                              / textureSize(sourceParams_in_currentPlanarRendering, 0).y 
+        );
     
         vec2 tc_corrected = texCoords_0_1 - tc_offset;
         tc_corrected.y = clamp(tc_corrected.y, 0.0, 1.0);
         
-        //DEBUG:
+        // WTF THIS WORKS! WHY!
         tc_corrected = vec2(1.0 - tc_corrected.x, tc_corrected.y) ;
-    
+        //tc_corrected = vec2(tc_corrected.x, 1.0 - tc_corrected.y) ;    
+        
         vec4 screenPixelColor = texture(sourceParams_in_currentPlanarRendering,
                                         tc_corrected
                                 );

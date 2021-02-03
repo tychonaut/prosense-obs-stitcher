@@ -75,6 +75,10 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 
 	planarProjection_inOut->planar_viewMatrix = viewMatrix;
 
+	////DEBUG
+	//graphene_matrix_t viewMatrix_T;
+	//graphene_matrix_transpose(&viewMatrix, &viewMatrix_T);
+	//planarProjection_inOut->planar_viewMatrix = viewMatrix_T;
 
 	//graphene_matrix_t viewMatrix_T;
 	//graphene_matrix_transpose(&viewMatrix, &viewMatrix_T);
@@ -113,9 +117,17 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 
 		//maybe double the half angle FOV
 		graphene_matrix_init_perspective(&projMatrix,
+						 //orig
 						 2.0f * fovs->up_degrees,
 						 //2.0 * fovs->left_degrees,
-						 aspectRatio_symm, 0.1f, 1000.0f);
+
+						 //orig
+						 aspectRatio_symm,
+						 //(2560.0 / 1600.0)
+						 //	 * aspectRatio_symm,
+						 //(float)(2560.0/1600.0),
+						 //1.0,
+						 0.1f, 1000.0f);
 
 		planarProjection_inOut->planar_projectionMatrix = projMatrix;
 

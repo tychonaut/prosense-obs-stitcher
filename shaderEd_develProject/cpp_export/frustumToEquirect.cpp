@@ -224,15 +224,16 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
 	glUniform1i(currULoc, 1);
 
-	//mat4's
+	//mat4's --------------
 	GLfloat matBuff[16];
+	GLboolean doTranspose = GL_FALSE;
 
 	currULoc = glGetUniformLocation(
 		currProg, "sourceParams_in.frustum_viewProjectionMatrix");
 	graphene_matrix_to_float(
 		&source_config->projection.planar_viewProjectionMatrix,
 		matBuff);
-	glUniformMatrix4fv(currULoc, 1, GL_FALSE, matBuff);
+	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
 	//graphene_matrix_print(
 	//	&source_config->projection.planar_viewProjectionMatrix);
 	// funny glitch-islands when transposing:
@@ -245,7 +246,7 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	graphene_matrix_to_float(
 		&source_config->projection.planar_viewMatrix,
 		matBuff);
-	glUniformMatrix4fv(currULoc, 1, GL_FALSE, matBuff);
+	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
 
 	//mat4
 	currULoc = glGetUniformLocation(currProg,
@@ -253,7 +254,7 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 
 	graphene_matrix_to_float(&source_config->projection.planar_projectionMatrix,
 				 matBuff);
-	glUniformMatrix4fv(currULoc, 1, GL_FALSE, matBuff);
+	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
 
 
 
@@ -333,6 +334,7 @@ void createRenderState(Clusti *clusti)
 	// Create SDL window and OpenGL context
 
 	stbi_set_flip_vertically_on_load(1);
+
 
 	// init sdl2
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) < 0) {

@@ -276,27 +276,37 @@ void main()
     // elevation ==  0  --> north or +y axis, respectively
     // elevation ==  pi/2    --> equator
     // elevation == -pi --> south or -y axis, respectively    
-    float ele_0_pi = (1.0 - ele_0_1) * c_PI;
+    float ele_0_pi = (1.0 - ele_0_1) * c_PI 
+        //+ c_PIH //DEBUG
+        ;
     vec2 aziEle = vec2(azi_0_2pi, ele_0_pi);
     
     
     vec3 dir_cartesian = aziEleToCartesian3D(aziEle);
     
     
-    vec4 dir_frustumCamCoords = sourceParams_in.frustum_viewMatrix
-        *   vec4(dir_cartesian.xyz, 1.0);
+    vec4 dir_frustumCamCoords = 
+        //orig
+        //sourceParams_in.frustum_viewMatrix
+        //DEBUG
+        transpose(sourceParams_in.frustum_viewMatrix)
+        * vec4(dir_cartesian.xyz, 1.0);
         
     // filter geometry behind frustum    
-    if(dir_frustumCamCoords.z < 0.01)
+    if(dir_frustumCamCoords.z > 0.0)
     {  
         discard;
-        return;
+        //return;
     }
     
        
+    vec4 t1 =  vec4(dir_frustumCamCoords.xyz, 1.0) *  sourceParams_in.frustum_projectionMatrix;
     
     vec4 texCoords_projected = 
+        //orig
         sourceParams_in.frustum_projectionMatrix
+        //DEBUG
+        //transpose(sourceParams_in.frustum_projectionMatrix)
         * vec4(dir_frustumCamCoords.xyz, 1.0);
         
     // Div by W coord    
@@ -306,13 +316,9 @@ void main()
     
     //DEBUG:
     //texCoords_NDC = texCoords_projected.xyz / texCoords_projected.z;
-    
-    
-    
-    
-    
         
-    vec2 texCoords_0_1 =  texCoords_NDC.xy * 0.5 + vec2(0.5, 0.5);
+        
+    vec2 texCoords_0_1 =  (texCoords_NDC.xy * 0.5) + vec2(0.5, 0.5);
     
     
     if( any( greaterThan( texCoords_0_1, vec2( 1.0, 1.0) ) )
@@ -323,14 +329,23 @@ void main()
         //out_color.xyz=vec3(0.5, 0.0, 0.0);
         //out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
         discard;
-        return;        
+        //return;        
         //out_color = backGroundColor;
     }
     else
-    
     {
+        vec2 tc_offset = vec2(0.0, 
+                              28.0 / textureSize(sourceParams_in_currentPlanarRendering, 0).y );
+    
+        vec2 tc_corrected = texCoords_0_1 - tc_offset;
+        tc_corrected.y = clamp(tc_corrected.y, 0.0, 1.0);
+        
+        //DEBUG:
+        tc_corrected = vec2(1.0 - tc_corrected.x, tc_corrected.y) ;
+    
         vec4 screenPixelColor = texture(sourceParams_in_currentPlanarRendering,
-                                        texCoords_0_1);
+                                        tc_corrected
+                                );
                                         
         vec4 debugColor[5] ;
         debugColor[0] = vec4(1.0, 0.0, 0.0, 0.0);
@@ -338,11 +353,12 @@ void main()
         debugColor[2] = vec4(0.0, 0.0, 1.0, 0.0);
         debugColor[3] = vec4(1.0, 1.0, 0.0, 0.0);
         debugColor[4] = vec4(1.0, 0.0, 1.0, 0.0);
-        //screenPixelColor = vec4(1.0);                                        
+        //screenPixelColor = vec4(1.0);             
+                                   
         out_color = screenPixelColor ; // + backGroundColor + debugColor[sourceParams_in.index] ;
         
-         out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
-        //out_color.a = 0.75;
+        // out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
+        
         
     }
     
@@ -393,7 +409,7 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 	
 	// just for readability:
 	// float r = s.domeRadius;
-    float r = 100.0f;
+    float r = 1.0f;
 	float azi = aziEle_rads.x;
 	float ele = aziEle_rads.y;
 	
@@ -404,6 +420,10 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 		        r * cos(ele),
 		        r * sin(ele) * sin(azi)
 	);
+	
+	//return ret;
+	
+	ret = normalize(ret);
 	
 	return ret;
 }

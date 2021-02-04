@@ -347,9 +347,13 @@ void main()
         vec2 tc_corrected = texCoords_0_1 - tc_offset;
         tc_corrected.y = clamp(tc_corrected.y, 0.0, 1.0);
         
-        // WTF THIS WORKS! WHY!
-        tc_corrected = vec2(1.0 - tc_corrected.x, tc_corrected.y) ;
-        //tc_corrected = vec2(tc_corrected.x, 1.0 - tc_corrected.y) ;    
+        // WTF THIS WORKS! WHY? 
+        // (I suspect ISO 9300  euler angle convention,
+        // effectively flipping coordinate system handedness,
+        // resulting in a mirroring that must be compensated by the below line;
+        // adaptet convention, below line shouldn't be nececcary now)
+        //tc_corrected = vec2(1.0 - tc_corrected.x, tc_corrected.y) ;
+ 
         
         vec4 screenPixelColor = texture(sourceParams_in_currentPlanarRendering,
                                         tc_corrected
@@ -371,6 +375,11 @@ void main()
     }
     
     return;
+    
+    
+    
+    
+    
     
     // old code --------------------------
 
@@ -441,6 +450,11 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 
 
 
+
+
+
+
+
 // texture coords in [0..1]^2 to azimuth and elevation radians,
 // in local dome coordinates (i.e. no tilt))
 // azi: west  (+x axis): 00   radians 
@@ -475,7 +489,6 @@ vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
 	
 	return vec2(azi,ele);
 }
-
 
 
 

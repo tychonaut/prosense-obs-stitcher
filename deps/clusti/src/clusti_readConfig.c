@@ -618,10 +618,22 @@ void clusti_parseOrientation(Clusti *instance, Clusti_State_Parsing *parser,
 			}
 		} else if ((strcmp("yaw", attributeNamesAndValues[i]) == 0)) {
 			yaw = (float)atof(attributeNamesAndValues[i + 1]);
+
+			// suspecting ISO 9300 axis conventions
+			// (pitch axis = right, yaw axis = down, roll axis = front)
+			// from VIOSO, , effectively flipping
+			// signs of yaw and roll in our right handed,
+			// (+x=right +y=up, -z=front) coodinate system
+			yaw *= -1.0f;
+
 		} else if ((strcmp("pitch", attributeNamesAndValues[i]) == 0)) {
 			pitch = (float)atof(attributeNamesAndValues[i + 1]);
 		} else if ((strcmp("roll", attributeNamesAndValues[i]) == 0)) {
+
+			// see above comment
 			roll = (float)atof(attributeNamesAndValues[i + 1]);
+			roll *= -1.0f;
+
 		} else {
 			printf("unexpected xml attribute: %s\n",
 			       attributeNamesAndValues[i]);

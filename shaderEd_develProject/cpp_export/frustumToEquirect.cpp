@@ -244,7 +244,10 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 
 	//mat4's --------------
 	GLfloat matBuff[16];
-	GLboolean doTranspose = GL_FALSE;
+	// As Graphene's left-to-right multiplication convention and row-majorness
+	// "cancel" with OpenGLs right-to-left multiplication convention and column-majorness,
+	// no further transposition of graphene matrices need to be done!
+	GLboolean doTranspose = GL_FALSE; 
 
 	currULoc = glGetUniformLocation(
 		currProg, "sourceParams_in.frustum_viewProjectionMatrix");

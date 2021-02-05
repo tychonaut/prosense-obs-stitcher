@@ -334,7 +334,8 @@ void main()
     // debugColor[4] = vec4(1.0, 0.0, 1.0, 0.0);
 
     //{ old code; maybe useful for fisheye projection support later --------------------------
-    //screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, sinkParams_in, texCoord_backGroundTexture);
+    //screenPixelColor = oldCode_lookupTexture_fishEyeTc(
+    //        oldParams_in, sinkParams_in, texCoord_backGroundTexture);
     //out_color = screenPixelColor + backGroundColor;
    //} end old code
 }
@@ -355,22 +356,25 @@ void main()
 // warning: can return values outside [0..1]^2, must be checked!
 vec2 cartesianDirectionToSourceTexCoords(vec3 dir, mat4 viewProjectionMatrix)
 {
-    vec4 dir_frustumCamCoords = 
-        sourceParams_in.frustum_viewMatrix
+    vec4 texCoords_projected  = 
+        viewProjectionMatrix
         * vec4(dir.xyz, 1.0);
         
-    // filter geometry behind frustum    
-    if(dir_frustumCamCoords.z > 0.0)
+        
+    // filter geometry behind frustum:
+    // the negative z component in 'frustum camera coords' is found in the w component.
+    // If -z is negative, then z is positive in cam coords, positive z coords 
+    // lie behind the cam. we have to filter them out
+    if(texCoords_projected.w <= 0.0)
     {  
         discard;
     }
-    
-    vec4 texCoords_projected = 
-        sourceParams_in.frustum_projectionMatrix
-        * vec4(dir_frustumCamCoords.xyz, 1.0);
         
     // Clip coords to Normalized device coords (NCD): Div by homogeneous (W) coord
     vec3 texCoords_NDC = texCoords_projected.xyz / texCoords_projected.w;
+
+
+
     
     // NDC [-1 .. +1] --> image space[0..1]       
     vec2 texCoords_0_1 =  (texCoords_NDC.xy * 0.5) + vec2(0.5, 0.5);

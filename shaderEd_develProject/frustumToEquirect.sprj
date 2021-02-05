@@ -376,11 +376,9 @@
 		</camera>
 	</cameras>
 	<settings>
-		<entry type="property" name="showResultPass" item="pipe" />
+		<entry type="property" name="frustumToEquirect_pass" item="pipe" />
 		<entry type="file" name="frustumToEquirect_pass" shader="vs" />
 		<entry type="file" name="frustumToEquirect_pass" shader="ps" />
-		<entry type="file" name="showResultPass" shader="vs" />
-		<entry type="file" name="showResultPass" shader="ps" />
 		<entry type="pinned" name="sinkParams_in.index" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sinkParams_in.resolution" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sinkParams_in.useSceneRotationMatrix" owner="frustumToEquirect_pass" />

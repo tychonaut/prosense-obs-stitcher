@@ -137,7 +137,7 @@
                 name="ArenaRT1"
                 warpFileName="warpLUT_RT001.pfm"
                 blendImageName="blendmask_RT001.png"
-                testImageName="RT001.png"
+                testImageName="ParaView/RT001.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
                 <Resolution x="2560" y="1600" /> 
@@ -202,7 +202,7 @@
                 name="ArenaRT2"
                 warpFileName="warpLUT_RT002.pfm"
                 blendImageName="blendmask_RT002.png"
-                testImageName="RT002.png"
+                testImageName="ParaView/RT002.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
                 <Resolution x="2560" y="1600" /> 
@@ -232,7 +232,7 @@
                 name="ArenaRT3"
                 warpFileName="warpLUT_RT003.pfm"
                 blendImageName="blendmask_RT003.png"
-                testImageName="RT003.png"
+                testImageName="ParaView/RT003.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
                 <Resolution x="2560" y="1600" /> 
@@ -263,7 +263,7 @@
                 name="ArenaRT4"
                 warpFileName="warpLUT_RT004.pfm"
                 blendImageName="blendmask_RT004.png"
-                testImageName="RT004.png"
+                testImageName="ParaView/RT004.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
                 <Resolution x="2560" y="1600" /> 
@@ -294,7 +294,7 @@
                 name="ArenaRT5"
                 warpFileName="warpLUT_RT005.pfm"
                 blendImageName="blendmask_RT005.png"
-                testImageName="RT005.png"
+                testImageName="ParaView/RT005.png"
                 decklinkWorkaround_verticalOffset_pixels="28"
             >        
                 <Resolution x="2560" y="1600" /> 

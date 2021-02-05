@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project version="2">
 	<pipeline>
-		<pass name="showResultPass" type="shader" active="false">
+		<pass name="showResultPass" type="shader" active="true">
 			<shader type="vs" path="shaders\viewTexture.vert" entry="main" />
 			<shader type="ps" path="shaders\viewTexture.frag" entry="main" />
 			<inputlayout>
@@ -23,13 +23,13 @@
 			<variables>
 				<variable type="int2" name="offset_pixels">
 					<row>
-						<value>-1158</value>
-						<value>-245</value>
+						<value>0</value>
+						<value>0</value>
 					</row>
 				</variable>
 				<variable type="float" name="renderScale">
 					<row>
-						<value>0.460000008</value>
+						<value>0.0399999991</value>
 					</row>
 				</variable>
 			</variables>
@@ -55,6 +55,211 @@
 			</items>
 			<itemvalues />
 			<variables>
+				<variable type="int" name="sinkParams_in.index">
+					<row>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="int2" name="sinkParams_in.resolution">
+					<row>
+						<value>8192</value>
+						<value>4096</value>
+					</row>
+				</variable>
+				<variable type="bool" name="sinkParams_in.useSceneRotationMatrix">
+					<row>
+						<value>false</value>
+					</row>
+				</variable>
+				<variable type="float4x4" name="sinkParams_in.scene_RotationMatrix">
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="bool" name="sinkParams_in.useFishEye">
+					<row>
+						<value>false</value>
+					</row>
+				</variable>
+				<variable type="float" name="sinkParams_in.fishEyeFOV_angle">
+					<row>
+						<value>180</value>
+					</row>
+				</variable>
+				<variable type="int2" name="sinkParams_in.resolution_virtual">
+					<row>
+						<value>8192</value>
+						<value>4096</value>
+					</row>
+				</variable>
+				<variable type="int2" name="sinkParams_in.cropRectangle_min">
+					<row>
+						<value>0</value>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="int2" name="sinkParams_in.cropRectangle_max">
+					<row>
+						<value>8192</value>
+						<value>4096</value>
+					</row>
+				</variable>
+				<variable type="int2" name="sinkParams_in.resolution_effective">
+					<row>
+						<value>8192</value>
+						<value>4096</value>
+					</row>
+				</variable>
+				<variable type="int" name="sourceParams_in.index">
+					<row>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float4x4" name="sourceParams_in.frustum_viewMatrix">
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float4x4" name="sourceParams_in.frustum_projectionMatrix">
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float4x4" name="sourceParams_in.frustum_viewProjectionMatrix">
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float4x4" name="sourceParams_in.frustum_reorientedViewProjectionMatrix">
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+					<row>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="int" name="sourceParams_in.decklinkWorkaround_verticalOffset_pixels">
+					<row>
+						<value>29</value>
+					</row>
+				</variable>
+				<variable type="bool" name="sourceParams_in.doImageWarp">
+					<row>
+						<value>false</value>
+					</row>
+				</variable>
+				<variable type="bool" name="sourceParams_in.do3DImageWarp">
+					<row>
+						<value>false</value>
+					</row>
+				</variable>
+				<variable type="bool" name="sourceParams_in.doBlending">
+					<row>
+						<value>false</value>
+					</row>
+				</variable>
 				<variable type="float" name="oldParams_in.domeRadius">
 					<row>
 						<value>300</value>
@@ -67,12 +272,12 @@
 				</variable>
 				<variable type="float" name="oldParams_in.virtualScreenAzimuth">
 					<row>
-						<value>-23.4699993</value>
+						<value>20</value>
 					</row>
 				</variable>
 				<variable type="float" name="oldParams_in.virtualScreenElevation">
 					<row>
-						<value>12.5500002</value>
+						<value>20</value>
 					</row>
 				</variable>
 				<variable type="float" name="oldParams_in.virtualScreenWidth">
@@ -82,18 +287,18 @@
 				</variable>
 				<variable type="float" name="oldParams_in.virtualScreenHeight">
 					<row>
-						<value>600</value>
+						<value>400</value>
 					</row>
 				</variable>
 				<variable type="float" name="oldParams_in.domeTilt">
 					<row>
-						<value>26.2099991</value>
+						<value>21</value>
 					</row>
 				</variable>
 				<variable type="int2" name="oldParams_in.renderTargetResolution_uncropped">
 					<row>
 						<value>8192</value>
-						<value>4096</value>
+						<value>8192</value>
 					</row>
 				</variable>
 				<variable type="float4x4" name="oldParams_in.frustum_viewProjectionMatrix">
@@ -122,97 +327,6 @@
 						<value>0</value>
 					</row>
 				</variable>
-				<variable type="int" name="sinkParams_in.index">
-					<row>
-						<value>0</value>
-					</row>
-				</variable>
-				<variable type="int2" name="sinkParams_in.resolution">
-					<row>
-						<value>8192</value>
-						<value>4096</value>
-					</row>
-				</variable>
-				<variable type="int2" name="sinkParams_in.resolution_virtual">
-					<row>
-						<value>8192</value>
-						<value>4096</value>
-					</row>
-				</variable>
-				<variable type="int2" name="sinkParams_in.cropRectangle_min">
-					<row>
-						<value>0</value>
-						<value>0</value>
-					</row>
-				</variable>
-				<variable type="int2" name="sinkParams_in.cropRectangle_max">
-					<row>
-						<value>8192</value>
-						<value>4096</value>
-					</row>
-				</variable>
-				<variable type="int2" name="sinkParams_in.resolution_effective">
-					<row>
-						<value>8192</value>
-						<value>4096</value>
-					</row>
-				</variable>
-				<variable type="bool" name="sinkParams_in.useSceneRotationMatrix">
-					<row>
-						<value>false</value>
-					</row>
-				</variable>
-				<variable type="int" name="sourceParams_in.index">
-					<row>
-						<value>0</value>
-					</row>
-				</variable>
-				<variable type="float4x4" name="sourceParams_in.frustum_viewProjectionMatrix">
-					<row>
-						<value>67.5223389</value>
-						<value>-23.2839832</value>
-						<value>-66.3273621</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>69.7462311</value>
-						<value>142.620575</value>
-						<value>20.9363651</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>-0.574932992</value>
-						<value>0.387024999</value>
-						<value>-0.721154988</value>
-						<value>-1</value>
-					</row>
-					<row>
-						<value>-0.0114979995</value>
-						<value>0.0077399998</value>
-						<value>-0.0144220004</value>
-						<value>0</value>
-					</row>
-				</variable>
-				<variable type="int" name="sourceParams_in.decklinkWorkaround_verticalOffset_pixels">
-					<row>
-						<value>28</value>
-					</row>
-				</variable>
-				<variable type="bool" name="sourceParams_in.doImageWarp">
-					<row>
-						<value>false</value>
-					</row>
-				</variable>
-				<variable type="bool" name="sourceParams_in.do3DImageWarp">
-					<row>
-						<value>false</value>
-					</row>
-				</variable>
-				<variable type="bool" name="sourceParams_in.doBlending">
-					<row>
-						<value>false</value>
-					</row>
-				</variable>
 			</variables>
 			<macros />
 		</pass>
@@ -221,16 +335,16 @@
 		<object type="texture" path="..\testData\fisheye_as_equirect_180_bourke.jpg" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
 			<bind slot="0" name="frustumToEquirect_pass" />
 		</object>
-		<object type="texture" path="..\testData\RT001.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+		<object type="texture" path="..\testData\OpenSpace\RT001.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
 			<bind slot="1" name="frustumToEquirect_pass" />
 		</object>
 		<object type="rendertexture" name="frustumToEquirectRenTex" fsize="8192,4096" clear="true">
 			<bind slot="0" name="showResultPass" />
 		</object>
-		<object type="texture" path="..\testData\RT002.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
-		<object type="texture" path="..\testData\RT003.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
-		<object type="texture" path="..\testData\RT004.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
-		<object type="texture" path="..\testData\RT005.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+		<object type="texture" path="..\testData\OpenSpace\RT002.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+		<object type="texture" path="..\testData\OpenSpace\RT003.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+		<object type="texture" path="..\testData\OpenSpace\RT004.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+		<object type="texture" path="..\testData\OpenSpace\RT005.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
 	</objects>
 	<cameras>
 		<camera name="Frustum0">
@@ -262,13 +376,30 @@
 		</camera>
 	</cameras>
 	<settings>
-		<entry type="property" name="frustumToEquirect_pass" item="pipe" />
-		<entry type="file" name="showResultPass" shader="vs" />
-		<entry type="file" name="showResultPass" shader="ps" />
+		<entry type="property" name="showResultPass" item="pipe" />
 		<entry type="file" name="frustumToEquirect_pass" shader="vs" />
 		<entry type="file" name="frustumToEquirect_pass" shader="ps" />
-		<entry type="pinned" name="offset_pixels" owner="showResultPass" />
-		<entry type="pinned" name="renderScale" owner="showResultPass" />
+		<entry type="file" name="showResultPass" shader="vs" />
+		<entry type="file" name="showResultPass" shader="ps" />
+		<entry type="pinned" name="sinkParams_in.index" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.resolution" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.useSceneRotationMatrix" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.scene_RotationMatrix" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.useFishEye" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.fishEyeFOV_angle" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.resolution_virtual" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.cropRectangle_min" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.cropRectangle_max" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sinkParams_in.resolution_effective" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.index" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.frustum_viewMatrix" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.frustum_projectionMatrix" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.frustum_viewProjectionMatrix" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.frustum_reorientedViewProjectionMatrix" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.decklinkWorkaround_verticalOffset_pixels" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.doImageWarp" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.do3DImageWarp" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="sourceParams_in.doBlending" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="oldParams_in.domeRadius" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="oldParams_in.domeAperture" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="oldParams_in.virtualScreenAzimuth" owner="frustumToEquirect_pass" />
@@ -278,19 +409,8 @@
 		<entry type="pinned" name="oldParams_in.domeTilt" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="oldParams_in.renderTargetResolution_uncropped" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="oldParams_in.frustum_viewProjectionMatrix" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.index" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.resolution" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.resolution_virtual" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.cropRectangle_min" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.cropRectangle_max" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.resolution_effective" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.useSceneRotationMatrix" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sourceParams_in.index" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sourceParams_in.frustum_viewProjectionMatrix" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sourceParams_in.decklinkWorkaround_verticalOffset_pixels" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sourceParams_in.doImageWarp" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sourceParams_in.do3DImageWarp" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sourceParams_in.doBlending" owner="frustumToEquirect_pass" />
+		<entry type="pinned" name="offset_pixels" owner="showResultPass" />
+		<entry type="pinned" name="renderScale" owner="showResultPass" />
 		<entry type="camera" fp="true">
 			<positionX>3.60522914</positionX>
 			<positionY>2.82433009</positionY>
@@ -300,21 +420,6 @@
 		</entry>
 		<entry type="clearcolor" r="1" g="0" b="0" a="0" />
 		<entry type="usealpha" val="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="177" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="87" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="133" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="176" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="86" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="132" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="175" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="85" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="131" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="174" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="84" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="130" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="722" use_cond="false" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="721" use_cond="false" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="720" use_cond="false" cond="" enabled="true" />
 	</settings>
 	<plugindata />
 </project>

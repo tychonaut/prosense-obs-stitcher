@@ -514,8 +514,12 @@ void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
 			} else if ((strcmp("planar",
 					   attributeNamesAndValues[i + 1]) ==
 				    0)) {
+				proj->type = CLUSTI_ENUM_PROJECTION_TYPE_PLANAR;
+			} else if ((strcmp("fishEye",
+					   attributeNamesAndValues[i + 1]) ==
+				    0)) {
 				proj->type =
-					CLUSTI_ENUM_PROJECTION_TYPE_PLANAR;
+					CLUSTI_ENUM_PROJECTION_TYPE_FISHEYE;
 			} else {
 				proj->type =
 					CLUSTI_ENUM_PROJECTION_TYPE_INVALID;
@@ -525,6 +529,9 @@ void clusti_parseProjection(Clusti *instance, Clusti_State_Parsing *parser,
 					"(yet) unsupported projection type in xml attribute");
 			}
 			//proj->type =
+		} else if ((strcmp("fishEye_aperture_angle", attributeNamesAndValues[i]) == 0)) {
+			proj->fisheye_aperture_degrees =
+				(float)atof(attributeNamesAndValues[i + 1]);
 		} else {
 			printf("unexpected xml attribute: %s\n",
 			       attributeNamesAndValues[i]);

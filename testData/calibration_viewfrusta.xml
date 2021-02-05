@@ -33,12 +33,17 @@
             
 
                 
-                <!-- alternative projections (not supported yet): 
-                     "fisheye", "equi-angular-cubemap" 
+                <!-- alternative projections (not all supported yet): 
+                     type="equirectangular"
+                     type="fishEye", (optional param: fishEye_aperture_angle, default 180 degrees) 
+                     type="planar"
+                     type="equi-angular-cubemap" 
                      (https://blog.google/products/google-ar-vr/bringing-pixels-front-and-center-vr-video/)
+                
+                    fishEye_aperture_angle="360.0"
                 -->
                 <Projection
-                    type="equirectangular"
+                    type="fishEye"
                 >
                     <!-- 
                         VIOSO has the euler angle convention 
@@ -87,7 +92,7 @@
                 </Projection>
                 
                 <VirtualResolution
-                    x="8192"
+                    x="4096"
                     y="4096"
                 />
                 
@@ -95,7 +100,7 @@
                 <CropRectangle
                     x_min="0"
                     y_min="0"
-                    x_max="8192"
+                    x_max="4096"
                     y_max="4096"
                 />
                 

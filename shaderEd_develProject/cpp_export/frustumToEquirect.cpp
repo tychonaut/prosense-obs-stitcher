@@ -209,6 +209,24 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	glUniform2i(currULoc, sink_config->virtualResolution.x,
 		    sink_config->virtualResolution.y);
 
+	//FishEye?
+	//bool
+	currULoc = glGetUniformLocation(currProg,
+					"sinkParams_in.useFishEye");
+	glUniform1i(currULoc,
+		    sink_config->projection.type ==
+				    CLUSTI_ENUM_PROJECTION_TYPE_FISHEYE
+			    ? GL_TRUE
+			    : GL_FALSE);
+	//float
+	currULoc = glGetUniformLocation(currProg,
+					"sinkParams_in.fishEyeFOV_angle");
+	glUniform1f(currULoc,
+		    (sink_config->projection.fisheye_aperture_degrees > 0.0f)
+			    ? sink_config->projection.fisheye_aperture_degrees
+			// default 180° hemisphere
+			: 180.0f);
+
 
 	//int 
 	currULoc = glGetUniformLocation(currProg, "sourceParams_in.index");
@@ -264,8 +282,8 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 		"sourceParams_in.decklinkWorkaround_verticalOffset_pixels");
 	glUniform1i(currULoc, source_config->decklinkWorkaround_verticalOffset_pixels);
 
-	
 
+	
 
 
 

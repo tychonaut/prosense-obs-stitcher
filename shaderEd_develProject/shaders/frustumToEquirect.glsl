@@ -75,16 +75,6 @@ struct FS_SinkParams_in {
     //sampler2D backgroundTexture;
     //KISS for first iteration:
     ivec2 resolution; 
-
-
-    // rest of this struct is unused yet
-    // resolution the whole 4pi steradian panorama image would have;
-    ivec2 resolution_virtual; 
-    ivec2 cropRectangle_min;
-    ivec2 cropRectangle_max;
-    //precalculated from cropRectangle
-    ivec2 resolution_effective;
-    
     
     // How to interpret this orientation:
     // The goal is to re-parametrize the canvas of 
@@ -111,10 +101,25 @@ struct FS_SinkParams_in {
     // 
     // IMPORTANT: The video *PLAYER* software needs
     // to be aware of this transformation and undo it
-    
     //TODO setup in host data structures
     bool useSceneRotationMatrix;
     mat4 scene_RotationMatrix;
+    
+    // in case of fisheye projection (planned alternative to eqirect):
+    // TODO setup in host data structures
+    // hacky flip from equirect to fisheye;
+    // dependent compilation would be better, but not for this prototype...
+    bool useFishEye;
+    float fishEyeFOV_angle;
+    
+    
+    // rest of this struct is unused yet
+    // resolution the whole 4pi steradian panorama image would have;
+    ivec2 resolution_virtual; 
+    ivec2 cropRectangle_min;
+    ivec2 cropRectangle_max;
+    //precalculated from cropRectangle
+    ivec2 resolution_effective;
 };
 
 uniform FS_SinkParams_in sinkParams_in;
@@ -220,20 +225,12 @@ void main();
 // little helpers:
 float angleToRadians(float angle);
 vec3  aziEleToCartesian3D(vec2 aziEle_rads);
-
-
-//-------------------------------------
-// Equirect subroutines:
-
-// TODO
-
-
-
+vec2 fragCoordsToAziEle_Equirect(FS_SinkParams_in params, vec2 fragCoords);
+vec2 fragCoordsToAziEle_FishEye (FS_SinkParams_in params, vec2 fragCoords);
 
 //-------------------------------------
 // old and possibly obsolete code:
-vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc);
-vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords);
+vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, FS_SinkParams_in params, vec2 tex_coords);
 // ----------------------------------------------------------------------------
 
 
@@ -260,14 +257,13 @@ layout(location = 0) out vec4 out_color;
 // main function impl.
 void main()
 {
-    //out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
-
-    vec2 textCoord_backGroundTexture = gl_FragCoord.xy / sinkParams_in.resolution.xy;
-    
+    // smaple background texture:
+    vec2 texCoord_backGroundTexture = gl_FragCoord.xy / sinkParams_in.resolution.xy;  
     vec4 backGroundColor = 
         vec4(texture(sinkParams_in_backgroundTexture,
-                     textCoord_backGroundTexture.xy).xyz, 1.0);
-    // some non-black debug background color to spot black bars:
+                     texCoord_backGroundTexture.xy).xyz, 1.0);
+                     
+    // DEBUG: some non-black debug background color to spot black bars:
     if(all(lessThan(backGroundColor.xyz, vec3(0.1))))
     {
         backGroundColor.xyz = vec3(0.25, 0.0, 0.0);
@@ -275,35 +271,29 @@ void main()
     
     
     
-    
-    float azi_0_1 = gl_FragCoord.x / sinkParams_in.resolution.x;
-    // this undoes the mirroring; TODO find out why there 
-    // are so many sign, transpose, invert and ordering issues!
-    azi_0_1 = (1.0 - azi_0_1);    
-    float ele_0_1 = gl_FragCoord.y / sinkParams_in.resolution.y;
-    
-    float azi_0_2pi = azi_0_1 * c_2PI;
-    
-    // elevation in [-pi/2 .. +pi/2]
-    // elevation == +pi/2 --> north or +y axis, respectively
-    // elevation ==  0    --> equator
-    // elevation == -pi/2 --> south or -y axis, respectively
-    //float ele_pmPih = (ele_0_1 * c_PI) - c_PIH;
-    //vec2 aziEle = vec2(azi_0_2pi, ele_pmPih);
-    
-    // elevation in [0 .. +pi]
-    // elevation ==  0  --> north or +y axis, respectively
-    // elevation ==  pi/2    --> equator
-    // elevation == -pi --> south or -y axis, respectively    
-    float ele_0_pi = (1.0 - ele_0_1) * c_PI 
-        //+ c_PIH //DEBUG
-        ;
-    vec2 aziEle = vec2(azi_0_2pi, ele_0_pi);
+    //{ fragment coords to equirect. azimuth and elevation:
+    vec2 aziEle;
+    if(sinkParams_in.useFishEye)
+    {
+        aziEle = fragCoordsToAziEle_FishEye(sinkParams_in, gl_FragCoord.xy);
+    }else
+    {
+        aziEle = fragCoordsToAziEle_Equirect(sinkParams_in, gl_FragCoord.xy);
+    }
     
     
+    
+    //}
+    
+    
+    // azimuth and elevation to cartesian (xyz) coords:
     vec3 dir_cartesian = aziEleToCartesian3D(aziEle);
     
     
+    //{ transform direction vector, interpreted as position vector
+    //  (this is valid, becaus all frusta are currently expected 
+    //  to sit in the center), from world coords into image-space
+    //  coords of the current frustum: 'shadow mapping-lookup-style':
     vec4 dir_frustumCamCoords = 
         sourceParams_in.frustum_viewMatrix
         * vec4(dir_cartesian.xyz, 1.0);
@@ -312,122 +302,78 @@ void main()
     if(dir_frustumCamCoords.z > 0.0)
     {  
         discard;
-        //return;
     }
     
-       
-    vec4 t1 =  vec4(dir_frustumCamCoords.xyz, 1.0) *  sourceParams_in.frustum_projectionMatrix;
-    
     vec4 texCoords_projected = 
-        //orig
         sourceParams_in.frustum_projectionMatrix
-        //DEBUG
-        //transpose(sourceParams_in.frustum_projectionMatrix)
         * vec4(dir_frustumCamCoords.xyz, 1.0);
         
-    // Div by W coord    
-    //vec4 texCoords_NDC = texCoords_projected.xyzw / texCoords_projected.z;
+    // Clip coords to Normalized device coords (NCD): Div by homogeneous (W) coord
     vec3 texCoords_NDC = texCoords_projected.xyz / texCoords_projected.w;
     
-    
-    //DEBUG:
-    //texCoords_NDC = texCoords_projected.xyz / texCoords_projected.z;
-        
-        
+    // NDC [-1 .. +1] --> image space[0..1]       
     vec2 texCoords_0_1 =  (texCoords_NDC.xy * 0.5) + vec2(0.5, 0.5);
+    //}
     
-    
+    //discard fragment if corresponding direction is not covered by the current frustum
+    // i.e. image coord are outside  [0..1]^2
     if( any( greaterThan( texCoords_0_1, vec2( 1.0, 1.0) ) )
         || 
         any( lessThan( texCoords_0_1, vec2( 0.0, 0.0) ) )
     )
     {
-        //out_color.xyz=vec3(0.5, 0.0, 0.0);
-        //out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
         discard;
-        //return;        
-        //out_color = backGroundColor;
     }
-    else
-    {
-        vec2 tc_offset = vec2(0.0, 
-                              float(sourceParams_in.decklinkWorkaround_verticalOffset_pixels)
-                              //29.0 
-                              / textureSize(sourceParams_in_currentPlanarRendering, 0).y 
-        );
-    
-        vec2 tc_corrected = texCoords_0_1 - tc_offset;
-        tc_corrected.y = clamp(tc_corrected.y, 0.0, 1.0);
+
+    // correct for the black bar issue in dacklink capture cards:
+    // https://forum.blackmagicdesign.com/viewtopic.php?f=4&t=131164
+    vec2 tc_offset = vec2(0.0, 
+                          float(sourceParams_in.decklinkWorkaround_verticalOffset_pixels)
+                          / textureSize(sourceParams_in_currentPlanarRendering, 0).y 
+    );
+    vec2 tc_corrected = texCoords_0_1 - tc_offset;
+    tc_corrected = clamp(tc_corrected, vec2(0.0, 0.0), vec2(1.0, 1.0));
+               
+    // do the lookup in the source texture:
+    vec4 screenPixelColor = texture(sourceParams_in_currentPlanarRendering,
+                                    tc_corrected);
         
-        // WTF THIS WORKS! WHY? 
-        // (I suspect ISO 9300  euler angle convention,
-        // effectively flipping coordinate system handedness,
-        // resulting in a mirroring that must be compensated by the below line;
-        // adaptet convention, below line shouldn't be nececcary now)
-        //tc_corrected = vec2(1.0 - tc_corrected.x, tc_corrected.y) ;
- 
+    out_color = screenPixelColor ; // + backGroundColor + debugColor[sourceParams_in.index] ;
         
-        vec4 screenPixelColor = texture(sourceParams_in_currentPlanarRendering,
-                                        tc_corrected
-                                );
-                                        
-        vec4 debugColor[5] ;
-        debugColor[0] = vec4(1.0, 0.0, 0.0, 0.0);
-        debugColor[1] = vec4(0.0, 1.0, 0.0, 0.0);
-        debugColor[2] = vec4(0.0, 0.0, 1.0, 0.0);
-        debugColor[3] = vec4(1.0, 1.0, 0.0, 0.0);
-        debugColor[4] = vec4(1.0, 0.0, 1.0, 0.0);
-        //screenPixelColor = vec4(1.0);             
-                                   
-        out_color = screenPixelColor ; // + backGroundColor + debugColor[sourceParams_in.index] ;
-        
-        // out_color.a = 0.2 * (1.0 + (float(sourceParams_in.index)));
-        
-        
-    }
-    
     return;
-    
-    
-    
-    
-    
-    
-    // old code --------------------------
+        
+        
+    // TODO check why blending does not work
+    // vec4 debugColor[5] ;
+    // debugColor[0] = vec4(1.0, 0.0, 0.0, 0.0);
+    // debugColor[1] = vec4(0.0, 1.0, 0.0, 0.0);
+    // debugColor[2] = vec4(0.0, 0.0, 1.0, 0.0);
+    // debugColor[3] = vec4(1.0, 1.0, 0.0, 0.0);
+    // debugColor[4] = vec4(1.0, 0.0, 1.0, 0.0);
 
-    //vec4 screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, textCoord_backGroundTexture);
+    //{ old code; maybe useful for fisheye projection support later --------------------------
+    //screenPixelColor = oldCode_lookupTexture_fishEyeTc(oldParams_in, sinkParams_in, texCoord_backGroundTexture);
     //out_color = screenPixelColor + backGroundColor;
-    
-    
-   //debug multiple samplers (shaderEd bug); works
-   /*
-   out_color.r += vec4(texture(sinkParams_in_backgroundTexture, tc).xyz,1).r; 
-   out_color.r += vec4(texture(sourceParams_in_currentPlanarRendering, tc).xyz,1).r; 
-   out_color.r += vec4(texture(sourceParams_in_warpLUT, tc).xyz,1).r; 
-   out_color.r += vec4(texture(sourceParams_in_blendMask, tc).xyz,1).r; 
-   out_color.r /= 6.0;
-   */
-
+   //} end old code
 }
-
 #endif //DEVELOPMENT_CODE
 // ----------------------------------------------------------------------------
 
 
 
 
-
+// ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // Little helpers impl.
 
+
+
+// ----------------------------------------------------------------------------
 float angleToRadians(float angle)
 {
 	return angle / 180.0f * c_PI ;
 }
 // ----------------------------------------------------------------------------
-
-
-
 
 
 // ----------------------------------------------------------------------------
@@ -459,11 +405,37 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 // ----------------------------------------------------------------------------
 
 
+// ----------------------------------------------------------------------------
+vec2 fragCoordsToAziEle_Equirect(FS_SinkParams_in params, vec2 fragCoords)
+{
+    float azi_0_1 = fragCoords.x / params.resolution.x;  
+    float ele_0_1 = fragCoords.y / params.resolution.y;
+    
+    float azi_0_2pi = azi_0_1 * c_2PI;
+    
+    // elevation in [-pi/2 .. +pi/2]
+    // elevation == +pi/2 --> north or +y axis, respectively
+    // elevation ==  0    --> equator
+    // elevation == -pi/2 --> south or -y axis, respectively
+    //float ele_pmPih = (ele_0_1 * c_PI) - c_PIH;
+    //vec2 aziEle = vec2(azi_0_2pi, ele_pmPih);
+    
+    // elevation in [0 .. +pi]
+    // elevation ==  0  --> north or +y axis, respectively
+    // elevation ==  pi/2    --> equator
+    // elevation == -pi --> south or -y axis, respectively    
+    float ele_0_pi = (1.0 - ele_0_1) * c_PI 
+        //+ c_PIH //DEBUG
+        ;
+    vec2 aziEle = vec2(azi_0_2pi, ele_0_pi);
+    
+    return aziEle;
+}
+// ----------------------------------------------------------------------------
 
 
 
-
-
+    // old code; maybe useful for fisheye projection support later --------------------------
 
 
 
@@ -475,10 +447,14 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 //      south (-z axis): 2pi  radians 
 // ele: top   (+y axis): 0 radians
 //      horizon (xz-plane): pi/2 radians
-vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
+vec2 fragCoordsToAziEle_FishEye (FS_SinkParams_in params, vec2 fragCoords)
+//vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
 {
+    //[img size]^2 --> [0..1]^2;
+    vec2 texCoord_ViewPort = fragCoords.xy / params.resolution.xy;
+
 	//[0..1]^2 --> [-1..-1]^2
-	vec2 tc_centered_0_1 = (tc - vec2(0.5f,0.5f)) * 2.0f;
+	vec2 tc_centered_0_1 = (texCoord_ViewPort - vec2(0.5f,0.5f)) * 2.0f;
 
 	float r = length(tc_centered_0_1);
 
@@ -496,8 +472,7 @@ vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
 		}
 	}
 	
-	float ele = r * angleToRadians(s.domeAperture)/2.0f;
-	
+	float ele = r * angleToRadians(params.fishEyeFOV_angle)/2.0f;
 	
 	return vec2(azi,ele);
 }
@@ -507,7 +482,7 @@ vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
 
 
 
-vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords)
+vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, FS_SinkParams_in params, vec2 tex_coords)
 {
 	const vec4 backgroundColor = vec4(0.25,0,0,0);
 	
@@ -527,7 +502,8 @@ vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, vec2 tex_coords)
 		);
 	vec3 virtualScreenCenterPos_cartesian = aziEleToCartesian3D(virtualScreenAziEle_radians);
 	
-	vec2 pixel_aziEle_radians = oldCode_FishEyeTexCoordsToAziEle_radians(s, tex_coords);
+	//vec2 pixel_aziEle_radians = oldCode_FishEyeTexCoordsToAziEle_radians(s, tex_coords);
+	vec2 pixel_aziEle_radians = fragCoordsToAziEle_FishEye(params, gl_FragCoord.xy);
 	vec3 pixelPos_cartesian_onWorld = aziEleToCartesian3D(pixel_aziEle_radians);
 	
 	

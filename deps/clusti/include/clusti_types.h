@@ -181,7 +181,7 @@ struct Clusti_Params_Projection {
 	// passed to and used in shader in shadowmapping-style
 	graphene_matrix_t planar_viewProjectionMatrix;
 
-	float fisheye_openingAngle_degrees;
+	float fisheye_aperture_degrees;
 	//}
 };
 //-----------------------------------------------------------------------------

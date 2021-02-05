@@ -608,6 +608,15 @@ void clusti_parseOrientation(Clusti *instance, Clusti_State_Parsing *parser,
 				clusti_status_declareError(
 					"(yet) unsupported euler angle type");
 			}
+		} else if ((strcmp("axisConvention", attributeNamesAndValues[i]) == 0)) {
+			if (strcmp(attributeNamesAndValues[i + 1],
+				   "DIN9300") != 0) {
+				printf("(yet) unsupported euler axis convention type: %s\n",
+				       attributeNamesAndValues[i + 1]);
+				printf("In this prototype implementation, only DIN9300 is supported");
+				clusti_status_declareError(
+					"(yet) unsupported euler angle type");
+			}
 		} else if ((strcmp("unit", attributeNamesAndValues[i]) == 0)) {
 			if (strcmp(attributeNamesAndValues[i + 1], "degree") !=
 			    0) {

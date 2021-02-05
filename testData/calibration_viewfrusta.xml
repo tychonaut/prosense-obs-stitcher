@@ -70,8 +70,15 @@
                         *** IMPORTANT: The video *PLAYER* software needs
                         to be aware of this transformation and undo it! ***
                     -->
+                    
+                    <!-- axisConventions describe the rotation axes for the euler angles.
+                        They can be 
+                        DIN9300:  pitch axis = right, yaw axis = down, roll axis = front 
+                        OpenGL:   pitch axis = right, yaw axis = up,   roll axis = back 
+                   -->
                     <Orientation
                         type="euler_static_zxy"
+                        axisConvention="DIN9300"
                         unit="degree"
                         roll="90.0"
                         pitch="0.0"
@@ -180,6 +187,7 @@
                         
                         <Orientation
                             type="euler_static_zxy"
+                            axisConvention="DIN9300"
                             unit="degree"
                             yaw="38.56322"
                             pitch="22.76471"
@@ -240,6 +248,7 @@
                         />
                         <Orientation
                             type="euler_static_zxy"
+                            axisConvention="DIN9300"
                             unit="degree"
                             yaw="-116.45371"
                             pitch="52.31257"
@@ -270,6 +279,7 @@
                         />
                         <Orientation
                             type="euler_static_zxy"
+                            axisConvention="DIN9300"
                             unit="degree"
                             yaw="115.04663"
                             pitch="53.06412"
@@ -300,6 +310,7 @@
                         />
                         <Orientation
                             type="euler_static_zxy"
+                            axisConvention="DIN9300"
                             unit="degree"
                             yaw="-6.74970"
                             pitch="72.18367"

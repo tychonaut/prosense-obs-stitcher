@@ -137,8 +137,8 @@
                 name="ArenaRT1"
                 warpFileName="warpLUT_RT001.pfm"
                 blendImageName="blendmask_RT001.png"
-                testImageName="ParaView/RT001.png"
-                decklinkWorkaround_verticalOffset_pixels="28"
+                testImageName="OpenSpace/RT001.png"
+                decklinkWorkaround_verticalOffset_pixels="29"
             >        
                 <Resolution x="2560" y="1600" /> 
                 <Projection
@@ -202,8 +202,8 @@
                 name="ArenaRT2"
                 warpFileName="warpLUT_RT002.pfm"
                 blendImageName="blendmask_RT002.png"
-                testImageName="ParaView/RT002.png"
-                decklinkWorkaround_verticalOffset_pixels="28"
+                testImageName="OpenSpace/RT002.png"
+                decklinkWorkaround_verticalOffset_pixels="29"
             >        
                 <Resolution x="2560" y="1600" /> 
                 <Projection
@@ -232,8 +232,8 @@
                 name="ArenaRT3"
                 warpFileName="warpLUT_RT003.pfm"
                 blendImageName="blendmask_RT003.png"
-                testImageName="ParaView/RT003.png"
-                decklinkWorkaround_verticalOffset_pixels="28"
+                testImageName="OpenSpace/RT003.png"
+                decklinkWorkaround_verticalOffset_pixels="29"
             >        
                 <Resolution x="2560" y="1600" /> 
                 <Projection
@@ -263,8 +263,8 @@
                 name="ArenaRT4"
                 warpFileName="warpLUT_RT004.pfm"
                 blendImageName="blendmask_RT004.png"
-                testImageName="ParaView/RT004.png"
-                decklinkWorkaround_verticalOffset_pixels="28"
+                testImageName="OpenSpace/RT004.png"
+                decklinkWorkaround_verticalOffset_pixels="29"
             >        
                 <Resolution x="2560" y="1600" /> 
                 <Projection
@@ -294,8 +294,8 @@
                 name="ArenaRT5"
                 warpFileName="warpLUT_RT005.pfm"
                 blendImageName="blendmask_RT005.png"
-                testImageName="ParaView/RT005.png"
-                decklinkWorkaround_verticalOffset_pixels="28"
+                testImageName="OpenSpace/RT005.png"
+                decklinkWorkaround_verticalOffset_pixels="29"
             >        
                 <Resolution x="2560" y="1600" /> 
                 <Projection

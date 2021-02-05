@@ -351,8 +351,8 @@ void main()
     else
     {
         vec2 tc_offset = vec2(0.0, 
-                               //float(sourceParams_in.decklinkWorkaround_verticalOffset_pixels)
-                              29.0 
+                              float(sourceParams_in.decklinkWorkaround_verticalOffset_pixels)
+                              //29.0 
                               / textureSize(sourceParams_in_currentPlanarRendering, 0).y 
         );
     

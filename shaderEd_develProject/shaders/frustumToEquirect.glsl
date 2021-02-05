@@ -227,6 +227,12 @@ float angleToRadians(float angle);
 vec3  aziEleToCartesian3D(vec2 aziEle_rads);
 vec2 fragCoordsToAziEle_Equirect(FS_SinkParams_in params, vec2 fragCoords);
 vec2 fragCoordsToAziEle_FishEye (FS_SinkParams_in params, vec2 fragCoords);
+// Transform direction vector, interpreted as position vector
+// (this is valid, becaus all frusta are currently expected 
+// to sit in the center), from world coords into image-space
+// coords of the current frustum: 'shadow mapping-lookup-style':
+// warning: can return values outside [0..1]^2, must be checked!
+vec2 cartesianDirectionToSourceTexCoords(vec3 dir, mat4 viewProjectionMatrix);
 
 //-------------------------------------
 // old and possibly obsolete code:
@@ -271,7 +277,7 @@ void main()
     
     
     
-    //{ fragment coords to equirect. azimuth and elevation:
+    //{ fragment coords to azimuth and elevation, either equirect or fishEye
     vec2 aziEle;
     if(sinkParams_in.useFishEye)
     {
@@ -280,40 +286,16 @@ void main()
     {
         aziEle = fragCoordsToAziEle_Equirect(sinkParams_in, gl_FragCoord.xy);
     }
-    
-    
-    
     //}
-    
     
     // azimuth and elevation to cartesian (xyz) coords:
     vec3 dir_cartesian = aziEleToCartesian3D(aziEle);
     
+    vec2 texCoords_0_1 = 
+        cartesianDirectionToSourceTexCoords(
+            dir_cartesian,  
+            sourceParams_in.frustum_viewProjectionMatrix);
     
-    //{ transform direction vector, interpreted as position vector
-    //  (this is valid, becaus all frusta are currently expected 
-    //  to sit in the center), from world coords into image-space
-    //  coords of the current frustum: 'shadow mapping-lookup-style':
-    vec4 dir_frustumCamCoords = 
-        sourceParams_in.frustum_viewMatrix
-        * vec4(dir_cartesian.xyz, 1.0);
-        
-    // filter geometry behind frustum    
-    if(dir_frustumCamCoords.z > 0.0)
-    {  
-        discard;
-    }
-    
-    vec4 texCoords_projected = 
-        sourceParams_in.frustum_projectionMatrix
-        * vec4(dir_frustumCamCoords.xyz, 1.0);
-        
-    // Clip coords to Normalized device coords (NCD): Div by homogeneous (W) coord
-    vec3 texCoords_NDC = texCoords_projected.xyz / texCoords_projected.w;
-    
-    // NDC [-1 .. +1] --> image space[0..1]       
-    vec2 texCoords_0_1 =  (texCoords_NDC.xy * 0.5) + vec2(0.5, 0.5);
-    //}
     
     //discard fragment if corresponding direction is not covered by the current frustum
     // i.e. image coord are outside  [0..1]^2
@@ -365,6 +347,36 @@ void main()
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // Little helpers impl.
+
+// Transform direction vector, interpreted as position vector
+// (this is valid, becaus all frusta are currently expected 
+// to sit in the center), from world coords into image-space
+// coords of the current frustum: 'shadow mapping-lookup-style':
+// warning: can return values outside [0..1]^2, must be checked!
+vec2 cartesianDirectionToSourceTexCoords(vec3 dir, mat4 viewProjectionMatrix)
+{
+    vec4 dir_frustumCamCoords = 
+        sourceParams_in.frustum_viewMatrix
+        * vec4(dir.xyz, 1.0);
+        
+    // filter geometry behind frustum    
+    if(dir_frustumCamCoords.z > 0.0)
+    {  
+        discard;
+    }
+    
+    vec4 texCoords_projected = 
+        sourceParams_in.frustum_projectionMatrix
+        * vec4(dir_frustumCamCoords.xyz, 1.0);
+        
+    // Clip coords to Normalized device coords (NCD): Div by homogeneous (W) coord
+    vec3 texCoords_NDC = texCoords_projected.xyz / texCoords_projected.w;
+    
+    // NDC [-1 .. +1] --> image space[0..1]       
+    vec2 texCoords_0_1 =  (texCoords_NDC.xy * 0.5) + vec2(0.5, 0.5);
+
+    return texCoords_0_1;
+}
 
 
 

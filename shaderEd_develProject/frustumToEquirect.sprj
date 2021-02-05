@@ -162,32 +162,6 @@
 						<value>false</value>
 					</row>
 				</variable>
-				<variable type="float4x4" name="sinkParams_in.sceneRotationMatrix">
-					<row>
-						<value>1</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>1</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>1</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>1</value>
-					</row>
-				</variable>
 				<variable type="int" name="sourceParams_in.index">
 					<row>
 						<value>0</value>
@@ -311,7 +285,6 @@
 		<entry type="pinned" name="sinkParams_in.cropRectangle_max" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sinkParams_in.resolution_effective" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sinkParams_in.useSceneRotationMatrix" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.sceneRotationMatrix" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.index" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.frustum_viewProjectionMatrix" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.decklinkWorkaround_verticalOffset_pixels" owner="frustumToEquirect_pass" />
@@ -339,8 +312,11 @@
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="174" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="84" use_cond="true" cond="" enabled="true" />
 		<entry type="bkpt" file="D:/devel/wings_domeshader/SHADEReD_project/shaders/frustumToEquirect.glsl" line="130" use_cond="true" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="663" use_cond="false" cond="" enabled="true" />
-		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="662" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="678" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="677" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="676" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="675" use_cond="false" cond="" enabled="true" />
+		<entry type="bkpt" file="C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/shaderEd_develProject/shaders/frustumToEquirect.glsl" line="674" use_cond="false" cond="" enabled="true" />
 	</settings>
 	<plugindata />
 </project>

@@ -114,7 +114,7 @@ struct FS_SinkParams_in {
     
     //TODO setup in host data structures
     bool useSceneRotationMatrix;
-    mat4 sceneRotationMatrix;
+    mat4 scene_RotationMatrix;
 };
 
 uniform FS_SinkParams_in sinkParams_in;
@@ -124,11 +124,26 @@ struct FS_SourceParams_in {
     int index;
     //sampler2D currentPlanarRendering;
     
+    
+    // just for debugging, prefer pre-accumulated versions
+    // like frustum_viewProjectionMatrix 
+    // or frustum_reorientedViewProjectionMatrix
+    
+    //  frustum_viewMatrix = transpose(frustum_rotationMatrix)
     mat4 frustum_viewMatrix;
     mat4 frustum_projectionMatrix;
 
-    
+    // accumulated VP matrix:
+    // frustum_viewProjectionMatrix =  frustum_projectionMatrix * frustum_viewMatrix;
     mat4 frustum_viewProjectionMatrix;
+    
+    // accumulated VP matrix, but additionally applied rotation to whole scene
+    // (e.g. to fit the hemisphere of a tilted dome into the left half of 
+    // an equirect. projection)
+    // frustum_reorientedRotationMatrix = scene_RotationMatrix * frustum_rotationMatrix
+    // frustum_reorientedViewMatrix = transpose(frustum_reorientedRotationMatrix);
+    // frustum_reorientedViewProjectionMatrix = frustum_projectionMatrix * frustum_reorientedViewMatrix
+    mat4 frustum_reorientedViewProjectionMatrix;
     
     int decklinkWorkaround_verticalOffset_pixels;
     
@@ -290,10 +305,7 @@ void main()
     
     
     vec4 dir_frustumCamCoords = 
-        //orig
-        //sourceParams_in.frustum_viewMatrix
-        // WTF THIS WORKS! WHY!
-        transpose(sourceParams_in.frustum_viewMatrix)
+        sourceParams_in.frustum_viewMatrix
         * vec4(dir_cartesian.xyz, 1.0);
         
     // filter geometry behind frustum    

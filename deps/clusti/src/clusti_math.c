@@ -70,8 +70,10 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	graphene_euler_t *eulerAnglesPtr =
 		&(planarProjection_inOut->orientation);
 
+	graphene_matrix_t rotationMatrix;
+	graphene_euler_to_matrix(eulerAnglesPtr, &rotationMatrix);
 	graphene_matrix_t viewMatrix;
-	graphene_euler_to_matrix(eulerAnglesPtr, &viewMatrix);
+	graphene_matrix_transpose(&rotationMatrix, &viewMatrix);
 
 	planarProjection_inOut->planar_viewMatrix = viewMatrix;
 
@@ -139,15 +141,20 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	}
 
 	
-	// create viewProjection matrix: vpm = p * v;
-	// store it directlyy into the target struct
+	// create viewProjection matrix:
+	// in OpenGL   convention: p_proj   =  P_gl * V_gl * p;
+	// in Graphene convention: p_proj^T = (P_gl * V_gl * p)^T;
+	//				    = p^T * V_gl^T * P_gl^T
+	// V_gl^T corresponds to V_gr
+	// (they are transposes of each other)
+	// -->                     p_proj^T = p^T * V_gr * P_gr
+	// --> viewProjectionMatrix_graphene =   V_gr * P_gr
+	// --> left to right multiply in graphene!
 	graphene_matrix_multiply(
-		&projMatrix, &viewMatrix,
+		// view left, proj right
+		&viewMatrix,  &projMatrix,
+		// store it directlyy into the target struct
 		&(planarProjection_inOut->planar_viewProjectionMatrix));
-
-	//graphene_matrix_multiply(
-	//	&projMatrix, &projMatrix,
-	//	&(planarProjection_inOut->planar_viewProjectionMatrix));
 
 
 	//debug stuff:

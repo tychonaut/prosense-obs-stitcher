@@ -203,11 +203,29 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
 	glUniform1i(currULoc, 0);
 
-	//ivec2
-	// TODO adapt
-	currULoc = glGetUniformLocation(currProg, "sinkParams_in.resolution");
-	glUniform2i(currULoc, sink_config->virtualResolution.x,
-		    sink_config->virtualResolution.y);
+
+	// Resolution and cropping stuff:
+	//vec2 resolution_virtual;
+	currULoc = glGetUniformLocation(currProg, "sinkParams_in.resolution_virtual");
+	glUniform2f(currULoc, (float) sink_config->virtualResolution.x,
+		    (float) sink_config->virtualResolution.y);
+	//vec2 cropRectangle_lowerLeft;
+	currULoc = glGetUniformLocation(currProg,
+					"sinkParams_in.cropRectangle_lowerLeft");
+	glUniform2f(currULoc, (float)sink_config->cropRectangle.lowerLeft.x,
+		    (float)sink_config->cropRectangle.lowerLeft.y);
+	//// *actual* render target reolution!
+	////vec2 cropRectangle_extents;
+	//// unused in shader
+	//currULoc = glGetUniformLocation(
+	//	currProg, "sinkParams_in.cropRectangle_extents");
+	//glUniform2f(currULoc, (float) sink_config->cropRectangle.extents.x,
+	//	    (float) sink_config->cropRectangle.extents.y);
+	////old code:
+	//currULoc = glGetUniformLocation(currProg, "sinkParams_in.resolution");
+	//glUniform2i(currULoc, sink_config->virtualResolution.x,
+	//	    sink_config->virtualResolution.y);	
+
 
 	//FishEye?
 	//bool
@@ -362,16 +380,18 @@ void createRenderState(Clusti *clusti)
 	renderState->leftMouseButtonDown = false;
 	
 
-	renderState->renderTargetRes = {
-		.x = (clusti->stitchingConfig.videoSinks[0]
-			      .cropRectangle.max.x -
-		      clusti->stitchingConfig.videoSinks[0]
-			      .cropRectangle.min.x),
-		.y = (clusti->stitchingConfig.videoSinks[0]
-			      .cropRectangle.max.y -
-		      clusti->stitchingConfig.videoSinks[0]
-			      .cropRectangle.min.y)
-	};
+	renderState->renderTargetRes =
+		clusti->stitchingConfig.videoSinks[0].cropRectangle.extents;
+	//{
+	//	.x = (clusti->stitchingConfig.videoSinks[0]
+	//		      .cropRectangle.max.x -
+	//	      clusti->stitchingConfig.videoSinks[0]
+	//		      .cropRectangle.min.x),
+	//	.y = (clusti->stitchingConfig.videoSinks[0]
+	//		      .cropRectangle.max.y -
+	//	      clusti->stitchingConfig.videoSinks[0]
+	//		      .cropRectangle.min.y)
+	//};
 
 	renderState->currentRenderScale =
 		(clusti->stitchingConfig.videoSinks[0]
@@ -520,12 +540,13 @@ void createRenderState(Clusti *clusti)
 			   renderState->renderTargetRes.x,
 			   renderState->renderTargetRes.y);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnablei(GL_BLEND, 0);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnablei(GL_BLEND, 1);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+		glDisable(GL_BLEND);
+		//glEnable(GL_BLEND);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glEnablei(GL_BLEND, 0);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glEnablei(GL_BLEND, 1);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
 		// use stitching shader
 		glUseProgram(renderState->stitchShaderProgram);

@@ -35,8 +35,8 @@ struct Clusti_iRectangle;
 typedef struct Clusti_iRectangle Clusti_iRectangle;
 struct Clusti_iRectangle {
 
-	Clusti_ivec2 min;
-	Clusti_ivec2 max;
+	Clusti_ivec2 lowerLeft;
+	Clusti_ivec2 extents;
 };
 
 //   Maybe needed later...

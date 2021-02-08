@@ -92,6 +92,7 @@
                         hemisphere behind the main view direction! ***
                     
                         pitch="0.0"
+                        pitch="21.0"
                         pitch="111.0"
                         pitch="-69.0"
                     -->
@@ -99,8 +100,8 @@
                         type="euler_static_zxy"
                         axisConvention="DIN9300"
                         unit="degree"
-                        roll="0.0"
-                        pitch="21.0"
+                        roll="180.0"
+                        pitch="-111.0"
                         yaw="0.0"
                     />
                 </Projection>
@@ -110,14 +111,22 @@
                     y="4096"
                 />
                 
-                <!-- will yield actual canvas rendering, encoding and streaming resolution -->
+                <!-- (extents_x, extents_y) is the *actual* canvas resolution
+                     for rendering, encoding and streaming -->
                 <CropRectangle
-                    x_min="0"
+                    lowerLeft_x="0"
+                    lowerLeft_y="0"
+                    extents_x="4096"
+                    extents_y="4096"
+                />
+                <!--
+                <CropRectangle
+                    x_min="4096"
                     y_min="0"
                     x_max="8192"
                     y_max="4096"
                 />
-                
+                -->
             </VideoSink>
         
         </VideoSinks>    

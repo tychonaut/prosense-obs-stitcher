@@ -25,7 +25,10 @@
 uniform sampler2D sinkParams_in_backgroundTexture;
 uniform sampler2D sourceParams_in_currentPlanarRendering;
 
+
+// currently unused
 uniform sampler2D sourceParams_in_warpLUT;
+// currently unused
 uniform sampler2D sourceParams_in_blendMask;
 
 //}
@@ -38,17 +41,56 @@ uniform sampler2D sourceParams_in_blendMask;
 
 struct FS_SinkParams_in {
     int index;
-    //sampler2D backgroundTexture;
-    //KISS for first iteration:
-    ivec2 resolution; 
     
-    // How to interpret this orientation:
+    //sampler2D backgroundTexture;
+    
+    // resolution the whole 4pi steradian panorama image would have;
+    // TODO change to float vectors
+    vec2 resolution_virtual; 
+    vec2 cropRectangle_lowerLeft;
+    // *actual* render target resolution!
+    // vec2 cropRectangle_extents; // unused
+    // obsolete
+    //ivec2 resolution;
+    
+    
+    // in case of fisheye projection (planned alternative to eqirect):
+    // TODO setup in host data structures
+    // hacky flip from equirect to fisheye;
+    // dependent compilation would be better, but not for this prototype...
+    bool useFishEye;
+    float fishEyeFOV_angle;
+};
+
+uniform FS_SinkParams_in sinkParams_in;
+
+
+struct FS_SourceParams_in {
+   
+     int index;
+   
+     //sampler2D currentPlanarRendering;
+     
+	//  Decklink 'black bar'-bug workaround:
+	//  https://forum.blackmagicdesign.com/viewtopic.php?f=4&t=131164&p=711173&hilit=black+bar+quad#p711173
+	//  ('VideoSource.decklinkWorkaround_verticalOffset_pixels' in config file)
+    int decklinkWorkaround_verticalOffset_pixels;
+    
+    // accumulated VP matrix, but additionally applied rotation to whole scene
+    // (e.g. to fit the hemisphere of a tilted dome into the left half of 
+    // an equirect. projection)
+    // frustum_reorientedRotationMatrix = sink_rotationMatrix * frustum_rotationMatrix
+    // frustum_reorientedViewMatrix = transpose(frustum_reorientedRotationMatrix);
+    // frustum_reorientedViewProjectionMatrix = frustum_projectionMatrix * frustum_reorientedViewMatrix
+    //
+    // How to interpret sink_rotationMatrix
+    // (calculated from VideoSink.Projection.Orientation in config file):
     // The goal is to re-parametrize the canvas of 
     // a full-sphere projection, so that the sub-canvas
-    // filled by e.g. a 21°-tilted hemispheric dome
+    // filled by e.g. a 21°-tilted hemispherical dome
     // fills the canvas in a way that has desireable 
-    // properties.
-    // To stick with the above example: If the full 
+    // properties for encoding and streaming.
+    // E.g. if the full 
     // spherical equirectangular canvas would have
     // a (virtual) resolution of 8k*4k, and if we would
     // encode  the dome image naively, 
@@ -59,66 +101,32 @@ struct FS_SinkParams_in {
     // 4k*4k resolution) and to save bandwidth,
     // the tilted dome could be encoded in the 
     // left 4kx4k half of the virtual 8kx4k canvas.
-    // Therefore, the whole scene (i.e. each frustum)
-    // needs to be rotated by 
-    // roll=90.0, pitch=0.0 yaw=21.0,
-    // in order to yield a left-only hemisphere
-    // only negative x values).
-    // 
+    // To achieve this, first undo the -21°tilt:
+    // tilt by +21°, resulting in only the upper half 
+    // of the canvas to be filled by the dome's hemisphere,
+    // then tilt another +90° (=+111° in total), mapping all
+    // pixels to the left half.
+    //
     // IMPORTANT: The video *PLAYER* software needs
-    // to be aware of this transformation and undo it
-    //TODO setup in host data structures
-    bool useSceneRotationMatrix;
-    mat4 scene_RotationMatrix;
-    
-    // in case of fisheye projection (planned alternative to eqirect):
-    // TODO setup in host data structures
-    // hacky flip from equirect to fisheye;
-    // dependent compilation would be better, but not for this prototype...
-    bool useFishEye;
-    float fishEyeFOV_angle;
-    
-    
-    // rest of this struct is unused yet
-    // resolution the whole 4pi steradian panorama image would have;
-    ivec2 resolution_virtual; 
-    ivec2 cropRectangle_min;
-    ivec2 cropRectangle_max;
-    //precalculated from cropRectangle
-    ivec2 resolution_effective;
-};
+    // to be aware of the sink_rotationMatrix transformation and undo it!
+    mat4 frustum_reorientedViewProjectionMatrix;
 
-uniform FS_SinkParams_in sinkParams_in;
-
-
-struct FS_SourceParams_in {
-    int index;
-    //sampler2D currentPlanarRendering;
     
+    // ---------------------------------
     
-    // just for debugging, prefer pre-accumulated versions
-    // like frustum_viewProjectionMatrix 
-    // or frustum_reorientedViewProjectionMatrix
-    
+    //{ just for debugging, prefer pre-accumulated versions
+    //  like frustum_viewProjectionMatrix 
+    //  or frustum_reorientedViewProjectionMatrix:
     //  frustum_viewMatrix = transpose(frustum_rotationMatrix)
     mat4 frustum_viewMatrix;
     mat4 frustum_projectionMatrix;
-
-    // accumulated VP matrix:
+    // accumulated VP matrix: in OpenGL notation (right-to-left-multiply):
     // frustum_viewProjectionMatrix =  frustum_projectionMatrix * frustum_viewMatrix;
     mat4 frustum_viewProjectionMatrix;
+    //}
     
-    // accumulated VP matrix, but additionally applied rotation to whole scene
-    // (e.g. to fit the hemisphere of a tilted dome into the left half of 
-    // an equirect. projection)
-    // frustum_reorientedRotationMatrix = scene_RotationMatrix * frustum_rotationMatrix
-    // frustum_reorientedViewMatrix = transpose(frustum_reorientedRotationMatrix);
-    // frustum_reorientedViewProjectionMatrix = frustum_projectionMatrix * frustum_reorientedViewMatrix
-    mat4 frustum_reorientedViewProjectionMatrix;
     
-    int decklinkWorkaround_verticalOffset_pixels;
-    
-    // rest of this struct is unused yet
+    //{ rest of this struct is unused yet
     
     // currently unused; default false
     bool doImageWarp;
@@ -134,6 +142,8 @@ struct FS_SourceParams_in {
     
     bool doBlending;
     //sampler2D blendMask;
+    
+    //}
 };
 
 uniform FS_SourceParams_in sourceParams_in;
@@ -221,11 +231,20 @@ layout(location = 0) out vec4 out_color;
 // main function impl.
 void main()
 {
-    // smaple background texture:
-    vec2 texCoord_backGroundTexture = gl_FragCoord.xy / sinkParams_in.resolution.xy;  
+    vec2 fragCoords_cropCorrected = gl_FragCoord.xy 
+                                   + sinkParams_in.cropRectangle_lowerLeft.xy;
+                                   
+    // sample background texture:
+    vec2 texCoords_backGroundTexture = 
+        fragCoords_cropCorrected
+        /
+        sinkParams_in.resolution_virtual;
+    //    gl_FragCoord.xy 
+    //    / sinkParams_in.resolution.xy;
+        
     vec4 backGroundColor = 
         vec4(texture(sinkParams_in_backgroundTexture,
-                     texCoord_backGroundTexture.xy).xyz, 1.0);
+                     texCoords_backGroundTexture.xy).xyz, 1.0);
                      
     // DEBUG: some non-black debug background color to spot black bars:
     if(all(lessThan(backGroundColor.xyz, vec3(0.1))))
@@ -239,10 +258,12 @@ void main()
     vec2 aziEle;
     if(sinkParams_in.useFishEye)
     {
-        aziEle = fragCoordsToAziEle_FishEye(sinkParams_in, gl_FragCoord.xy);
+        aziEle = fragCoordsToAziEle_FishEye(sinkParams_in,
+                                            fragCoords_cropCorrected.xy);
     }else
     {
-        aziEle = fragCoordsToAziEle_Equirect(sinkParams_in, gl_FragCoord.xy);
+        aziEle = fragCoordsToAziEle_Equirect(sinkParams_in,
+                                             fragCoords_cropCorrected.xy);
     }
     //}
     
@@ -375,25 +396,17 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 // ----------------------------------------------------------------------------
 vec2 fragCoordsToAziEle_Equirect(FS_SinkParams_in params, vec2 fragCoords)
 {
-    float azi_0_1 = fragCoords.x / params.resolution.x;  
-    float ele_0_1 = fragCoords.y / params.resolution.y;
+    float azi_0_1 = fragCoords.x / params.resolution_virtual.x;  
+    float ele_0_1 = fragCoords.y / params.resolution_virtual.y;
     
     float azi_0_2pi = azi_0_1 * c_2PI;
-    
-    // elevation in [-pi/2 .. +pi/2]
-    // elevation == +pi/2 --> north or +y axis, respectively
-    // elevation ==  0    --> equator
-    // elevation == -pi/2 --> south or -y axis, respectively
-    //float ele_pmPih = (ele_0_1 * c_PI) - c_PIH;
-    //vec2 aziEle = vec2(azi_0_2pi, ele_pmPih);
     
     // elevation in [0 .. +pi]
     // elevation ==  0  --> north or +y axis, respectively
     // elevation ==  pi/2    --> equator
     // elevation == -pi --> south or -y axis, respectively    
-    float ele_0_pi = (1.0 - ele_0_1) * c_PI 
-        //+ c_PIH //DEBUG
-        ;
+    float ele_0_pi = (1.0 - ele_0_1) * c_PI;
+    
     vec2 aziEle = vec2(azi_0_2pi, ele_0_pi);
     
     return aziEle;
@@ -418,7 +431,7 @@ vec2 fragCoordsToAziEle_FishEye (FS_SinkParams_in params, vec2 fragCoords)
 //vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
 {
     //[img size]^2 --> [0..1]^2;
-    vec2 texCoord_ViewPort = fragCoords.xy / params.resolution.xy;
+    vec2 texCoord_ViewPort = fragCoords.xy / params.resolution_virtual.xy;
 
 	//[0..1]^2 --> [-1..-1]^2
 	vec2 tc_centered_0_1 = (texCoord_ViewPort - vec2(0.5f,0.5f)) * 2.0f;

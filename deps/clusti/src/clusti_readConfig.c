@@ -399,17 +399,17 @@ void clusti_parseBlending(Clusti *instance, Clusti_State_Parsing *parser,
 void clusti_parseRectangle(Clusti *instance, Clusti_State_Parsing *parser,
 			   const char **attributeNamesAndValues)
 {
-	Clusti_iRectangle rect = {.min = {0, 0}, .max = {0, 0}};
+	Clusti_iRectangle rect = {.lowerLeft = {0, 0}, .extents = {0, 0}};
 
 	for (size_t i = 0; attributeNamesAndValues[i]; i += 2) {
-		if ((strcmp("x_min", attributeNamesAndValues[i]) == 0)) {
-			rect.min.x = atoi(attributeNamesAndValues[i + 1]);
-		} else if((strcmp("y_min", attributeNamesAndValues[i]) == 0)){
-			rect.min.y = atoi(attributeNamesAndValues[i + 1]);
-		} else if ((strcmp("x_max", attributeNamesAndValues[i]) == 0)) {
-			rect.max.x = atoi(attributeNamesAndValues[i + 1]);
-		} else if ((strcmp("y_max", attributeNamesAndValues[i]) == 0)) {
-			rect.max.y = atoi(attributeNamesAndValues[i + 1]);
+		if ((strcmp("lowerLeft_x", attributeNamesAndValues[i]) == 0)) {
+			rect.lowerLeft.x = atoi(attributeNamesAndValues[i + 1]);
+		} else if((strcmp("lowerLeft_y", attributeNamesAndValues[i]) == 0)){
+			rect.lowerLeft.y = atoi(attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("extents_x", attributeNamesAndValues[i]) == 0)) {
+			rect.extents.x = atoi(attributeNamesAndValues[i + 1]);
+		} else if ((strcmp("extents_y", attributeNamesAndValues[i]) == 0)) {
+			rect.extents.y = atoi(attributeNamesAndValues[i + 1]);
 		}
 		else
 		{

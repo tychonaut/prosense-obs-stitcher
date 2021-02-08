@@ -60,43 +60,6 @@
 						<value>0</value>
 					</row>
 				</variable>
-				<variable type="int2" name="sinkParams_in.resolution">
-					<row>
-						<value>8192</value>
-						<value>4096</value>
-					</row>
-				</variable>
-				<variable type="bool" name="sinkParams_in.useSceneRotationMatrix">
-					<row>
-						<value>false</value>
-					</row>
-				</variable>
-				<variable type="float4x4" name="sinkParams_in.scene_RotationMatrix">
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-				</variable>
 				<variable type="bool" name="sinkParams_in.useFishEye">
 					<row>
 						<value>false</value>
@@ -108,24 +71,6 @@
 					</row>
 				</variable>
 				<variable type="int2" name="sinkParams_in.resolution_virtual">
-					<row>
-						<value>8192</value>
-						<value>4096</value>
-					</row>
-				</variable>
-				<variable type="int2" name="sinkParams_in.cropRectangle_min">
-					<row>
-						<value>0</value>
-						<value>0</value>
-					</row>
-				</variable>
-				<variable type="int2" name="sinkParams_in.cropRectangle_max">
-					<row>
-						<value>8192</value>
-						<value>4096</value>
-					</row>
-				</variable>
-				<variable type="int2" name="sinkParams_in.resolution_effective">
 					<row>
 						<value>8192</value>
 						<value>4096</value>
@@ -313,15 +258,9 @@
 		<entry type="file" name="frustumToEquirect_pass" shader="vs" />
 		<entry type="file" name="frustumToEquirect_pass" shader="ps" />
 		<entry type="pinned" name="sinkParams_in.index" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.resolution" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.useSceneRotationMatrix" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.scene_RotationMatrix" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sinkParams_in.useFishEye" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sinkParams_in.fishEyeFOV_angle" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sinkParams_in.resolution_virtual" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.cropRectangle_min" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.cropRectangle_max" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="sinkParams_in.resolution_effective" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.index" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.frustum_viewMatrix" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.frustum_projectionMatrix" owner="frustumToEquirect_pass" />

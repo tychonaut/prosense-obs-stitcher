@@ -325,64 +325,6 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 		"sourceParams_in.decklinkWorkaround_verticalOffset_pixels");
 	glUniform1i(currULoc, source_config->decklinkWorkaround_verticalOffset_pixels);
 
-
-	
-
-
-
-
-
-
-
-
-	// old uniforms: -----------------------------------
-
-	//glActiveTexture(GL_TEXTURE0 + 0);
-	//glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
-	//glUniform1i(glGetUniformLocation(
-	//		    renderState->stitchShaderProgram,
-	//		    "oldParams_in_planarRend"),
-	//		    //"oldParams_in.currentPlanarRendering"),
-	//	    0);
-
-	//glActiveTexture(GL_TEXTURE0 + 1);
-	//glBindTexture(GL_TEXTURE_2D, sink_render->backgroundTexture);
-	//glUniform1i(
-	//	glGetUniformLocation(renderState->stitchShaderProgram,
-	//			     //"oldParams_in.backgroundTexture"),
-	//			     "oldParams_in_bgt"),
-	//	    1);
-
-	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
-					 "oldParams_in.domeRadius"),
-		    300.000000f);
-	glUniform1f(
-		glGetUniformLocation(renderState->stitchShaderProgram,
-				     "oldParams_in.virtualScreenWidth"),
-		600.000000f);
-	glUniform1f(
-		glGetUniformLocation(renderState->stitchShaderProgram,
-				     "oldParams_in.virtualScreenHeight"),
-		199.199997f);
-	glUniform1f(
-		glGetUniformLocation(renderState->stitchShaderProgram,
-				     "oldParams_in.virtualScreenAzimuth"),
-		-37.689999f);
-	glUniform1f(glGetUniformLocation(
-			    renderState->stitchShaderProgram,
-			    "oldParams_in.virtualScreenElevation"),
-		    3.600000f);
-	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
-					 "oldParams_in.domeAperture"),
-		    180.000000f);
-	glUniform1f(glGetUniformLocation(renderState->stitchShaderProgram,
-					 "oldParams_in.domeTilt"),
-		    21.610001f);
-	glUniform2i(
-		glGetUniformLocation(
-			renderState->stitchShaderProgram,
-			"oldParams_in.renderTargetResolution_uncropped"),
-		8192, 4096);
 }
 
 

@@ -28,45 +28,11 @@ uniform sampler2D sourceParams_in_currentPlanarRendering;
 uniform sampler2D sourceParams_in_warpLUT;
 uniform sampler2D sourceParams_in_blendMask;
 
-// even commented this screws up ShaderEd's parser
-//uniform sampler2D oldParams_in_bgt;
-//uniform sampler2D oldParams_in_planarRend;
-
 //}
 
 
 
-struct OldCode_FS_input {
 
-	//@ label: "dome radius cm", editor: range,  min: 0, max: 10000, range_min: 0, range_max: 10000, range_default: 300
-	float domeRadius;
-	//@ label: "dome aperture degrees", editor: range,  min: 0, max: 360, range_min: 0, range_max: 360, range_default: 180
-	float domeAperture;
-	//@ label: "virtual screen azimuth", editor: range,  min: -180, max: 180, range_min: -180, range_max: 180, range_default: 0
-	
-
-	
-	float virtualScreenAzimuth;
-	//@ label: "virtual screen elevation", editor: range,  min: -90, max: 90, range_min: -90, range_max: 90, range_default: 35
-	float virtualScreenElevation;
-	//@ label: "virtual screen width cm", editor: range,  min: 0, max: 10000, range_min: 0, range_max: 10000, range_default: 355
-	float virtualScreenWidth;
-	//@ label: "virtual screen height cm", editor: range,  min: 0, max: 10000, range_min: 0, range_max: 10000, range_default: 200
-	float virtualScreenHeight;
-	//@ label: "dome tilt degrees", editor: range,  min: 0, max: 180, range_min: 0, range_max: 180, range_default: 21
-	float domeTilt;
-	
-	// renderTargetResolution_uncropped
-	ivec2 renderTargetResolution_uncropped;
-	
-	mat4 frustum_viewProjectionMatrix;
-	
-	
-	//workaround for shaderEd development: scale preview;
-	//float debug_previewScalefactor;
-};
-
-uniform OldCode_FS_input oldParams_in; //oldcode_in_params;
 
 
 
@@ -234,14 +200,6 @@ vec2 fragCoordsToAziEle_FishEye (FS_SinkParams_in params, vec2 fragCoords);
 // warning: can return values outside [0..1]^2, must be checked!
 vec2 cartesianDirectionToSourceTexCoords(vec3 dir, mat4 viewProjectionMatrix);
 
-//-------------------------------------
-// old and possibly obsolete code:
-vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, FS_SinkParams_in params, vec2 tex_coords);
-// ----------------------------------------------------------------------------
-
-
-
-
 
 
 
@@ -322,10 +280,8 @@ void main()
                                     tc_corrected);
         
     out_color = screenPixelColor ; // + backGroundColor + debugColor[sourceParams_in.index] ;
-        
-    return;
-        
-        
+    
+    
     // TODO check why blending does not work
     // vec4 debugColor[5] ;
     // debugColor[0] = vec4(1.0, 0.0, 0.0, 0.0);
@@ -333,12 +289,6 @@ void main()
     // debugColor[2] = vec4(0.0, 0.0, 1.0, 0.0);
     // debugColor[3] = vec4(1.0, 1.0, 0.0, 0.0);
     // debugColor[4] = vec4(1.0, 0.0, 1.0, 0.0);
-
-    //{ old code; maybe useful for fisheye projection support later --------------------------
-    //screenPixelColor = oldCode_lookupTexture_fishEyeTc(
-    //        oldParams_in, sinkParams_in, texCoord_backGroundTexture);
-    //out_color = screenPixelColor + backGroundColor;
-   //} end old code
 }
 #endif //DEVELOPMENT_CODE
 // ----------------------------------------------------------------------------
@@ -494,101 +444,6 @@ vec2 fragCoordsToAziEle_FishEye (FS_SinkParams_in params, vec2 fragCoords)
 	return vec2(azi,ele);
 }
 
-
-
-
-
-
-vec4 oldCode_lookupTexture_fishEyeTc(OldCode_FS_input s, FS_SinkParams_in params, vec2 tex_coords)
-{
-	const vec4 backgroundColor = vec4(0.25,0,0,0);
-	
-	// azimuth param shift by 270 degrees,
-	//  so that 0 degrees represents the front of the dome for the user;
-	float virtualScreenAzimuth_shifted = mod( s.virtualScreenAzimuth +90.0f, 360.0f);
-	//shift range [0..360] to [-180..+180]
-	virtualScreenAzimuth_shifted -= 180.0f;
-	
-	// elevation param  shift: [0..180] -> [90..-90], so that  for the user, 
-	// 0 degrees represents the front of the dome, and positiv angles mean elevation towards the upper zenith.
-	float virtualScreenElevation_shifted =  90.0f - s.virtualScreenElevation;
-
-	vec2 virtualScreenAziEle_radians = vec2(
-			angleToRadians(virtualScreenAzimuth_shifted),
-			angleToRadians(virtualScreenElevation_shifted)
-		);
-	vec3 virtualScreenCenterPos_cartesian = aziEleToCartesian3D(virtualScreenAziEle_radians);
-	
-	//vec2 pixel_aziEle_radians = oldCode_FishEyeTexCoordsToAziEle_radians(s, tex_coords);
-	vec2 pixel_aziEle_radians = fragCoordsToAziEle_FishEye(params, gl_FragCoord.xy);
-	vec3 pixelPos_cartesian_onWorld = aziEleToCartesian3D(pixel_aziEle_radians);
-	
-	
-	
-	// compensate elevation  for dome tilt:
-	// rotate "negative tilt angle" radians around the x-axis 
-	float alpha = - angleToRadians(s.domeTilt);
-	// create  column major rotation matrix
-	float ca = cos(alpha);
-	float sa = sin(alpha);
-	vec3 base_x = vec3(1,   0,  0);
-	vec3 base_y = vec3(0,  ca, sa);
-	vec3 base_z = vec3(0, -sa, ca);
-	mat3x3 Rx = mat3x3(base_x, base_y, base_z);
-	
-	vec3 pixelPos_cartesian_onDome =  Rx * pixelPos_cartesian_onWorld;
-	
-	
-	
-	// Calculate hitpoint of pixel's 3D direction ray with 3D plane of virtual screen,
-	// using hessian normal form, where the normalized plane normal n_0 corresponds 
-	// to normalized screen center direction (normalize(virtualScreenCenter_cartesian))
-	vec3 n_0 = normalize(virtualScreenCenterPos_cartesian);
-	// normalized pixel ray direction:
-	vec3 pixelRayDir_0 = normalize(pixelPos_cartesian_onDome);
-	
-	float n_0_dot_pixelRayDir_0 = dot(n_0,pixelRayDir_0);
-
-	//only continue if pixel dir can hit the plane:
-	if(n_0_dot_pixelRayDir_0 < 0.001)
-	{
-		return backgroundColor;
-	}
-	
-	float planeDistance = s.domeRadius;
-	// Hessian normal form of plane equation: dot(n_0, l * pixelRayDir_0) = planeDistance;
-	// solve for l:
-	float l = planeDistance / n_0_dot_pixelRayDir_0;
-	
-	vec3 hitPoint = l * pixelRayDir_0;
-	
-	// Create tangent and cotangent of plane, in order to later calc plane-local
-	// (x,y) coordinates that can be used as as lookup into the payload texture
-	// cross(n_0,up_0) == cross((n_0.x, n_0.y, n_0.z)^T, (0, y, 0)) == see below
-	vec3 virtualScreen_tangent   = normalize(vec3(-n_0.z, 0.0f, n_0.x));
-	vec3 virtualScreen_cotangent = normalize(cross(virtualScreen_tangent, n_0));
-	
-	vec3 screenCenterToPixelHit = hitPoint - virtualScreenCenterPos_cartesian;//pixelPos_cartesian_onDome;
-	float pixel_local_xCoord_inPlane = dot(screenCenterToPixelHit, virtualScreen_tangent);
-	float pixel_local_yCoord_inPlane = dot(screenCenterToPixelHit, virtualScreen_cotangent);
-	
-	vec2 screenHalfExtents = 0.5f * vec2(s.virtualScreenWidth, s.virtualScreenHeight);
-	
-	// Rescale local physical distances to [-1..1]^2
-	vec2 localTexCoords = vec2(
-		pixel_local_xCoord_inPlane / screenHalfExtents.x,
-		pixel_local_yCoord_inPlane / screenHalfExtents.y
-	);
-	//scale [-1..1]^2 to [0..1]^2
-	localTexCoords = localTexCoords * 0.5f + vec2(0.5f, 0.5f);
-	
-	if( localTexCoords.x > 1.0f || localTexCoords.x < 0.0f || localTexCoords.y > 1.0f || localTexCoords.y < 0.0f)
-	{
-		return backgroundColor;
-	}
-	
-	return vec4(texture(sourceParams_in_currentPlanarRendering,localTexCoords).xyz,1);
-}
 
 
 

@@ -260,73 +260,6 @@
 						<value>false</value>
 					</row>
 				</variable>
-				<variable type="float" name="oldParams_in.domeRadius">
-					<row>
-						<value>300</value>
-					</row>
-				</variable>
-				<variable type="float" name="oldParams_in.domeAperture">
-					<row>
-						<value>180</value>
-					</row>
-				</variable>
-				<variable type="float" name="oldParams_in.virtualScreenAzimuth">
-					<row>
-						<value>20</value>
-					</row>
-				</variable>
-				<variable type="float" name="oldParams_in.virtualScreenElevation">
-					<row>
-						<value>20</value>
-					</row>
-				</variable>
-				<variable type="float" name="oldParams_in.virtualScreenWidth">
-					<row>
-						<value>400</value>
-					</row>
-				</variable>
-				<variable type="float" name="oldParams_in.virtualScreenHeight">
-					<row>
-						<value>400</value>
-					</row>
-				</variable>
-				<variable type="float" name="oldParams_in.domeTilt">
-					<row>
-						<value>21</value>
-					</row>
-				</variable>
-				<variable type="int2" name="oldParams_in.renderTargetResolution_uncropped">
-					<row>
-						<value>8192</value>
-						<value>8192</value>
-					</row>
-				</variable>
-				<variable type="float4x4" name="oldParams_in.frustum_viewProjectionMatrix">
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-					<row>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-						<value>0</value>
-					</row>
-				</variable>
 			</variables>
 			<macros />
 		</pass>
@@ -398,15 +331,6 @@
 		<entry type="pinned" name="sourceParams_in.doImageWarp" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.do3DImageWarp" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="sourceParams_in.doBlending" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.domeRadius" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.domeAperture" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.virtualScreenAzimuth" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.virtualScreenElevation" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.virtualScreenWidth" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.virtualScreenHeight" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.domeTilt" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.renderTargetResolution_uncropped" owner="frustumToEquirect_pass" />
-		<entry type="pinned" name="oldParams_in.frustum_viewProjectionMatrix" owner="frustumToEquirect_pass" />
 		<entry type="pinned" name="offset_pixels" owner="showResultPass" />
 		<entry type="pinned" name="renderScale" owner="showResultPass" />
 		<entry type="camera" fp="true">

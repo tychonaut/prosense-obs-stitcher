@@ -41,6 +41,8 @@
                      (https://blog.google/products/google-ar-vr/bringing-pixels-front-and-center-vr-video/)
                 
                     fishEye_aperture_angle="360.0"
+                    fishEye_aperture_angle="180.0"
+                    type="fishEye"
                 -->
                 <Projection
                     type="equirectangular"
@@ -91,13 +93,14 @@
                     
                         pitch="0.0"
                         pitch="111.0"
+                        pitch="-69.0"
                     -->
                     <Orientation
                         type="euler_static_zxy"
                         axisConvention="DIN9300"
                         unit="degree"
                         roll="0.0"
-                        pitch="-69.0"
+                        pitch="21.0"
                         yaw="0.0"
                     />
                 </Projection>

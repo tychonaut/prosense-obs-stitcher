@@ -304,12 +304,16 @@ void main()
     
     
     // TODO check why blending does not work
-    // vec4 debugColor[5] ;
-    // debugColor[0] = vec4(1.0, 0.0, 0.0, 0.0);
-    // debugColor[1] = vec4(0.0, 1.0, 0.0, 0.0);
-    // debugColor[2] = vec4(0.0, 0.0, 1.0, 0.0);
-    // debugColor[3] = vec4(1.0, 1.0, 0.0, 0.0);
-    // debugColor[4] = vec4(1.0, 0.0, 1.0, 0.0);
+    vec4 debugColor[5] ;
+    debugColor[0] = vec4(1.0, 0.0, 0.0, 0.0);
+    debugColor[1] = vec4(0.0, 1.0, 0.0, 0.0);
+    debugColor[2] = vec4(0.0, 0.0, 1.0, 0.0);
+    debugColor[3] = vec4(1.0, 1.0, 0.0, 0.0);
+    debugColor[4] = vec4(0.0, 1.0, 1.0, 0.0);
+    
+     out_color = screenPixelColor  
+                 // + backGroundColor 
+                 + 0.25 * debugColor[sourceParams_in.index] ;
 }
 #endif //DEVELOPMENT_CODE
 // ----------------------------------------------------------------------------

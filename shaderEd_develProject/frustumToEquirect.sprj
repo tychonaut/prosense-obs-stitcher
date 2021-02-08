@@ -254,7 +254,6 @@
 		</camera>
 	</cameras>
 	<settings>
-		<entry type="property" name="frustumToEquirect_pass" item="pipe" />
 		<entry type="file" name="frustumToEquirect_pass" shader="vs" />
 		<entry type="file" name="frustumToEquirect_pass" shader="ps" />
 		<entry type="pinned" name="sinkParams_in.index" owner="frustumToEquirect_pass" />

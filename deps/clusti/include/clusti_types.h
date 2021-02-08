@@ -174,14 +174,20 @@ struct Clusti_Params_Projection {
 
 	Clusti_Params_FrustumFOV planar_FrustumFOV;
 
+	float fisheye_aperture_degrees;
+
+	// redundant: matrices from above information.
+	// should be calc'ed on the fly before passing
+	// to shader in the long run;
+	// (actually, they aren't even used in shaders,
+	// but the accumulated and scene-reoriented
+	// viewProj. matrix reorVP, that IS calculated on the fly:
+	// reorVP = (R_Frustum * R_Scene)^T * P)
 	graphene_matrix_t planar_viewMatrix;
 	graphene_matrix_t planar_projectionMatrix;
-
-	// Redundant: calculated from the above data;
+	// double Redundant: calculated from the above data;
 	// passed to and used in shader in shadowmapping-style
 	graphene_matrix_t planar_viewProjectionMatrix;
-
-	float fisheye_aperture_degrees;
 	//}
 };
 //-----------------------------------------------------------------------------

@@ -45,10 +45,17 @@
                 <Projection
                     type="equirectangular"
                 >
+                    <!-- axisConventions describe the rotation axes for the euler angles.
+                        They can be 
+                        DIN9300:  pitch axis = right, yaw axis = down, roll axis = front 
+                        OpenGL:   pitch axis = right, yaw axis = up,   roll axis = back 
+                    -->
                     <!-- 
-                        VIOSO has the euler angle convention 
+                        Our calibration has the euler angle convention 
                         "roll pitch yaw" ("zxy", "rotationMat = yawMat * pitchMat *  rollMat")
-                        
+                    -->    
+        
+                    <!--    
                         How to interpret this orientation:
                         The goal is to re-parametrize the canvas of 
                         a full-sphere projection, so that the sub-canvas
@@ -66,28 +73,32 @@
                         4k*4k resolution) and to save bandwidth,
                         the tilted dome could be encoded in the 
                         "left 4k*4k half of the virtual 8k*4k canvas.
-                        Therefore, the whole scene (i.e. each frustum)
-                        needs to be rotated by 
-                        roll="90.0", pitch="0.0" yaw="21.0",
-                        in order to yield a "left-only" hemisphere
-                        only negative x values).
+                        To achieve this, first undo the -21°tilt:
+                        tilt by +21°, resulting in the upper half 
+                        of the canvas to be filled by the dome's hemisphere),
+                        then tilt another +90° (=+111° in total),
+                        putting all canvas contents into the left half.
+                        For conventions on mapping azimuth and elevation 
+                        angles to cartesian coordinats, see functions 
+                        fragCoordsToAziEle_Equirect() and 
+                        fragCoordsToAziEle_FishEye() in fragment shader
+                        (frustumToEquirect.frag).
                         
                         *** IMPORTANT: The video *PLAYER* software needs
-                        to be aware of this transformation and undo it! ***
-                    -->
+                        to be aware of this transformation and undo it,
+                        otherwise one would look at a heavily tilted 
+                        hemisphere behind the main view direction! ***
                     
-                    <!-- axisConventions describe the rotation axes for the euler angles.
-                        They can be 
-                        DIN9300:  pitch axis = right, yaw axis = down, roll axis = front 
-                        OpenGL:   pitch axis = right, yaw axis = up,   roll axis = back 
-                   -->
+                        pitch="0.0"
+                        pitch="111.0"
+                    -->
                     <Orientation
                         type="euler_static_zxy"
                         axisConvention="DIN9300"
                         unit="degree"
-                        roll="90.0"
-                        pitch="0.0"
-                        yaw="21.0"
+                        roll="0.0"
+                        pitch="-69.0"
+                        yaw="0.0"
                     />
                 </Projection>
                 

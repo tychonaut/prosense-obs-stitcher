@@ -294,7 +294,8 @@ void main()
     vec2 texCoords_0_1 = 
         cartesianDirectionToSourceTexCoords(
             dir_cartesian,  
-            sourceParams_in.frustum_viewProjectionMatrix);
+            sourceParams_in.frustum_reorientedViewProjectionMatrix); 
+            //sourceParams_in.frustum_viewProjectionMatrix);
     
     
     //discard fragment if corresponding direction is not covered by the current frustum

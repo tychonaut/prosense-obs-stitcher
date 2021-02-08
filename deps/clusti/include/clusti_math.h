@@ -44,9 +44,12 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 
 bool clusti_math_FOVAnglesAreSymmetric(Clusti_Params_FrustumFOV const *fovs);
 
-// out must be at least 16*fizeof(float)
-float *clusti_math_grapheneMatrixToColumnMajorFloatArray(graphene_matrix_t const* in,
-	float* out);
+//// obsolete after observing that Graphenes left-to-right multiplication scheme
+//// cancels the "transposed-ness" of the resulting matrices with the the row-majorness
+//// of the matrix storage (or exposed float arrays)
+//// out must be at least 16*fizeof(float)
+//float *clusti_math_grapheneMatrixToColumnMajorFloatArray(graphene_matrix_t const* in,
+//	float* out);
 
 //-----------------------------------------------------------------------------
 

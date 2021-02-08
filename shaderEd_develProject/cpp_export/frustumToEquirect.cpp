@@ -242,41 +242,81 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	glBindTexture(GL_TEXTURE_2D, source_render->sourceTexture);
 	glUniform1i(currULoc, 1);
 
-	//mat4's --------------
+
+	//mat4's -----------------------
 	GLfloat matBuff[16];
+
 	// As Graphene's left-to-right multiplication convention and row-majorness
 	// "cancel" with OpenGLs right-to-left multiplication convention and column-majorness,
 	// no further transposition of graphene matrices need to be done!
-	GLboolean doTranspose = GL_FALSE; 
+	GLboolean doTranspose = GL_FALSE;
 
+
+	//mat4
+	currULoc = glGetUniformLocation(currProg,
+					"sourceParams_in.frustum_viewMatrix");
+
+	graphene_matrix_to_float(&source_config->projection.planar_viewMatrix,
+				 matBuff);
+	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
+
+	//mat4
+	currULoc = glGetUniformLocation(
+		currProg, "sourceParams_in.frustum_projectionMatrix");
+
+	graphene_matrix_to_float(
+		&source_config->projection.planar_projectionMatrix, matBuff);
+	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
+
+	//mat4
 	currULoc = glGetUniformLocation(
 		currProg, "sourceParams_in.frustum_viewProjectionMatrix");
 	graphene_matrix_to_float(
 		&source_config->projection.planar_viewProjectionMatrix,
 		matBuff);
 	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
-	//graphene_matrix_print(
-	//	&source_config->projection.planar_viewProjectionMatrix);
-	// funny glitch-islands when transposing:
-	//glUniformMatrix4fv(currULoc, 1, GL_TRUE, matBuff);
-	
+
+
+	// The "frustum rotation matrix" is multiplied by the sink's
+	// "scene rotation matrix", the result is transposed to a view matrix
+	//  and then mult. with the frustum's projection matrix:
+	// This can be useful to render tilted hemispherical content
+	// in a way to only fill the left half of the full-spherical
+	// canvas, allowing the right haft to be cropped
+	// without loss of information.
+	//
+	// Construct on the fly here, to decouple sink from source data
+	// (if we need more sinks later);
+	// In graphene notation
+	// (multiply row vectors by matrices to the right):
+	// point'^T = point^T * VP
+	// Wanted: VP
+	// VP = V*P
+	// V = (R)^T
+	// R = R_Frustum * R_Scene
+	// --> VP = (R_Frustum * R_Scene)^T * P
+	//
 	//mat4
 	currULoc = glGetUniformLocation(
-		currProg, "sourceParams_in.frustum_viewMatrix");
-
-	graphene_matrix_to_float(
-		&source_config->projection.planar_viewMatrix,
-		matBuff);
+		currProg, "sourceParams_in.frustum_reorientedViewProjectionMatrix");
+	// Source's Euler angles to rotation matrix:
+	graphene_matrix_t frustumRotMat;
+	graphene_euler_to_matrix(&source_config->projection.orientation,
+				 &frustumRotMat);
+	// Sink's Euler angles to rotation matrix
+	graphene_matrix_t sceneRotMat;
+	graphene_euler_to_matrix(&sink_config->projection.orientation, &sceneRotMat);
+	graphene_matrix_t finalRotMat;
+	graphene_matrix_multiply(&frustumRotMat, &sceneRotMat, &finalRotMat);
+	graphene_matrix_t finalViewMat;
+	graphene_matrix_transpose(&finalRotMat, &finalViewMat);
+	graphene_matrix_t sceneRotatedViewProjectionMatrix;
+	graphene_matrix_multiply(
+		&finalViewMat,
+		&source_config->projection.planar_projectionMatrix,
+		&sceneRotatedViewProjectionMatrix);
+	graphene_matrix_to_float(&sceneRotatedViewProjectionMatrix, matBuff);
 	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
-
-	//mat4
-	currULoc = glGetUniformLocation(currProg,
-					"sourceParams_in.frustum_projectionMatrix");
-
-	graphene_matrix_to_float(&source_config->projection.planar_projectionMatrix,
-				 matBuff);
-	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
-
 
 
 	//int 

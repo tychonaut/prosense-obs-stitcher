@@ -29,6 +29,7 @@ extern "C" {
 //#include "obs-internal.h"
 
 
+#include "clusti.h"
 #include <expat.h>
 
 
@@ -72,6 +73,8 @@ struct stitch_filter_data {
 	struct vec2                    de;
 	struct vec2                    crop_c;
 	struct vec2                    crop_r;
+
+	Clusti *clusti_instance;
 };
 
 static const char *stitch_filter_get_name(void *unused)
@@ -86,8 +89,31 @@ static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context)
 		(struct stitch_filter_data *)bzalloc(sizeof(*filter));
 
 	filter->context = context;
+
+	// ---------------------------------------------------------------------------
+	filter->clusti_instance = clusti_create();
+	clusti_readConfig(
+		filter->clusti_instance,
+		// hard code for basic functioning test
+		"C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/calibration_viewfrusta.xml");
+	blog(LOG_DEBUG, "stitcher: num video sources: %d",
+	     filter->clusti_instance->stitchingConfig.numVideoSources);
+	// ---------------------------------------------------------------------------
+
 	
 	stitch_filter_update(filter, settings);
+
+
+
+
+
+
+
+
+
+
+
+
 	return filter;
 }
 
@@ -98,6 +124,13 @@ static void stitch_filter_destroy(void *data)
 	obs_enter_graphics();
 	gs_effect_destroy(filter->effect);
 	obs_leave_graphics();
+
+
+	
+	// ---------------------------------------------------------------------------
+	clusti_destroy(filter->clusti_instance);
+	filter->clusti_instance = NULL;
+	// ---------------------------------------------------------------------------
 
 	bfree(filter);
 }
@@ -394,7 +427,7 @@ static uint32_t stitch_filter_width(void *data)
 	}
 	else
 	{
-		return (uint32_t)4096;;
+		return (uint32_t)4096;
 	}
 }
 

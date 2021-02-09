@@ -45,71 +45,24 @@ endif(CMAKE_TOOLCHAIN_FILE)
 
 
 
-
-# -----------------------------------------------------------------------------
-# clusti (ClusterStitching) library source code
-
-
-# share some code with OBS plugin. This project here 
-# is the playground for non-OBS-related development, after all
-set(clusti_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/include")
-set(clusti_SOURCES_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/src")
-
-
-set(clusti_HEADERS_PUBLIC
-    ${clusti_INCLUDE_DIR}/clusti.h
-    ${clusti_INCLUDE_DIR}/clusti_types.h
-    ${clusti_INCLUDE_DIR}/clusti_math.h
-)
-
-
-set(clusti_HEADERS_PRIVATE
-    ${clusti_SOURCES_DIR}/clusti_types_priv.h
-    ${clusti_SOURCES_DIR}/clusti_status_priv.h
-    ${clusti_SOURCES_DIR}/clusti_mem_priv.h
-)
-
-set(clusti_SOURCES
-    ${clusti_SOURCES_DIR}/clusti.c
-    ${clusti_SOURCES_DIR}/clusti_readConfig.c
-    ${clusti_SOURCES_DIR}/clusti_math.c
-    ${clusti_SOURCES_DIR}/clusti_status.c
-    ${clusti_SOURCES_DIR}/clusti_mem.c
-)
-
-
-
-
-# -----------------------------------------------------------------------------
-# App source code
-
-# app
-set(APP_SOURCES
-	frustumToEquirect.c
-)
-
-
-
-
-
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # Find external libraries
 
 
 # -----------------------------------------------------------------------------
-# graphene pure-C alternative to GLM math
+# Graphene pure-C alternative to GLM math
 
 # Dirty hack, after failing to integrate graphene's meson build into CMake'
 # "ExternalProject_Add" workflow: 
 # Because meson build needs the visual studio command prompt to detect the
-# MSVC compiler, it must be invoked from  cmake somehow. Resarach gave
+# MSVC compiler, it must be invoked from  cmake somehow. Research gave
 # some very ugly hardcode- results like 
 # https://www.codeproject.com/Questions/706617/How-to-open-Visual-studio-command-Prompt-using-Win
 # rendering any kind of partability useless. So I will just link to the
 # headers and libs of the graphene install, which is expected to be 
-# built & installed "by hand" before.
+# built & installed "by hand" via meson before. 
+# See https://github.com/ebassi/graphene for how to do this.
 
 #TODO maybe outsource as FindGraphene.cmake...
 
@@ -150,7 +103,6 @@ FIND_LIBRARY(graphene_LIBRARY
 	PATH_SUFFIXES lib64 lib lib/x64
 	PATHS ${graphene_SEARCH_PATHS}
 )
-
 # -----------------------------------------------------------------------------
 
 
@@ -192,12 +144,36 @@ endif()
 
 
 
-
-
 # -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# create clusti library
+# clusti (ClusterStitching) library:
 
+# sources:
+
+# share some code with OBS plugin. This project here 
+# is the playground for non-OBS-related development, after all
+set(clusti_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/include")
+set(clusti_SOURCES_DIR "${PROJECT_SOURCE_DIR}/../../deps/clusti/src")
+
+set(clusti_HEADERS_PUBLIC
+    ${clusti_INCLUDE_DIR}/clusti.h
+    ${clusti_INCLUDE_DIR}/clusti_types.h
+    ${clusti_INCLUDE_DIR}/clusti_math.h
+)
+set(clusti_HEADERS_PRIVATE
+    ${clusti_SOURCES_DIR}/clusti_types_priv.h
+    ${clusti_SOURCES_DIR}/clusti_status_priv.h
+    ${clusti_SOURCES_DIR}/clusti_mem_priv.h
+)
+set(clusti_SOURCES
+    ${clusti_SOURCES_DIR}/clusti.c
+    ${clusti_SOURCES_DIR}/clusti_readConfig.c
+    ${clusti_SOURCES_DIR}/clusti_math.c
+    ${clusti_SOURCES_DIR}/clusti_status.c
+    ${clusti_SOURCES_DIR}/clusti_mem.c
+)
+# -------------------------------------
+
+# create library:
 
 add_library(clusti
     ${clusti_HEADERS_PUBLIC}
@@ -222,13 +198,21 @@ target_link_libraries(clusti
 	${EXPAT_LIBRARIES}
 	${graphene_LIBRARY} 
 )
+# -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-# create executable
 
+# -----------------------------------------------------------------------------
+# Executable:
 
+# sources:
+set(APP_SOURCES
+	frustumToEquirect.c
+)
+
+# create executable:
 add_executable(FrustumToEquirect
     ${APP_SOURCES} 
 )
@@ -239,13 +223,11 @@ set_target_properties(FrustumToEquirect PROPERTIES
 )
 
 
-# C++ unused 
+# C++ unused by now
 #set_target_properties(FrustumToEquirect PROPERTIES
 #    CXX_STANDARD 20
 #    C_STANDARD_REQUIRED YES
 #)
-
-
 
 
 # include directories
@@ -261,8 +243,6 @@ target_include_directories(FrustumToEquirect PRIVATE
 	${graphene_CONFIG_INCLUDE_DIR}
     ${clusti_INCLUDE_DIR}
 )
-
-
 
 
 # link libraries
@@ -311,10 +291,10 @@ if(WIN32)
 	set(graphene_SHARED_LIBRARY "${root_dir}/bin/graphene-1.0-0.dll")
 	add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${graphene_SHARED_LIBRARY} ${FrustumToEquirect_BINARY_DIR}/. )
 	
+    message("expat dir: ${EXPAT_INSTALL_DIR}")
 	add_custom_command(TARGET FrustumToEquirect POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${EXPAT_INSTALL_DIR}/bin/libexpat.dll ${FrustumToEquirect_BINARY_DIR}/. )
 	
 endif()
-
 ####-------------
 
 

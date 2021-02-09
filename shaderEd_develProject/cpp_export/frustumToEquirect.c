@@ -1,6 +1,8 @@
-#include <chrono>
-#include <fstream>
-#include <string>
+
+
+// #include <chrono>
+// #include <fstream>
+// #include <string>
 
 #include <GL/glew.h>
 
@@ -55,7 +57,7 @@ void createFBO(Clusti_State_Render *renderState);
 //generate VAO and VBO
 void CreateScreenQuadNDC(Clusti_State_Render *renderState);
 
-GLuint LoadTexture(const std::string &filename);
+GLuint LoadTexture(char const *filename);
 
 GLuint CreateShader(const char *vsCode, const char *psCode);
 
@@ -396,7 +398,7 @@ void createRenderState(Clusti *clusti)
 	renderState->currentRenderScale =
 		(clusti->stitchingConfig.videoSinks[0]
 			 .debug_renderScale);
-	renderState->canvasViewPosition_pixels_lowerLeft = {0, 0};
+	renderState->canvasViewPosition_pixels_lowerLeft = (Clusti_ivec2){.x=0, .y=0};
 
 	// window can be smaller than render target
 	graphene_vec2_init(
@@ -694,7 +696,7 @@ GLuint CreateShader(const char* vsCode, const char* psCode)
 
 	// create vertex shader
 	unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vs, 1, &vsCode, nullptr);
+	glShaderSource(vs, 1, &vsCode, NULL);
 	glCompileShader(vs);
 	glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
 	if (!success) {
@@ -705,7 +707,7 @@ GLuint CreateShader(const char* vsCode, const char* psCode)
 
 	// create pixel shader
 	unsigned int ps = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(ps, 1, &psCode, nullptr);
+	glShaderSource(ps, 1, &psCode, NULL);
 	glCompileShader(ps);
 	glGetShaderiv(ps, GL_COMPILE_STATUS, &success);
 	if (!success) {
@@ -734,13 +736,14 @@ GLuint CreateShader(const char* vsCode, const char* psCode)
 
 
 
-GLuint LoadTexture(const std::string& file)
+GLuint LoadTexture(char const *filename)
 {
 	int width, height, nrChannels;
-	unsigned char* data = stbi_load(file.c_str(), &width, &height, &nrChannels, 0);
-	unsigned char* paddedData = nullptr;
+	unsigned char *data =
+		stbi_load(filename, &width, &height, &nrChannels, 0);
+	unsigned char* paddedData = NULL;
 
-	if (data == nullptr)
+	if (data == NULL)
 		return 0;
 
 	GLenum fmt = GL_RGB;
@@ -780,10 +783,11 @@ GLuint LoadTexture(const std::string& file)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, paddedData == nullptr ? data : paddedData);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+		     GL_UNSIGNED_BYTE, paddedData == NULL ? data : paddedData);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	if (paddedData != nullptr)
+	if (paddedData != NULL)
 		free(paddedData);
 	stbi_image_free(data);
 
@@ -831,12 +835,14 @@ void handleUserInput(Clusti_State_Render *renderState)
 			//
 		} else if (event.type == SDL_MOUSEBUTTONDOWN){
 			renderState->leftMouseButtonDown = true;
-			renderState->lastButtonDownMousePos = {
-				event.button.x,
+			renderState->lastButtonDownMousePos =
+			(Clusti_ivec2){
+				.x = event.button.x,
 				// invert y axis
-				(int)graphene_vec2_get_y(
+				.y = (int)graphene_vec2_get_y(
 					&renderState->windowRes_f) -
-					event.button.y};
+					event.button.y
+			};
 
 			printf("last mouse position: (%d, %d)\n",
 			       renderState->lastButtonDownMousePos.x,
@@ -873,10 +879,10 @@ void handleUserInput(Clusti_State_Render *renderState)
 				//	       .y);
 
 				//update last mous pos to current
-				renderState->lastButtonDownMousePos = {
-					event.button.x,
+				renderState->lastButtonDownMousePos = (Clusti_ivec2){
+					.x = event.button.x,
 					// invert y axis
-					(int)graphene_vec2_get_y(
+					.y = (int)graphene_vec2_get_y(
 						&renderState->windowRes_f) -
 						event.button.y};
 			}

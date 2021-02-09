@@ -85,7 +85,7 @@ set(clusti_SOURCES
 
 # app
 set(APP_SOURCES
-	frustumToEquirect.cpp
+	frustumToEquirect.c
 )
 
 
@@ -233,12 +233,17 @@ add_executable(FrustumToEquirect
     ${APP_SOURCES} 
 )
 
-# properties
+# C-port
 set_target_properties(FrustumToEquirect PROPERTIES
-    CXX_STANDARD 20
-    C_STANDARD_REQUIRED YES
+    C_STANDARD 11
 )
 
+
+# C++ unused 
+#set_target_properties(FrustumToEquirect PROPERTIES
+#    CXX_STANDARD 20
+#    C_STANDARD_REQUIRED YES
+#)
 
 
 

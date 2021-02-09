@@ -24,18 +24,21 @@ find_package(EXPAT REQUIRED)
 
 
 set(prosense-obs-stitcher_SOURCES
-	prosense-obs-stitcher.cpp)
+	prosense-obs-stitcher.c)
 
 add_library(prosense-obs-stitcher MODULE
 	${prosense-obs-stitcher_SOURCES}
 	${prosense-obs-stitcher_config_HEADERS})
 
 
-# properties
-set_target_properties(prosense-obs-stitcher PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED YES
-)
+# test port from C to C++20; successful, yet
+# prefer sticking to C version now, in order to not
+# get subtle compiler related issues later.
+# Upgrading to C++ is easier than downgrading to C
+#set_target_properties(prosense-obs-stitcher PROPERTIES
+#    CXX_STANDARD 20
+#    CXX_STANDARD_REQUIRED YES
+#)
 
 
 target_include_directories(prosense-obs-stitcher PRIVATE

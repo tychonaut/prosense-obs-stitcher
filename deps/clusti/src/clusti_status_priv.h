@@ -25,6 +25,8 @@ struct Clusti_Status;
 typedef struct Clusti_Status Clusti_Status;
 // definition needed by clusti_mem.c
 struct Clusti_Status {
+	long numClustiInstances;
+
 	// error/status stuff:
 	Clusti_StatusType currentStatusType;
 	char const * statusMessage;

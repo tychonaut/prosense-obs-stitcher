@@ -42,6 +42,7 @@ typedef struct Clusti_DoublyLinkedMemoryChunkListItem
 	Clusti_DoublyLinkedMemoryChunkListItem;
 
 struct Clusti_MemoryRegistry {
+
 	long numAllocations;
 	long totalUsedCPUMemory;
 
@@ -184,36 +185,48 @@ char *clusti_String_callocAndCopy(char const *orig)
 
 void clusti_mem_init()
 {
-	assert(g_clustiStatus.memoryRegistry == NULL);
+	g_clustiStatus.numClustiInstances++;
 
-	g_clustiStatus.memoryRegistry =
-		calloc(1, sizeof(Clusti_MemoryRegistry));
+	//first call?
+	if (g_clustiStatus.numClustiInstances == 1) {
+		assert(g_clustiStatus.memoryRegistry == NULL);
 
-	assert(g_clustiStatus.memoryRegistry != NULL);
+		g_clustiStatus.memoryRegistry =
+			calloc(1, sizeof(Clusti_MemoryRegistry));
 
-	assert(g_clustiStatus.memoryRegistry->numAllocations == 0);
-	assert(g_clustiStatus.memoryRegistry->totalUsedCPUMemory == 0);
-	// fails for some reason:
-	//assert(g_clustiStatus.memoryRegistry->firstMemoryItem ==
-	//       g_clustiStatus.memoryRegistry->lastMemoryItem == NULL);
-	assert(g_clustiStatus.memoryRegistry->firstMemoryItem == NULL);
-	assert(g_clustiStatus.memoryRegistry->lastMemoryItem == NULL);
+		assert(g_clustiStatus.memoryRegistry != NULL);
+
+		assert(g_clustiStatus.memoryRegistry->numAllocations == 0);
+		assert(g_clustiStatus.memoryRegistry->totalUsedCPUMemory == 0);
+		// fails for some reason:
+		//assert(g_clustiStatus.memoryRegistry->firstMemoryItem ==
+		//       g_clustiStatus.memoryRegistry->lastMemoryItem == NULL);
+		assert(g_clustiStatus.memoryRegistry->firstMemoryItem == NULL);
+		assert(g_clustiStatus.memoryRegistry->lastMemoryItem == NULL);
+	}
+
+
 }
 
 void clusti_mem_deinit()
 {
-	assert(g_clustiStatus.memoryRegistry != NULL);
+	g_clustiStatus.numClustiInstances--;
 
-	assert(g_clustiStatus.memoryRegistry->numAllocations == 0);
-	assert(g_clustiStatus.memoryRegistry->totalUsedCPUMemory == 0);
+	//last call?
+	if (g_clustiStatus.numClustiInstances == 0) {
+		assert(g_clustiStatus.memoryRegistry != NULL);
 
-	assert(g_clustiStatus.memoryRegistry->firstMemoryItem == NULL);
-	assert(g_clustiStatus.memoryRegistry->lastMemoryItem == NULL);
+		assert(g_clustiStatus.memoryRegistry->numAllocations == 0);
+		assert(g_clustiStatus.memoryRegistry->totalUsedCPUMemory == 0);
 
-	free(g_clustiStatus.memoryRegistry);
-	g_clustiStatus.memoryRegistry = NULL;
+		assert(g_clustiStatus.memoryRegistry->firstMemoryItem == NULL);
+		assert(g_clustiStatus.memoryRegistry->lastMemoryItem == NULL);
 
-	assert(g_clustiStatus.memoryRegistry == NULL);
+		free(g_clustiStatus.memoryRegistry);
+		g_clustiStatus.memoryRegistry = NULL;
+
+		assert(g_clustiStatus.memoryRegistry == NULL);
+	}
 }
 
 void clusti_mem_registerNewAllocation(void *ptr, size_t sizeInBytes,

@@ -337,7 +337,19 @@ float2 fragCoordsToAziEle_FishEye (float2 fragCoords)
 // main function impl.
 float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
 {
-    float2 fragCoords = v_in.uv.xy * sinkParams_in_cropRectangle_extents.xy;
+    //OBS' image coordinate system of OBS is "matrix style",
+    // i.e. that coord. system origin is (left,top), and y-axis points downwards!
+    // o-----> +X
+    // |
+    // |
+    // v +Y
+    // flip them, as shader was oiriginally developed for coord sys 
+    // with origin at (left,bottom) and y-axis pointing upwards:
+    float2 texCoords_yFlipped = float2(
+        v_in.uv.x,
+        1.0 - v_in.uv.y
+    );
+    float2 fragCoords = texCoords_yFlipped.xy * sinkParams_in_cropRectangle_extents.xy;
     
     float2 fragCoords_cropCorrected = fragCoords.xy 
                                    + sinkParams_in_cropRectangle_lowerLeft.xy;
@@ -487,7 +499,16 @@ float4 oldcode_fragmentShade_main(VertData v_in) : TARGET
 		val.w = alpha;
 	}
     
-    val.y = 0.33; 
+    
+    //demo that OBS' image coordinate system of OBS is "matrix style",
+    // i.e. that coord. system origin is (left,top), and y-axis points downwards!
+    //val.xy = v_in.uv.xy;
+    float2 texCoords_yFlipped = float2(
+        v_in.uv.x,
+        1.0 - v_in.uv.y
+    );
+    val.xy = texCoords_yFlipped.xy;
+    
 	return val;
 }
 

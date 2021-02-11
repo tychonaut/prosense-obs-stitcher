@@ -13,10 +13,12 @@
 // version 0.1.0
 // date: 2021/02/01
 
-// ============================================================================
-// ============================================================================
-//{ GLSL Fragment Shader data interface
 
+
+
+// ============================================================================
+// ============================================================================
+//{ Types and uniforms:
 
 
 //{
@@ -45,17 +47,12 @@ struct FS_SinkParams_in {
     //sampler2D backgroundTexture;
     
     // resolution the whole 4pi steradian panorama image would have;
-    // TODO change to float vectors
     vec2 resolution_virtual; 
     vec2 cropRectangle_lowerLeft;
     // *actual* render target resolution!
-    // vec2 cropRectangle_extents; // unused
-    // obsolete
-    //ivec2 resolution;
+    // vec2 cropRectangle_extents; // unused    
     
-    
-    // in case of fisheye projection (planned alternative to eqirect):
-    // TODO setup in host data structures
+    // in case of fisheye projection (alternative to eqirect):
     // hacky flip from equirect to fisheye;
     // dependent compilation would be better, but not for this prototype...
     bool useFishEye;
@@ -132,7 +129,7 @@ struct FS_SourceParams_in {
     bool doImageWarp;
     // currently unused; default false
     bool do3DImageWarp;
-    //n.b. warp inversion must be done on the host side
+    // n.b. warp inversion must be done on the host side
     // by inverting the LUT.
     // n.b. (inverse) mesh warping must be done
     // as a preprocess: render warp mesh and input image
@@ -148,10 +145,8 @@ struct FS_SourceParams_in {
 
 uniform FS_SourceParams_in sourceParams_in;
 
-
-
-//} GLSL Fragment Shader data interface
-// ----------------------------------------------------------------------------
+//} Types and uniforms
+// ============================================================================
 
 
 
@@ -173,21 +168,9 @@ uniform FS_SourceParams_in sourceParams_in;
  
  
  
-// ============================================================================
-// ============================================================================
-// types:
-
-
-
-
-
-
-
-
-
-
-
-
+ 
+ 
+ 
 
 // ============================================================================
 // ============================================================================
@@ -325,6 +308,16 @@ void main()
 // ----------------------------------------------------------------------------
 // Little helpers impl.
 
+
+// ----------------------------------------------------------------------------
+float angleToRadians(float angle)
+{
+	return angle / 180.0f * c_PI ;
+}
+// ----------------------------------------------------------------------------
+
+
+// ----------------------------------------------------------------------------
 // Transform direction vector, interpreted as position vector
 // (this is valid, becaus all frusta are currently expected 
 // to sit in the center), from world coords into image-space
@@ -349,38 +342,26 @@ vec2 cartesianDirectionToSourceTexCoords(vec3 dir, mat4 viewProjectionMatrix)
     // Clip coords to Normalized device coords (NCD): Div by homogeneous (W) coord
     vec3 texCoords_NDC = texCoords_projected.xyz / texCoords_projected.w;
 
-
-
-    
     // NDC [-1 .. +1] --> image space[0..1]       
     vec2 texCoords_0_1 =  (texCoords_NDC.xy * 0.5) + vec2(0.5, 0.5);
 
     return texCoords_0_1;
 }
-
-
-
 // ----------------------------------------------------------------------------
-float angleToRadians(float angle)
-{
-	return angle / 180.0f * c_PI ;
-}
-// ----------------------------------------------------------------------------
+
+
 
 
 // ----------------------------------------------------------------------------
 //takes a pixel's azi/ele and calculates unit length 3D coordinate 
 // Coordinate system is described in comments to texCoordsToAziEle()
 vec3 aziEleToCartesian3D(vec2 aziEle_rads)
-{
-	
+{	
 	// just for readability:
 	// float r = s.domeRadius;
     float r = 1.0f;
 	float azi = aziEle_rads.x;
 	float ele = aziEle_rads.y;
-	
-	//ele+= angleToRadians(s.domeTilt);
 	
 	vec3 ret = vec3(
 		        r * sin(ele) * cos(azi),
@@ -388,10 +369,8 @@ vec3 aziEleToCartesian3D(vec2 aziEle_rads)
 		        r * sin(ele) * sin(azi)
 	);
 	
-	//return ret;
-	
+    //obsolete and/or unneccessary, but to be sure:	
 	ret = normalize(ret);
-	
 	return ret;
 }
 // ----------------------------------------------------------------------------
@@ -418,11 +397,7 @@ vec2 fragCoordsToAziEle_Equirect(FS_SinkParams_in params, vec2 fragCoords)
 // ----------------------------------------------------------------------------
 
 
-
-    // old code; maybe useful for fisheye projection support later --------------------------
-
-
-
+// ----------------------------------------------------------------------------
 // texture coords in [0..1]^2 to azimuth and elevation radians,
 // in local dome coordinates (i.e. no tilt))
 // azi: west  (+x axis): 00   radians 
@@ -432,7 +407,6 @@ vec2 fragCoordsToAziEle_Equirect(FS_SinkParams_in params, vec2 fragCoords)
 // ele: top   (+y axis): 0 radians
 //      horizon (xz-plane): pi/2 radians
 vec2 fragCoordsToAziEle_FishEye (FS_SinkParams_in params, vec2 fragCoords)
-//vec2 oldCode_FishEyeTexCoordsToAziEle_radians(OldCode_FS_input s, vec2 tc)
 {
     //[img size]^2 --> [0..1]^2;
     vec2 texCoord_ViewPort = fragCoords.xy / params.resolution_virtual.xy;
@@ -460,7 +434,7 @@ vec2 fragCoordsToAziEle_FishEye (FS_SinkParams_in params, vec2 fragCoords)
 	
 	return vec2(azi,ele);
 }
-
+// ----------------------------------------------------------------------------
 
 
 

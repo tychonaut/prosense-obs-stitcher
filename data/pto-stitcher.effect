@@ -15,18 +15,142 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+
+// ============================================================================
+// ============================================================================
+//{ Types and uniforms:
+
+//{ Set automatically by OBS
+// transposed, left-to-right-multiplication like in Graphene
+// This is for voertex shader full screen quad only!
 uniform float4x4 ViewProj;
 uniform texture2d image;
+//}
 
-uniform texture2d target;
-//uniform float2 resO;
-uniform float2 resI;
-uniform float3 yrp;
-uniform float ppr;
-uniform float3 abc;
-uniform float2 de;
-uniform float2 crop_r;
-uniform float2 crop_c;
+/* ~~~~~~~~~~~~~
+Damn, this implementation does not support uniform structs!
+struct Old_Uniforms 
+{
+ float2 resI;
+ float3 yrp;
+ float ppr;
+ float3 abc;
+ float2 de;
+ float2 crop_r;
+ float2 crop_c;    
+};
+uniform Old_Uniforms oldUniforms;
+
+typedefs also don't work
+typedef float4x4 mat4;
+
+function forwards also not work;
+~~~~~~~~~~~~~~~*/
+
+//{ old code's uniforms
+uniform texture2d   oldUniforms_target;
+uniform float2      oldUniforms_resI;
+uniform float3      oldUniforms_yrp;
+uniform float       oldUniforms_ppr;
+uniform float3      oldUniforms_abc;
+uniform float2      oldUniforms_de;
+uniform float2      oldUniforms_crop_r;
+uniform float2      oldUniforms_crop_c;
+//}
+
+
+//{ Frustum to equirect - uniforms
+
+//{ Video sink params
+uniform texture2d   sinkParams_in_backgroundTexture;
+uniform int         sinkParams_in_index;
+// resolution the whole 4pi steradian panorama image would have;
+uniform float2      sinkParams_in_resolution_virtual; 
+uniform float2      sinkParams_in_cropRectangle_lowerLeft;
+// resolution of render target:
+uniform float2      sinkParams_in_cropRectangle_extents;
+// in case of fisheye projection (alternative to eqirect):
+// hacky flip from equirect to fisheye;
+// dependent compilation would be better, but not for this prototype...
+uniform bool        sinkParams_in_useFishEye;
+uniform float       sinkParams_in_fishEyeFOV_angle;
+//}
+
+//{ Video source params
+uniform texture2d   sourceParams_in_currentPlanarRendering;
+uniform float2      sourceParams_in_resolution; 
+uniform int         sourceParams_in_index;
+// currently unused
+//uniform texture2d sourceParams_in_warpLUT;
+// currently unused
+//uniform texture2d sourceParams_in_blendMask;
+//  Decklink 'black bar'-bug workaround:
+//  https://forum.blackmagicdesign.com/viewtopic.php?f=4&t=131164&p=711173&hilit=black+bar+quad#p711173
+//  ('VideoSource.decklinkWorkaround_verticalOffset_pixels' in config file)
+uniform int         sourceParams_in_decklinkWorkaround_verticalOffset_pixels;
+// accumulated VP matrix, but additionally applied rotation to whole scene
+// (e.g. to fit the hemisphere of a tilted dome into the left half of 
+// an equirect. projection)
+// frustum_reorientedRotationMatrix = sink_rotationMatrix * frustum_rotationMatrix
+// frustum_reorientedViewMatrix = transpose(frustum_reorientedRotationMatrix);
+// frustum_reorientedViewProjectionMatrix = frustum_projectionMatrix * frustum_reorientedViewMatrix
+//
+// How to interpret sink_rotationMatrix
+// (calculated from VideoSink.Projection.Orientation in config file):
+// The goal is to re-parametrize the canvas of 
+// a full-sphere projection, so that the sub-canvas
+// filled by e.g. a 21°-tilted hemispherical dome
+// fills the canvas in a way that has desireable 
+// properties for encoding and streaming.
+// E.g. if the full 
+// spherical equirectangular canvas would have
+// a (virtual) resolution of 8k*4k, and if we would
+// encode  the dome image naively, 
+// most of the bottom half of the image is black, 
+// and the seam has a wave form due to the tilt.
+// In order to use hardware encoding of Nvidia GPUs
+// without issues (not all GPUs support more than
+// 4k*4k resolution) and to save bandwidth,
+// the tilted dome could be encoded in the 
+// left 4kx4k half of the virtual 8kx4k canvas.
+// To achieve this, first undo the -21°tilt:
+// tilt by +21°, resulting in only the upper half 
+// of the canvas to be filled by the dome's hemisphere,
+// then tilt another +90° (=+111° in total), mapping all
+// pixels to the left half.
+//
+// IMPORTANT: The video *PLAYER* software needs
+// to be aware of the sink_rotationMatrix transformation and undo it!
+uniform float4x4    sourceParams_in_frustum_reorientedViewProjectionMatrix;
+//{ just for debugging, prefer pre-accumulated versions
+//  like frustum_viewProjectionMatrix 
+//  or frustum_reorientedViewProjectionMatrix:
+//  frustum_viewMatrix = transpose(frustum_rotationMatrix)
+uniform float4x4    sourceParams_in_frustum_viewMatrix;
+uniform float4x4    sourceParams_in_frustum_projectionMatrix;
+// accumulated VP matrix: in OpenGL notation (right-to-left-multiply):
+// frustum_viewProjectionMatrix =  frustum_projectionMatrix * frustum_viewMatrix;
+uniform float4x4    sourceParams_in_frustum_viewProjectionMatrix;
+//}  
+//{ rest of this struct is unused yet
+//default false
+//uniform bool    sourceParams_in_doImageWarp;
+// default false
+//uniform bool    sourceParams_in_do3DImageWarp;
+// n.b. warp inversion must be done on the host side
+// by inverting the LUT.
+// n.b. (inverse) mesh warping must be done
+// as a preprocess: render warp mesh and input image
+// to texture, then feed the resulting texture
+// to this shader.
+//uniform texture2d sourceParams_warpLUT; //2D or 3D
+//uniform bool    sourceParams_in_doBlending;
+//uniform texture2d sourceParams_in_blendMask;
+//}
+//}
+
+
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -35,12 +159,273 @@ sampler_state textureSampler {
 	BorderColor = 00000000;
 };
 
+
+
 struct VertData {
 	float4 pos : POSITION;
 	float2 uv  : TEXCOORD0;
 };
 
-float2 get_coords(float2 coords)
+//} Types and uniforms
+// ============================================================================
+
+
+
+// ============================================================================
+// ============================================================================
+// Macros and constants:
+
+//define c_PI (3.1415926535897932384626433832795028841971693)
+//define c_PIH (c_PI/2.0)
+//define c_2PI (2.0*c_PI)
+//define my_PI 3.14159265358979
+static const float PI = 3.1415926535897932384626433832795028841971693;
+
+// ============================================================================
+// ============================================================================
+// Vertex shader:
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    //vert_out.pos = float4(v_in.pos.xyz, 1.0) * ViewProj;
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+//} Vertex shader
+// ============================================================================
+
+
+// ============================================================================
+// ============================================================================
+// function implementations:
+
+
+// ----------------------------------------------------------------------------
+float angleToRadians(float angle)
+{
+	return angle / 180.0 * PI;
+}
+// ----------------------------------------------------------------------------
+
+
+// ----------------------------------------------------------------------------
+// Transform direction vector, interpreted as position vector
+// (this is valid, becaus all frusta are currently expected 
+// to sit in the center), from world coords into image-space
+// coords of the current frustum: 'shadow mapping-lookup-style':
+// warning: can return values outside [0..1]^2, must be checked!
+float2 cartesianDirectionToSourceTexCoords(float3 dir, float4x4 viewProjectionMatrix)
+{
+    float4 texCoords_projected  = 
+        viewProjectionMatrix
+        * float4(dir.xyz, 1.0);
+        
+        
+    // filter geometry behind frustum:
+    // the negative z component in 'frustum camera coords' is found in the w component.
+    // If -z is negative, then z is positive in cam coords, positive z coords 
+    // lie behind the cam. we have to filter them out
+    if(texCoords_projected.w <= 0.0)
+    {  
+        discard;
+    }
+        
+    // Clip coords to Normalized device coords (NCD): Div by homogeneous (W) coord
+    float3 texCoords_NDC = texCoords_projected.xyz / texCoords_projected.w;
+
+    // NDC [-1 .. +1] --> image space[0..1]       
+    float2 texCoords_0_1 =  (texCoords_NDC.xy * 0.5) + float2(0.5, 0.5);
+
+    return texCoords_0_1;
+}
+// ----------------------------------------------------------------------------
+
+
+// ----------------------------------------------------------------------------
+//takes a pixel's azi/ele and calculates unit length 3D coordinate 
+// Coordinate system is described in comments to texCoordsToAziEle()
+float3 aziEleToCartesian3D(float2 aziEle_rads)
+{	
+	// just for readability:
+	// float r = s.domeRadius;
+    float r = 1.0f;
+	float azi = aziEle_rads.x;
+	float ele = aziEle_rads.y;
+	
+	float3 ret = float3(
+		        r * sin(ele) * cos(azi),
+		        r * cos(ele),
+		        r * sin(ele) * sin(azi)
+	);
+	
+    //obsolete and/or unneccessary, but to be sure:	
+	ret = normalize(ret);
+	return ret;
+}
+// ----------------------------------------------------------------------------
+
+
+// ----------------------------------------------------------------------------
+float2 fragCoordsToAziEle_Equirect(float2 fragCoords)
+{
+    float azi_0_1 = fragCoords.x / sinkParams_in_resolution_virtual.x;  
+    float ele_0_1 = fragCoords.y / sinkParams_in_resolution_virtual.y;
+    
+    float azi_0_2pi = azi_0_1 * 2.0 * PI;
+    
+    // elevation in [0 .. +pi]
+    // elevation ==  0  --> north or +y axis, respectively
+    // elevation ==  pi/2    --> equator
+    // elevation == -pi --> south or -y axis, respectively    
+    float ele_0_pi = (1.0 - ele_0_1) * PI;
+    
+    float2 aziEle = float2(azi_0_2pi, ele_0_pi);
+    
+    return aziEle;
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// texture coords in [0..1]^2 to azimuth and elevation radians,
+// in local dome coordinates (i.e. no tilt))
+// azi: west  (+x axis): 00   radians 
+//      north (+z axis): pi/2 radians 
+//      east  (-x axis): pi   radians 
+//      south (-z axis): 2pi  radians 
+// ele: top   (+y axis): 0 radians
+//      horizon (xz-plane): pi/2 radians
+float2 fragCoordsToAziEle_FishEye (float2 fragCoords)
+{
+    //[img size]^2 --> [0..1]^2;
+    float2 texCoord_ViewPort = fragCoords.xy / sinkParams_in_resolution_virtual.xy;
+
+	//[0..1]^2 --> [-1..-1]^2
+	float2 tc_centered_0_1 = (texCoord_ViewPort - float2(0.5,0.5)) * 2.0;
+
+	float r = length(tc_centered_0_1);
+
+	// http://paulbourke.net/dome/fisheye/
+	float azi = 0.0;
+	if(r != 0.0)
+	{
+		if( (tc_centered_0_1.x >= 0.0f))
+		{
+			azi = asin(tc_centered_0_1.y / r);
+		}
+		else
+		{
+			azi = c_PI - asin(tc_centered_0_1.y / r);
+		}
+	}
+	
+	float ele = r * angleToRadians(sinkParams_in_fishEyeFOV_angle) / 2.0;
+	
+	return float2(azi,ele);
+}
+// ----------------------------------------------------------------------------
+
+
+
+
+
+// ----------------------------------------------------------------------------
+// main function impl.
+float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
+{
+    float2 fragCoords = v_in.uv.xy * sinkParams_in_cropRectangle_extents.xy;
+    
+    float2 fragCoords_cropCorrected = fragCoords.xy 
+                                   + sinkParams_in_cropRectangle_lowerLeft.xy;
+                                   
+    // sample background texture:
+    float2 texCoords_backGroundTexture = 
+        fragCoords_cropCorrected.xy
+        /
+        sinkParams_in_resolution_virtual.xy;
+
+        
+    float4 backGroundColor = 
+        sinkParams_in_backgroundTexture.Sample(
+            textureSampler, texCoords_backGroundTexture);
+
+                     
+    // DEBUG: some non-black debug background color to spot black bars:
+    if(all(lessThan(backGroundColor.xyz, float3(0.1))))
+    {
+        backGroundColor.xyz = float3(0.25, 0.0, 0.0);
+    }
+    
+    
+    
+    //{ fragment coords to azimuth and elevation, either equirect or fishEye
+    float2 aziEle;
+    if(sinkParams_in_useFishEye)
+    {
+        aziEle = fragCoordsToAziEle_FishEye(fragCoords_cropCorrected.xy);
+    }else
+    {
+        aziEle = fragCoordsToAziEle_Equirect(fragCoords_cropCorrected.xy);
+    }
+    //}
+    
+    // azimuth and elevation to cartesian (xyz) coords:
+    float3 dir_cartesian = aziEleToCartesian3D(aziEle);
+    
+    float2 texCoords_0_1 = 
+        cartesianDirectionToSourceTexCoords(
+            dir_cartesian,  
+            sourceParams_in_frustum_reorientedViewProjectionMatrix); 
+    
+    
+    //discard fragment if corresponding direction is not covered by the current frustum
+    // i.e. image coord are outside  [0..1]^2
+    if( any( texCoords_0_1.xy > float2( 1.0, 1.0) )
+        || 
+        any( texCoords_0_1.xy < float2( 0.0, 0.0) )
+    )
+    {
+        discard;
+    }
+
+    // correct for the black bar issue in dacklink capture cards:
+    // https://forum.blackmagicdesign.com/viewtopic.php?f=4&t=131164
+    float2 tc_offset = float2(0.0, 
+                          float(sourceParams_in_decklinkWorkaround_verticalOffset_pixels)
+                          / sourceParams_in_resolution.y;
+    );
+    float2 tc_corrected = texCoords_0_1 - tc_offset;
+    tc_corrected = clamp(tc_corrected, float2(0.0, 0.0), float2(1.0, 1.0));
+               
+    // do the lookup in the source texture:
+    float4 screenPixelColor = sourceParams_in_currentPlanarRendering.Sample(
+        textureSampler, tc_corrected);
+        
+    out_color = screenPixelColor ; // + backGroundColor + debugColor[sourceParams_in.index] ;
+    
+    
+    // TODO check why blending does not work
+    float4 debugColor[5] ;
+    debugColor[0] = float4(1.0, 0.0, 0.0, 0.0);
+    debugColor[1] = float4(0.0, 1.0, 0.0, 0.0);
+    debugColor[2] = float4(0.0, 0.0, 1.0, 0.0);
+    debugColor[3] = float4(1.0, 1.0, 0.0, 0.0);
+    debugColor[4] = float4(0.0, 1.0, 1.0, 0.0);
+    
+     out_color = screenPixelColor  
+                 // + backGroundColor 
+                 + 0.25 * debugColor[sourceParams_in.index] ;
+}
+// ----------------------------------------------------------------------------
+
+
+
+
+float2 oldCode_get_coords(float2 coords)
 {
 	float lon = -coords.x;
 	float lat = coords.y;
@@ -63,56 +448,65 @@ float2 get_coords(float2 coords)
 	return r;
 }
 
-VertData VSDefault(VertData v_in)
-{
-	VertData vert_out;
-	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
-	vert_out.uv  = v_in.uv;
-	return vert_out;
-}
 
-float4 render(VertData v_in) : TARGET
+float4 oldcode_fragmentShade_main(VertData v_in) : TARGET
 {
 	float4 val = 0;
 	float c_y, s_y;
-	sincos(-yrp.y, s_y, c_y);
+	sincos(-oldUniforms_yrp.y, s_y, c_y);
 	
 	float2 fcoords = v_in.uv;
 	fcoords.x = 2.0f * 3.14159265f * (fcoords.x - 0.5f);
 	fcoords.y = 3.14159265f * -(fcoords.y - 0.5f);
-	fcoords.x -= yrp.x;
+	fcoords.x -= oldUniforms_yrp.x;
 	
-	float alpha = target.Sample(textureSampler, v_in.uv).w;
+	float alpha = oldUniforms_target.Sample(textureSampler, v_in.uv).w;
 
 	if(alpha > 0.004f)
 	{
-		float2 r = get_coords(fcoords);
+		float2 r = oldCode_get_coords(fcoords);
 		float2 fcoords2;
 		fcoords2.x = r.x * cos(r.y);
-		fcoords2.y = r.x * sin(r.y) - yrp.z;
+		fcoords2.y = r.x * sin(r.y) - oldUniforms_yrp.z;
 		r.x = fcoords2.x * c_y - fcoords2.y * s_y;
 		r.y = fcoords2.x * s_y + fcoords2.y * c_y;
-		fcoords2 = r * ppr;
-		r = fcoords2 / resI.y * 2.0f;
+		fcoords2 = r * oldUniforms_ppr;
+		r = fcoords2 / oldUniforms_resI.y * 2.0f;
 		r *= r;
 		r.x = sqrt(r.x + r.y);
-		float undis = ((abc.x * r.x + abc.y) * r.x + abc.z) * r.x + (1.0f - (abc.x + abc.y + abc.z));
+		float undis = ((oldUniforms_abc.x * r.x + oldUniforms_abc.y) * r.x + oldUniforms_abc.z) * r.x 
+            + 
+            (1.0f - (oldUniforms_abc.x + oldUniforms_abc.y + oldUniforms_abc.z));
 		fcoords2 *= undis;
 
 		fcoords2 = -fcoords2;
-		fcoords2 += (resI / 2.0f) + de;
+		fcoords2 += (oldUniforms_resI / 2.0f) + oldUniforms_de;
 		
-		val = image.Sample(textureSampler, fcoords2 / resI);
+		val = image.Sample(textureSampler, fcoords2 / oldUniforms_resI)
+            ;//+ float4(1.0,0.0,0.0,1.0);
 		val.w = alpha;
 	}
+    
+    val.y = 0.33; 
 	return val;
 }
+
+
+
+
+
+
+
+
+
+
+
 
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = render(v_in);
+		pixel_shader  = oldcode_fragmentShade_main(v_in);
 	}
 }

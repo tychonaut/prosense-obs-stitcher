@@ -23,6 +23,7 @@ extern "C" {
 
 #include <obs-module.h>
 #include <graphics/vec2.h>
+#include <graphics/matrix4.h>
 #include <graphics/image-file.h>
 #include <stdio.h>
 #include "obs.h"
@@ -53,6 +54,8 @@ struct stitch_filter_data {
 	obs_source_t                   *context;
 
 	gs_effect_t                    *effect;
+
+
 	gs_eparam_t                    *param_alpha;
 	//gs_eparam_t                    *param_resO;
 	gs_eparam_t                    *param_resI;
@@ -75,6 +78,9 @@ struct stitch_filter_data {
 	struct vec2                    crop_r;
 
 	Clusti *clusti_instance;
+
+	// TODO
+	struct matrix4 mat;
 };
 
 static const char *stitch_filter_get_name(void *unused)
@@ -103,10 +109,11 @@ static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context)
 	
 	stitch_filter_update(filter, settings);
 
+	   
+	 
+	
 
-
-
-
+	  //
 
 
 
@@ -251,15 +258,17 @@ void parse_file(const char* path, int cam, struct stitch_filter_data* filter)
 			obs_leave_graphics();
 			bfree(effect_path);
 
-			filter->param_alpha = gs_effect_get_param_by_name(filter->effect, "target");
+			filter->param_alpha = gs_effect_get_param_by_name(filter->effect, "oldUniforms_target");
 			//filter->param_resO		= gs_effect_get_param_by_name(filter->effect, "resO");
-			filter->param_resI = gs_effect_get_param_by_name(filter->effect, "resI");
-			filter->param_yrp = gs_effect_get_param_by_name(filter->effect, "yrp");
-			filter->param_ppr = gs_effect_get_param_by_name(filter->effect, "ppr");
-			filter->param_abc = gs_effect_get_param_by_name(filter->effect, "abc");
-			filter->param_de = gs_effect_get_param_by_name(filter->effect, "de");
-			filter->param_crop_c = gs_effect_get_param_by_name(filter->effect, "crop_c");
-			filter->param_crop_r = gs_effect_get_param_by_name(filter->effect, "crop_r");
+			filter->param_resI = gs_effect_get_param_by_name(filter->effect, "oldUniforms_resI");
+			filter->param_yrp = gs_effect_get_param_by_name(filter->effect, "oldUniforms_yrp");
+			filter->param_ppr = gs_effect_get_param_by_name(filter->effect, "oldUniforms_ppr");
+			filter->param_abc = gs_effect_get_param_by_name(filter->effect, "oldUniforms_abc");
+			filter->param_de = gs_effect_get_param_by_name(filter->effect, "oldUniforms_de");
+			filter->param_crop_c = gs_effect_get_param_by_name(filter->effect, "oldUniforms_crop_c");
+			filter->param_crop_r = gs_effect_get_param_by_name(filter->effect, "oldUniforms_crop_r");
+
+
 
 			int i = 0;
 			while (i <= cam)
@@ -273,9 +282,9 @@ void parse_file(const char* path, int cam, struct stitch_filter_data* filter)
 					}
 				}
 				i++;
-			}
-
-			float v =
+			}  
+		  	 	 	   
+			float v =  
 				parse_script(str, (char *)" v") * M_PI / 180.0f;
 			filter->abc.x = parse_script(str, (char *)" a");
 			filter->abc.y = parse_script(str, (char *)" b");
@@ -411,6 +420,8 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 	gs_effect_set_vec2(filter->param_de, &filter->de);
 	gs_effect_set_vec2(filter->param_crop_c, &filter->crop_c);
 	gs_effect_set_vec2(filter->param_crop_r, &filter->crop_r);
+
+	//gs_effect_set_matrix4()
 
 	obs_source_process_filter_end(filter->context, filter->effect, (uint32_t)filter->resO.x, (uint32_t)filter->resO.y);
 

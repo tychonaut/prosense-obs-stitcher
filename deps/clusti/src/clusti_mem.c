@@ -95,6 +95,11 @@ void clusti_mem_printItem(int index, int numTotalItems,
 // returned string must be clusti_free()'d
 char* clusti_string_getDirectoryFromPath(char const *path)
 {
+	if (path == NULL) {
+		//returns empty string of path is NULL
+		return clusti_String_callocAndCopy("");
+	}
+
 	char *slash = path;
 	char *next;
 

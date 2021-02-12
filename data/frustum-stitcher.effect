@@ -74,11 +74,16 @@ uniform float2      sinkParams_in_cropRectangle_extents;
 // hacky flip from equirect to fisheye;
 // dependent compilation would be better, but not for this prototype...
 uniform bool        sinkParams_in_useFishEye;
+// angle in degrees
 uniform float       sinkParams_in_fishEyeFOV_angle;
 //}
 
 //{ Video source params
-uniform texture2d   sourceParams_in_currentPlanarRendering;
+
+// not passable directly, instead "uniform texture2d image"
+// is passed automatically by OBS
+// uniform texture2d   sourceParams_in_currentPlanarRendering;
+
 uniform float2      sourceParams_in_resolution; 
 uniform int         sourceParams_in_index;
 // currently unused
@@ -414,7 +419,7 @@ float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
     tc_corrected = clamp(tc_corrected, float2(0.0, 0.0), float2(1.0, 1.0));
                
     // do the lookup in the source texture:
-    float4 screenPixelColor = sourceParams_in_currentPlanarRendering.Sample(
+    float4 screenPixelColor = image.Sample(
         textureSampler, tc_corrected);
         
     out_color = screenPixelColor ; // + backGroundColor + debugColor[sourceParams_in.index] ;
@@ -507,9 +512,10 @@ float4 oldcode_fragmentShade_main(VertData v_in) : TARGET
         v_in.uv.x,
         1.0 - v_in.uv.y
     );
-    val.xy += texCoords_yFlipped.xy;
     
-    val.xyz = oldUniforms_target.Sample(textureSampler, v_in.uv).xyz;
+    val.xy *= texCoords_yFlipped.xy;
+    
+    //val.xyz = oldUniforms_target.Sample(textureSampler, v_in.uv).xyz;
     
 	return val;
 }

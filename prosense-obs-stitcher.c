@@ -257,7 +257,9 @@ struct Clusti_OBS_uniforms {
 	//}
 
 	//{ Video source params
-	Clusti_OBS_uniform sourceParams_in_currentPlanarRendering;
+	// not passable directly, instead "uniform texture2d image"
+	// is passed automatically by OBS
+	//Clusti_OBS_uniform sourceParams_in_currentPlanarRendering;
 	Clusti_OBS_uniform sourceParams_in_resolution;
 	Clusti_OBS_uniform sourceParams_in_index;
 	//  Decklink 'black bar'-bug workaround:
@@ -390,6 +392,25 @@ static void clusti_OBS_initUniformTexture(Clusti_OBS_uniform *uni_out,
 					  char *const varName,
 					  char *const textureFileName)
 {
+	////test clusti_string_getDirectoryFromPath; works as needed;
+	//// without trailing slash, the last substring is interpreted as file
+	//// TODO put this elsewhere
+	//char * testRes = clusti_string_getDirectoryFromPath(NULL);
+	//clusti_free(testRes);
+	//testRes = clusti_string_getDirectoryFromPath("");
+	//clusti_free(testRes);
+	//testRes = clusti_string_getDirectoryFromPath("/");
+	//clusti_free(testRes);
+	//testRes = clusti_string_getDirectoryFromPath("noslash");
+	//clusti_free(testRes);
+	//testRes = clusti_string_getDirectoryFromPath("/noTrailingSlash");
+	//clusti_free(testRes);
+	//testRes = clusti_string_getDirectoryFromPath("/trailingSlash/");
+	//clusti_free(testRes);
+	//testRes = clusti_string_getDirectoryFromPath("/wayne/noEnding");
+	//clusti_free(testRes);
+	//testRes = NULL;
+
 	uni_out->name = varName;
 	uni_out->type = CLUSTI_ENUM_UNIFORM_TYPE_texture;
 	uni_out->handle = gs_effect_get_param_by_name(obsEffect, uni_out->name);
@@ -397,9 +418,10 @@ static void clusti_OBS_initUniformTexture(Clusti_OBS_uniform *uni_out,
 	const char *calibFilePath =
 		obs_data_get_string(settings, "calibrationFile");
 	assert(strcmp(calibFilePath, "") != 0);
+
 	if (strcmp(calibFilePath, "") != 0) {
-		char *dir = clusti_string_getDirectoryFromPath(calibFilePath);
-		char *imgPath = clusti_String_concat(dir, textureFileName);
+		char *imgDir = clusti_string_getDirectoryFromPath(calibFilePath);
+		char *imgPath = clusti_String_concat(imgDir, textureFileName);
 
 		gs_image_file_init(&uni_out->image, imgPath);
 		obs_enter_graphics();
@@ -407,13 +429,58 @@ static void clusti_OBS_initUniformTexture(Clusti_OBS_uniform *uni_out,
 		obs_leave_graphics();
 
 		clusti_free(imgPath);
-		clusti_free(dir);
+		clusti_free(imgDir);
 	}
 
-
+	//// successfully hack-tested in render function:
+	//gs_effect_set_texture(
+	//	filter->param_alpha,
+	//	filter->clusti_OBS_uniforms.sinkParams_in_backgroundTexture.image.texture);
 
 }
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+static matrix4 clusti_OBS_matrix_convert(graphene_matrix_t const * graMa)
+{
+	float matBuffer[16];
+	graphene_matrix_to_float(graMa, matBuffer);
+
+	matrix4 ret = {
+		.x =
+			{
+				.x = matBuffer[0],
+				.y = matBuffer[1],
+				.z = matBuffer[2],
+				.w = matBuffer[3]
+			},
+		.y =
+			{
+				.x = matBuffer[4],
+				.y = matBuffer[5],
+				.z = matBuffer[6],
+				.w = matBuffer[7]
+			},
+		.z =
+			{
+				.x = matBuffer[8],
+				.y = matBuffer[9],
+				.z = matBuffer[10],
+				.w = matBuffer[11]
+			},
+		.t =
+			{
+				.x = matBuffer[12],
+				.y = matBuffer[13],
+				.z = matBuffer[14],
+				.w = matBuffer[15]
+			}
+	};
+
+	return ret;
+
+}
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
@@ -422,6 +489,14 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 				    gs_effect_t const *obsEffect,
 				    Clusti_OBS_uniforms *uniforms)
 {
+	Clusti_OBS_uniform *currUni = NULL;
+	// always 0 now, but maybe one wnats multiple sinks in the future
+	const int sinkIndex = 0;
+	// cluster node index is way more interesting
+	const int nodeIndex = (int)obs_data_get_int(settings, "nodeIndex");
+
+	// texture
+	// sinkParams_in_backgroundTexture
 	clusti_OBS_initUniformTexture(
 		&uniforms->sinkParams_in_backgroundTexture,
 		obsEffect,
@@ -430,44 +505,163 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 		clusti->stitchingConfig.videoSinks[0].debug_backgroundImageName
 	);
 
+	// int
+	// sinkParams_in_index
+	currUni = &uniforms->sinkParams_in_index;
+	currUni->name = "sinkParams_in_index";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_int;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_int = sinkIndex;
 
+	// vec2
+	// sinkParams_in_resolution_virtual
+	currUni = &uniforms->sinkParams_in_resolution_virtual;
+	currUni->name = "sinkParams_in_resolution_virtual";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_vec2;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_vec2.obs =
+		(vec2){.x = (float)clusti->stitchingConfig.videoSinks[sinkIndex]
+				    .virtualResolution.x,
+		       .y = (float)clusti->stitchingConfig.videoSinks[sinkIndex]
+				    .virtualResolution.y};
+	// complication with ivec2 defeates the purpose of native container here.
+	// maybe we can dith them at all, but for debugging it might be useful.
+	graphene_vec2_init_from_float(&currUni->_vec2.native,
+				      currUni->_vec2.obs.ptr);
+		
+	// vec2
+	// sinkParams_in_cropRectangle_lowerLeft
+	currUni = &uniforms->sinkParams_in_cropRectangle_lowerLeft;
+	currUni->name = "sinkParams_in_cropRectangle_lowerLeft";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_vec2;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_vec2.obs =
+		(vec2){.x = (float)clusti->stitchingConfig.videoSinks[sinkIndex]
+				    .cropRectangle.lowerLeft.x,
+		       .y = (float)clusti->stitchingConfig.videoSinks[sinkIndex]
+				    .cropRectangle.lowerLeft.y};
+	graphene_vec2_init_from_float(&currUni->_vec2.native,
+				      currUni->_vec2.obs.ptr);
 
+	// vec2
+	// sinkParams_in_cropRectangle_extents
+	currUni = &uniforms->sinkParams_in_cropRectangle_extents;
+	currUni->name = "sinkParams_in_cropRectangle_extents";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_vec2;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_vec2.obs =
+		(vec2){.x = (float)clusti->stitchingConfig.videoSinks[sinkIndex]
+				    .cropRectangle.extents.x,
+		       .y = (float)clusti->stitchingConfig.videoSinks[sinkIndex]
+				    .cropRectangle.extents.y};
+	graphene_vec2_init_from_float(&currUni->_vec2.native,
+				      currUni->_vec2.obs.ptr);
 
-	//
+	// bool
+	// sinkParams_in_useFishEye
+	currUni = &uniforms->sinkParams_in_useFishEye;
+	currUni->name = "sinkParams_in_useFishEye";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_bool;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_bool = clusti->stitchingConfig.videoSinks[sinkIndex].projection.type
+		== CLUSTI_ENUM_PROJECTION_TYPE_FISHEYE;
 
-	//TODO
+	// float
+	// sinkParams_in_fishEyeFOV_angle
+	currUni = &uniforms->sinkParams_in_fishEyeFOV_angle;
+	currUni->name = "sinkParams_in_fishEyeFOV_angle";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_float;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_float = clusti->stitchingConfig.videoSinks[sinkIndex]
+				  .projection.fisheye_aperture_degrees;
 
-	//uniforms->sinkParams_in_backgroundTexture.handle =
-	//	gs_effect_get_param_by_name(
-	//		obsEffect,
-	//		uniforms->sinkParams_in_backgroundTexture.name);
-	//uniforms->sinkParams_in_backgroundTexture.
+	// vec2
+	// sourceParams_in_resolution
+	currUni = &uniforms->sourceParams_in_resolution;
+	currUni->name = "sourceParams_in_resolution";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_vec2;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_vec2.obs = (vec2){
+		.x = (float)clusti->stitchingConfig.videoSources[nodeIndex]
+			     .resolution.x,
+		.y = (float)clusti->stitchingConfig.videoSources[nodeIndex]
+			     .resolution.y};
+	graphene_vec2_init_from_float(&currUni->_vec2.native,
+				      currUni->_vec2.obs.ptr);
 
-	//filter->param_alpha = gs_effect_get_param_by_name(filter->effect,
-	//						  "oldUniforms_target");
-	//gs_effect_set_texture(filter->param_alpha, filter->target);
+	// int
+	// sourceParams_in_index
+	currUni = &uniforms->sourceParams_in_index;
+	currUni->name = "sourceParams_in_index";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_int;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_int = nodeIndex;
 
+	// int
+	// sourceParams_in_decklinkWorkaround_verticalOffset_pixels
+	currUni =
+		&uniforms->sourceParams_in_decklinkWorkaround_verticalOffset_pixels;
+	currUni->name =
+		"sourceParams_in_decklinkWorkaround_verticalOffset_pixels";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_int;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	currUni->_int = clusti->stitchingConfig.videoSources[nodeIndex]
+				.decklinkWorkaround_verticalOffset_pixels;
 
-	/*
-	Clusti_OBS_uniform sinkParams_in_backgroundTexture;
-	Clusti_OBS_uniform sinkParams_in_index;
-	Clusti_OBS_uniform sinkParams_in_resolution_virtual;
-	Clusti_OBS_uniform sinkParams_in_cropRectangle_lowerLeft;
-	Clusti_OBS_uniform sinkParams_in_cropRectangle_extents;
-	Clusti_OBS_uniform sinkParams_in_useFishEye;
-	Clusti_OBS_uniform sinkParams_in_fishEyeFOV_angle;
-	Clusti_OBS_uniform sourceParams_in_currentPlanarRendering;
-	Clusti_OBS_uniform sourceParams_in_resolution;
-	Clusti_OBS_uniform sourceParams_in_index;
-	Clusti_OBS_uniform
-		sourceParams_in_decklinkWorkaround_verticalOffset_pixels;
-	Clusti_OBS_uniform
-		sourceParams_in_frustum_reorientedViewProjectionMatrix;
-	Clusti_OBS_uniform sourceParams_in_frustum_viewMatrix;
-	Clusti_OBS_uniform sourceParams_in_frustum_projectionMatrix;
-	Clusti_OBS_uniform sourceParams_in_frustum_viewProjectionMatrix;
-	*/
+	// mat4
+	// sourceParams_in_frustum_reorientedViewProjectionMatrix
+	currUni =
+		&uniforms->sourceParams_in_frustum_reorientedViewProjectionMatrix;
+	currUni->name = "sourceParams_in_frustum_reorientedViewProjectionMatrix";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_mat4;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	// calculate the matrix:
+	graphene_matrix_t reorientedViewProjectionMatrix =
+		clusti_math_reorientedViewProjectionMatrix(
+			&clusti->stitchingConfig.videoSinks[sinkIndex]
+				 .projection.orientation,
+			&clusti->stitchingConfig.videoSources[nodeIndex]
+				 .projection);
+	currUni->_mat4.native = reorientedViewProjectionMatrix;
+	currUni->_mat4.obs =
+		clusti_OBS_matrix_convert(&reorientedViewProjectionMatrix);
 
+	// mat4
+	// sourceParams_in_frustum_viewMatrix
+	currUni = &uniforms->sourceParams_in_frustum_viewMatrix;
+	currUni->name = "sourceParams_in_frustum_viewMatrix";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_mat4;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	graphene_matrix_init_from_matrix(
+		&currUni->_mat4.native,
+		&clusti->stitchingConfig.videoSources[nodeIndex]
+			.projection.planar_viewMatrix
+	);
+	currUni->_mat4.obs = clusti_OBS_matrix_convert(&currUni->_mat4.native);
+
+	// mat4
+	// sourceParams_in_frustum_projectionMatrix
+	currUni = &uniforms->sourceParams_in_frustum_projectionMatrix;
+	currUni->name = "sourceParams_in_frustum_projectionMatrix";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_mat4;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	graphene_matrix_init_from_matrix(
+		&currUni->_mat4.native,
+		&clusti->stitchingConfig.videoSources[nodeIndex]
+			 .projection.planar_projectionMatrix);
+	currUni->_mat4.obs = clusti_OBS_matrix_convert(&currUni->_mat4.native);
+
+	// mat4
+	// sourceParams_in_frustum_viewProjectionMatrix
+	currUni = &uniforms->sourceParams_in_frustum_viewProjectionMatrix;
+	currUni->name = "sourceParams_in_frustum_viewProjectionMatrix";
+	currUni->type = CLUSTI_ENUM_UNIFORM_TYPE_mat4;
+	currUni->handle = gs_effect_get_param_by_name(obsEffect, currUni->name);
+	graphene_matrix_init_from_matrix(
+		&currUni->_mat4.native,
+		&clusti->stitchingConfig.videoSources[nodeIndex]
+			 .projection.planar_viewProjectionMatrix);
+	currUni->_mat4.obs = clusti_OBS_matrix_convert(&currUni->_mat4.native);
 
 }
 //-----------------------------------------------------------------------------
@@ -482,6 +676,19 @@ static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms)
 	//	uniforms->sinkParams_in_backgroundTexture.image.texture);
 
 	//gs_effect_set_texture(filter->param_alpha, filter->target);
+
+	//uniforms->sinkParams_in_backgroundTexture.handle =
+	//	gs_effect_get_param_by_name(
+	//		obsEffect,
+	//		uniforms->sinkParams_in_backgroundTexture.name);
+	//uniforms->sinkParams_in_backgroundTexture.
+
+	//filter->param_alpha = gs_effect_get_param_by_name(filter->effect,
+	//						  "oldUniforms_target");
+	//gs_effect_set_texture(filter->param_alpha, filter->target);
+
+
+	//gs_effect_set_matrix4()
 }
 //-----------------------------------------------------------------------------
 
@@ -689,13 +896,11 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 	gs_effect_set_vec2(filter->param_de, &filter->de);
 	gs_effect_set_vec2(filter->param_crop_c, &filter->crop_c);
 	gs_effect_set_vec2(filter->param_crop_r, &filter->crop_r);
-
-	//gs_effect_set_matrix4()
 	 
-	// hack test:
-	gs_effect_set_texture(
-		filter->param_alpha,
-		filter->clusti_OBS_uniforms.sinkParams_in_backgroundTexture.image.texture);
+	//// hack test: 
+	//gs_effect_set_texture(
+	//	filter->param_alpha,
+	//	filter->clusti_OBS_uniforms.sinkParams_in_backgroundTexture.image.texture);
 
 
 	clusti_OBS_bindUniforms(&filter->clusti_OBS_uniforms);

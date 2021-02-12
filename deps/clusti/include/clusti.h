@@ -32,6 +32,7 @@ char *clusti_loadFileContents(char const *configPath);
 // must be clusti_free()'d
 char *clusti_String_concat(const char *s1, const char *s2);
 
+//returns empty string of path is NULL
 // returned string must be clusti_free()'d
 char *clusti_string_getDirectoryFromPath(char const *path);
 

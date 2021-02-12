@@ -81,13 +81,25 @@ typedef struct stitch_filter_data stitch_filter_data;
 // called by main app:
 bool obs_module_load(void);
 
-// Plugin's constructor and destructor
+// Plugin's constructor
+// Also: load XML config and calc math stuff 
+// as soon as a path to a calibrationfile is available:
+//  - either if  saved in a global json file or
+//  - sepcified by the user in the OBS GUI
 static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context);
+// Plugin's cdestructor
 static void stitch_filter_destroy(void *data);
+
 
 // called by plugin upon filter creation
 // and also by OBS when user changes filter settings in the OBS GUI;
 static void stitch_filter_update(void *data, obs_data_t *settings);
+
+static void initState(stitch_filter_data *filter, obs_data_t *settings);
+// if user config changes, purge and rebuild;
+// in order to reuse code with stitch_filter_destroy(),
+// extract this stuff into this.
+static void purgeState(stitch_filter_data *filter);
 
 // define some per-filter settings to be set/altered by the user
 // via GUI and to be saved/restored in a OBS-global json file.
@@ -110,12 +122,9 @@ static uint32_t stitch_filter_width(void *data);
 //{ Helpers to feed the OBS-independent calibration-loader-lib's
 //  data to OBS, especially OBS's shader uniform variables
 
-// load config, calc math stuff as soon as a path to a calibration
-// file is available:
-//  - either if  saved in a global json file or
-//  - sepcified by the user in the OBS GUI
-static void clusti_OBS_init(void *data, obs_data_t *settings);
-static void clusti_OBS_deinit(void *data);
+
+//static void clusti_OBS_init(void *data, obs_data_t *settings);
+//static void clusti_OBS_deinit(void *data);
 
 static void clusti_OBS_initUniforms(Clusti const *clusti,
 				    gs_effect_t const *obsEffect,
@@ -271,9 +280,11 @@ struct Clusti_OBS_uniforms {
 typedef struct Clusti_OBS_uniforms Clusti_OBS_uniforms;
 
 struct stitch_filter_data {
-	obs_source_t *context;
-	gs_effect_t *effect;
 
+	obs_source_t *context;
+
+	gs_effect_t *frustumStitchEffect;
+	
 	// Data for parsing the XML config file and setting up
 	// the math data (in OBS-independent Graphene types
 	// that have to be converted, though)
@@ -286,7 +297,9 @@ struct stitch_filter_data {
 
 	Clusti_OBS_uniforms clusti_OBS_uniforms;
 
-	// old code ------
+	// old code --------------------------
+	//gs_effect_t *oldEffect;
+
 	gs_eparam_t *param_alpha;
 	//gs_eparam_t *param_resO;
 	gs_eparam_t *param_resI;
@@ -332,7 +345,6 @@ static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context)
 
 	filter->context = context;
 
-
 	stitch_filter_update(filter, settings);
 
 	return filter;
@@ -344,34 +356,25 @@ static void stitch_filter_destroy(void *data)
 {
 	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
-	obs_enter_graphics();
-	gs_effect_destroy(filter->effect);
-	obs_leave_graphics();
-
-	// -----------------------------------
-	if (filter->clusti_instance != NULL) {
-		clusti_destroy(filter->clusti_instance);
-		filter->clusti_instance = NULL;
-	}
-	// -----------------------------------
+	purgeState(filter);
 
 	bfree(filter);
 }
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-static void clusti_OBS_init(void *data, obs_data_t *settings)
-{
-	//TODO
-}
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-static void clusti_OBS_deinit(void *data, obs_data_t *settings)
-{
-	//TODO
-}
-//-----------------------------------------------------------------------------
+////-----------------------------------------------------------------------------
+//static void clusti_OBS_init(void *data, obs_data_t *settings)
+//{
+//	//TODO
+//}
+////-----------------------------------------------------------------------------
+//
+////-----------------------------------------------------------------------------
+//static void clusti_OBS_deinit(void *data, obs_data_t *settings)
+//{
+//	//TODO
+//}
+////-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 static void clusti_OBS_initUniforms(Clusti const *clusti,
@@ -404,31 +407,74 @@ static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms)
 }
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+static void initState(stitch_filter_data *filter, obs_data_t *settings)
+{
+	int nodeIndex = (int)obs_data_get_int(settings, "nodeIndex");
+	filter->sourceIndexToUse = nodeIndex;
+
+	assert(filter->clusti_instance == NULL);
+
+	//hack: not update, but purge and recreate
+	filter->clusti_instance = clusti_create();
+
+	const char *calibFilePath =
+		obs_data_get_string(settings, "calibrationFile");
+	assert(strcmp(calibFilePath, "") != 0);
+
+	clusti_readConfig(filter->clusti_instance, calibFilePath);
+
+	blog(LOG_DEBUG, "stitcher: num video sources: %d",
+	     filter->clusti_instance->stitchingConfig.numVideoSources);
+
+
+	//create effect
+	char *effect_path = obs_module_file("frustum-stitcher.effect");
+	obs_enter_graphics();
+	filter->frustumStitchEffect =
+		gs_effect_create_from_file(effect_path, NULL);
+	obs_leave_graphics();
+	bfree(effect_path);
+
+}
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+static void purgeState(stitch_filter_data *filter)
+{
+	//hack: not update, but purge and recreate
+	obs_enter_graphics();
+	gs_effect_destroy(filter->frustumStitchEffect);
+	filter->frustumStitchEffect = NULL;
+	obs_leave_graphics();
+
+	if (filter->clusti_instance != NULL) {
+		clusti_destroy(filter->clusti_instance);
+		filter->clusti_instance = NULL;
+	}
+}
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 static void stitch_filter_update(void *data, obs_data_t *settings)
 {
 	stitch_filter_data *filter = (stitch_filter_data *)data;
 
-	// ---------------------------------------------------------------------------
+	// ----------------------------
 	const char *calibFilePath = obs_data_get_string(settings, "calibrationFile");
+	// string not empty?
 	if (strcmp(calibFilePath, "") != 0) {
+
 		if (filter->clusti_instance != NULL) {
 			//hack: not update, but purge and recreate
-			clusti_destroy(filter->clusti_instance);
-			filter->clusti_instance = NULL;
+			purgeState(filter);
 		}
-		filter->clusti_instance = clusti_create();
 
-		clusti_readConfig(filter->clusti_instance, calibFilePath);
-			// hard code for basic functioning test
-			// "C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/calibration_viewfrusta.xml");
+		initState(filter, settings);
 
-		blog(LOG_DEBUG, "stitcher: num video sources: %d",
-		     filter->clusti_instance->stitchingConfig.numVideoSources);
 	}
 
-	// ---------------------------------------------------------------------------
+	// ----------------------------
 
 
 	filter->resO.x = (float)4096;
@@ -541,7 +587,7 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 {
 	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
-	if (!filter->target || !filter->effect) {
+	if (!filter->target || !filter->frustumStitchEffect) {
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
@@ -562,7 +608,7 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 
 	//gs_effect_set_matrix4()
 
-	obs_source_process_filter_end(filter->context, filter->effect,
+	obs_source_process_filter_end(filter->context, filter->frustumStitchEffect,
 				      (uint32_t)filter->resO.x,
 				      (uint32_t)filter->resO.y);
 
@@ -663,31 +709,34 @@ void parse_file(const char *path, int cam, struct stitch_filter_data *filter)
 	if (pFile != NULL) {
 		const char *fext = strrchr(path, '.');
 		if (strcmp(fext, ".pts") == 0) {
+
+			blog(LOG_ERROR, "not supported anymore, old code to be removed");
+
 			char *effect_path =
 				obs_module_file("pts-stitcher.effect");
 			obs_enter_graphics();
-			filter->effect =
+			filter->frustumStitchEffect =
 				gs_effect_create_from_file(effect_path, NULL);
 			obs_leave_graphics();
 			bfree(effect_path);
 
 			filter->param_alpha = gs_effect_get_param_by_name(
-				filter->effect, "target");
+				filter->frustumStitchEffect, "target");
 			//filter->param_resO		= gs_effect_get_param_by_name(filter->effect, "resO");
 			filter->param_resI = gs_effect_get_param_by_name(
-				filter->effect, "resI");
+				filter->frustumStitchEffect, "resI");
 			filter->param_yrp = gs_effect_get_param_by_name(
-				filter->effect, "yrp");
+				filter->frustumStitchEffect, "yrp");
 			filter->param_ppr = gs_effect_get_param_by_name(
-				filter->effect, "ppr");
+				filter->frustumStitchEffect, "ppr");
 			filter->param_abc = gs_effect_get_param_by_name(
-				filter->effect, "abc");
+				filter->frustumStitchEffect, "abc");
 			filter->param_de = gs_effect_get_param_by_name(
-				filter->effect, "de");
+				filter->frustumStitchEffect, "de");
 			filter->param_crop_c = gs_effect_get_param_by_name(
-				filter->effect, "crop_c");
+				filter->frustumStitchEffect, "crop_c");
 			filter->param_crop_r = gs_effect_get_param_by_name(
-				filter->effect, "crop_r");
+				filter->frustumStitchEffect, "crop_r");
 
 			while (str[0] != 'o') {
 				if (fgets(str, 150 * 1000 * 1000, pFile) ==
@@ -726,31 +775,33 @@ void parse_file(const char *path, int cam, struct stitch_filter_data *filter)
 			filter->ppr = (filter->crop_r.x + filter->crop_r.y) / v;
 		}
 		if (strcmp(fext, ".pto") == 0) {
-			char *effect_path =
-				obs_module_file("pto-stitcher.effect");
-			obs_enter_graphics();
-			filter->effect =
-				gs_effect_create_from_file(effect_path, NULL);
-			obs_leave_graphics();
-			bfree(effect_path);
+			//char *effect_path =
+			//	//obs_module_file("pto-stitcher.effect");
+			//	//hack
+			//	obs_module_file("frustum-stitcher.effect");
+			//obs_enter_graphics();
+			//filter->frustumStitchEffect =
+			//	gs_effect_create_from_file(effect_path, NULL);
+			//obs_leave_graphics();
+			//bfree(effect_path);
 
 			filter->param_alpha = gs_effect_get_param_by_name(
-				filter->effect, "oldUniforms_target");
+				filter->frustumStitchEffect, "oldUniforms_target");
 			//filter->param_resO		= gs_effect_get_param_by_name(filter->effect, "resO");
 			filter->param_resI = gs_effect_get_param_by_name(
-				filter->effect, "oldUniforms_resI");
+				filter->frustumStitchEffect, "oldUniforms_resI");
 			filter->param_yrp = gs_effect_get_param_by_name(
-				filter->effect, "oldUniforms_yrp");
+				filter->frustumStitchEffect, "oldUniforms_yrp");
 			filter->param_ppr = gs_effect_get_param_by_name(
-				filter->effect, "oldUniforms_ppr");
+				filter->frustumStitchEffect, "oldUniforms_ppr");
 			filter->param_abc = gs_effect_get_param_by_name(
-				filter->effect, "oldUniforms_abc");
+				filter->frustumStitchEffect, "oldUniforms_abc");
 			filter->param_de = gs_effect_get_param_by_name(
-				filter->effect, "oldUniforms_de");
+				filter->frustumStitchEffect, "oldUniforms_de");
 			filter->param_crop_c = gs_effect_get_param_by_name(
-				filter->effect, "oldUniforms_crop_c");
+				filter->frustumStitchEffect, "oldUniforms_crop_c");
 			filter->param_crop_r = gs_effect_get_param_by_name(
-				filter->effect, "oldUniforms_crop_r");
+				filter->frustumStitchEffect, "oldUniforms_crop_r");
 
 			int i = 0;
 			while (i <= cam) {

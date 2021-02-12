@@ -507,7 +507,7 @@ float4 oldcode_fragmentShade_main(VertData v_in) : TARGET
         v_in.uv.x,
         1.0 - v_in.uv.y
     );
-    val.xy = texCoords_yFlipped.xy;
+    val.xy *= texCoords_yFlipped.xy;
     
 	return val;
 }

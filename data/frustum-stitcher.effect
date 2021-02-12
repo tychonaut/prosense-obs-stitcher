@@ -430,10 +430,13 @@ float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
         );
     float2 tc_corrected = texCoords_0_1 - tc_offset;
     tc_corrected = clamp(tc_corrected, float2(0.0, 0.0), float2(1.0, 1.0));
+    
+    float2 tc_Yinverted = float2(tc_corrected.x, 1.0 - tc_corrected.y);
+    
                
     // do the lookup in the source texture:
     float3 screenPixelColor = 
-        image.Sample(textureSampler, tc_corrected).xyz;
+        image.Sample(textureSampler, tc_Yinverted).xyz;
         
     out_color.xyz = screenPixelColor.xyz; // + backGroundColor + debugColor[sourceParams_in.index] ;
     out_color.w = 1.0;

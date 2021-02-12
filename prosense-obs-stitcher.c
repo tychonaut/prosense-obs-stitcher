@@ -797,6 +797,7 @@ static void initState(stitch_filter_data *filter, obs_data_t *settings)
 
 
 
+
 	 
 }
 //-----------------------------------------------------------------------------

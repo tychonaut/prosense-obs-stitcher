@@ -19,6 +19,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // ============================================================================
 // ============================================================================
+// Macros and constants:
+
+//define c_PI (3.1415926535897932384626433832795028841971693)
+//define c_PIH (c_PI/2.0)
+//define c_2PI (2.0*c_PI)
+//define my_PI 3.14159265358979
+// doesn't work!
+//static const float PI = 3.1415926535897932384626433832795028841971693;
+//const float myPI = 3.1415926535897932384626433832795028841971693;
+// all don't work, have to use literals or uniforms :@
+//float myPI = 3.1415926535897932384626433832795028841971693;
+
+
+// ============================================================================
+// ============================================================================
 //{ Types and uniforms:
 
 //{ Set automatically by OBS
@@ -63,7 +78,10 @@ uniform float2      oldUniforms_crop_c;
 //{ Frustum to equirect - uniforms
 
 //{ Video sink params
-uniform texture2d   sinkParams_in_backgroundTexture;
+
+// another image also seems to mess with their home brew shader wrapper layer!
+//uniform texture2d   sinkParams_in_backgroundTexture;
+
 uniform int         sinkParams_in_index;
 // resolution the whole 4pi steradian panorama image would have;
 uniform float2      sinkParams_in_resolution_virtual; 
@@ -176,15 +194,7 @@ struct VertData {
 
 
 
-// ============================================================================
-// ============================================================================
-// Macros and constants:
 
-//define c_PI (3.1415926535897932384626433832795028841971693)
-//define c_PIH (c_PI/2.0)
-//define c_2PI (2.0*c_PI)
-//define my_PI 3.14159265358979
-static const float PI = 3.1415926535897932384626433832795028841971693;
 
 // ============================================================================
 // ============================================================================
@@ -211,7 +221,7 @@ VertData VSDefault(VertData v_in)
 // ----------------------------------------------------------------------------
 float angleToRadians(float angle)
 {
-	return angle / 180.0 * PI;
+	return angle / 180.0 * 3.14159265358979323;
 }
 // ----------------------------------------------------------------------------
 
@@ -225,9 +235,8 @@ float angleToRadians(float angle)
 float2 cartesianDirectionToSourceTexCoords(float3 dir, float4x4 viewProjectionMatrix)
 {
     float4 texCoords_projected  = 
-        viewProjectionMatrix
-        * float4(dir.xyz, 1.0);
-        
+        mul(viewProjectionMatrix,
+            float4(dir.xyz, 1.0));
         
     // filter geometry behind frustum:
     // the negative z component in 'frustum camera coords' is found in the w component.
@@ -273,25 +282,7 @@ float3 aziEleToCartesian3D(float2 aziEle_rads)
 // ----------------------------------------------------------------------------
 
 
-// ----------------------------------------------------------------------------
-float2 fragCoordsToAziEle_Equirect(float2 fragCoords)
-{
-    float azi_0_1 = fragCoords.x / sinkParams_in_resolution_virtual.x;  
-    float ele_0_1 = fragCoords.y / sinkParams_in_resolution_virtual.y;
-    
-    float azi_0_2pi = azi_0_1 * 2.0 * PI;
-    
-    // elevation in [0 .. +pi]
-    // elevation ==  0  --> north or +y axis, respectively
-    // elevation ==  pi/2    --> equator
-    // elevation == -pi --> south or -y axis, respectively    
-    float ele_0_pi = (1.0 - ele_0_1) * PI;
-    
-    float2 aziEle = float2(azi_0_2pi, ele_0_pi);
-    
-    return aziEle;
-}
-// ----------------------------------------------------------------------------
+
 
 
 
@@ -324,7 +315,7 @@ float2 fragCoordsToAziEle_FishEye (float2 fragCoords)
 		}
 		else
 		{
-			azi = c_PI - asin(tc_centered_0_1.y / r);
+			azi = 3.14159265358979323 - asin(tc_centered_0_1.y / r);
 		}
 	}
 	
@@ -335,13 +326,34 @@ float2 fragCoordsToAziEle_FishEye (float2 fragCoords)
 // ----------------------------------------------------------------------------
 
 
-
+// ----------------------------------------------------------------------------
+float2 fragCoordsToAziEle_Equirect(float2 fragCoords)
+{
+    float azi_0_1 = fragCoords.x / sinkParams_in_resolution_virtual.x;  
+    float ele_0_1 = fragCoords.y / sinkParams_in_resolution_virtual.y;
+    
+    float azi_0_2pi = azi_0_1 * 2.0 * 3.14159265358979323;
+    
+    // elevation in [0 .. +pi]
+    // elevation ==  0  --> north or +y axis, respectively
+    // elevation ==  pi/2    --> equator
+    // elevation == -pi --> south or -y axis, respectively    
+    float ele_0_pi = (1.0 - ele_0_1) * 3.14159265358979323;
+    
+    float2 aziEle = float2(azi_0_2pi, ele_0_pi);
+    
+    return aziEle;
+}
+// ----------------------------------------------------------------------------
 
 
 // ----------------------------------------------------------------------------
 // main function impl.
 float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
 {
+    float4 out_color = float4(1.0, 0.0, 0.0, 1.0);
+    
+    
     //OBS' image coordinate system of OBS is "matrix style",
     // i.e. that coord. system origin is (left,top), and y-axis points downwards!
     // o-----> +X
@@ -365,19 +377,18 @@ float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
         /
         sinkParams_in_resolution_virtual.xy;
 
-        
+    /*  
     float4 backGroundColor = 
-        sinkParams_in_backgroundTexture.Sample(
-            textureSampler, texCoords_backGroundTexture);
-
-                     
+        float4(
+            sinkParams_in_backgroundTexture.Sample(
+                textureSampler, texCoords_backGroundTexture).xyz,
+            1.0);             
     // DEBUG: some non-black debug background color to spot black bars:
-    if(all(lessThan(backGroundColor.xyz, float3(0.1))))
+    if(all(backGroundColor.xyz < float3(0.1, 0.1, 0.1)))
     {
         backGroundColor.xyz = float3(0.25, 0.0, 0.0);
     }
-    
-    
+    */
     
     //{ fragment coords to azimuth and elevation, either equirect or fishEye
     float2 aziEle;
@@ -408,22 +419,34 @@ float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
     {
         discard;
     }
-
+    
     // correct for the black bar issue in dacklink capture cards:
     // https://forum.blackmagicdesign.com/viewtopic.php?f=4&t=131164
-    float2 tc_offset = float2(0.0, 
-                          float(sourceParams_in_decklinkWorkaround_verticalOffset_pixels)
-                          / sourceParams_in_resolution.y;
-    );
+    float2 tc_offset = 
+        float2(
+            0.0, 
+            float(sourceParams_in_decklinkWorkaround_verticalOffset_pixels)
+              / sourceParams_in_resolution.y
+        );
     float2 tc_corrected = texCoords_0_1 - tc_offset;
     tc_corrected = clamp(tc_corrected, float2(0.0, 0.0), float2(1.0, 1.0));
                
     // do the lookup in the source texture:
-    float4 screenPixelColor = image.Sample(
-        textureSampler, tc_corrected);
+    float3 screenPixelColor = 
+        image.Sample(textureSampler, tc_corrected).xyz;
         
-    out_color = screenPixelColor ; // + backGroundColor + debugColor[sourceParams_in.index] ;
+    out_color.xyz = screenPixelColor.xyz; // + backGroundColor + debugColor[sourceParams_in.index] ;
+    out_color.w = 1.0;
     
+    /*
+    out_color.xy = 
+        //backGroundColor.xyz 
+        //+ 
+        //( (dir_cartesian.xyz + float3(1.0,1.0,1.0).xyz ) * 0.5);
+        //dir_cartesian.xyz * dir_cartesian.xyz;
+        //aziEle.xy;
+        //fragCoords_cropCorrected.xy;      
+        texCoords_0_1.xy;
     
     // TODO check why blending does not work
     float4 debugColor[5] ;
@@ -436,6 +459,10 @@ float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
      out_color = screenPixelColor  
                  // + backGroundColor 
                  + 0.25 * debugColor[sourceParams_in.index] ;
+                 
+    */
+    
+    return out_color;
 }
 // ----------------------------------------------------------------------------
 
@@ -522,15 +549,20 @@ float4 oldcode_fragmentShade_main(VertData v_in) : TARGET
 
 
 
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = frustumToPano_fragmentShade_main(v_in);
+	}
+}
 
 
 
 
 
-
-
-
-
+/*
 technique Draw
 {
 	pass
@@ -539,3 +571,6 @@ technique Draw
 		pixel_shader  = oldcode_fragmentShade_main(v_in);
 	}
 }
+*/
+
+

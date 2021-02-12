@@ -241,8 +241,12 @@ typedef struct Clusti_OBS_uniform Clusti_OBS_uniform;
 struct Clusti_OBS_uniforms {
 	// For the meaning of the uniform variables,
 	// please have a look a the respective effect file.
+
 	//{ Video sink params
-	Clusti_OBS_uniform sinkParams_in_backgroundTexture;
+
+	// another image also seems to mess with their home brew shader wrapper layer!
+	//Clusti_OBS_uniform sinkParams_in_backgroundTexture;
+
 	Clusti_OBS_uniform sinkParams_in_index;
 	// resolution the whole 4pi steradian panorama image would have;
 	Clusti_OBS_uniform sinkParams_in_resolution_virtual;
@@ -431,12 +435,6 @@ static void clusti_OBS_initUniformTexture(Clusti_OBS_uniform *uni_out,
 		clusti_free(imgPath);
 		clusti_free(imgDir);
 	}
-
-	//// successfully hack-tested in render function:
-	//gs_effect_set_texture(
-	//	filter->param_alpha,
-	//	filter->clusti_OBS_uniforms.sinkParams_in_backgroundTexture.image.texture);
-
 }
 //-----------------------------------------------------------------------------
 
@@ -496,15 +494,15 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 	const int nodeIndex = (int)obs_data_get_int(settings, "nodeIndex");
 
 
-	// texture
-	// sinkParams_in_backgroundTexture
-	clusti_OBS_initUniformTexture(
-		&uniforms->sinkParams_in_backgroundTexture,
-		obsEffect,
-		settings,
-		"sinkParams_in_backgroundTexture",
-		clusti->stitchingConfig.videoSinks[0].debug_backgroundImageName
-	);
+	//// texture
+	//// sinkParams_in_backgroundTexture
+	//clusti_OBS_initUniformTexture(
+	//	&uniforms->sinkParams_in_backgroundTexture,
+	//	obsEffect,
+	//	settings,
+	//	"sinkParams_in_backgroundTexture",
+	//	clusti->stitchingConfig.videoSinks[0].debug_backgroundImageName
+	//);
 
 	// int
 	// sinkParams_in_index
@@ -672,10 +670,10 @@ static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms)
 {
 	Clusti_OBS_uniform const *currUni = NULL;
 
-	// texture
-	// sinkParams_in_backgroundTexture
-	currUni = &uniforms->sinkParams_in_backgroundTexture;
-	gs_effect_set_texture(currUni->handle, currUni->image.texture);
+	//// texture
+	//// sinkParams_in_backgroundTexture
+	//currUni = &uniforms->sinkParams_in_backgroundTexture;
+	//gs_effect_set_texture(currUni->handle, currUni->image.texture);
 
 	// int
 	// sinkParams_in_index
@@ -779,6 +777,27 @@ static void initState(stitch_filter_data *filter, obs_data_t *settings)
 				&filter->clusti_OBS_uniforms);
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	 
 }
 //-----------------------------------------------------------------------------
 
@@ -948,11 +967,6 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 	gs_effect_set_vec2(filter->param_de, &filter->de);
 	gs_effect_set_vec2(filter->param_crop_c, &filter->crop_c);
 	gs_effect_set_vec2(filter->param_crop_r, &filter->crop_r);
-	 
-	//// hack test: 
-	//gs_effect_set_texture(
-	//	filter->param_alpha,
-	//	filter->clusti_OBS_uniforms.sinkParams_in_backgroundTexture.image.texture);
 
 
 	clusti_OBS_bindUniforms(&filter->clusti_OBS_uniforms);

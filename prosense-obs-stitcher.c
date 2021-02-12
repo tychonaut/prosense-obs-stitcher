@@ -332,15 +332,6 @@ static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context)
 
 	filter->context = context;
 
-	// ---------------------------------------------------------------------------
-	filter->clusti_instance = clusti_create();
-	clusti_readConfig(
-		filter->clusti_instance,
-		// hard code for basic functioning test
-		"C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/calibration_viewfrusta.xml");
-	blog(LOG_DEBUG, "stitcher: num video sources: %d",
-	     filter->clusti_instance->stitchingConfig.numVideoSources);
-	// ---------------------------------------------------------------------------
 
 	stitch_filter_update(filter, settings);
 
@@ -358,8 +349,10 @@ static void stitch_filter_destroy(void *data)
 	obs_leave_graphics();
 
 	// -----------------------------------
-	clusti_destroy(filter->clusti_instance);
-	filter->clusti_instance = NULL;
+	if (filter->clusti_instance != NULL) {
+		clusti_destroy(filter->clusti_instance);
+		filter->clusti_instance = NULL;
+	}
 	// -----------------------------------
 
 	bfree(filter);
@@ -415,7 +408,28 @@ static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms)
 //-----------------------------------------------------------------------------
 static void stitch_filter_update(void *data, obs_data_t *settings)
 {
-	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
+	stitch_filter_data *filter = (stitch_filter_data *)data;
+
+	// ---------------------------------------------------------------------------
+	const char *calibFilePath = obs_data_get_string(settings, "calibrationFile");
+	if (strcmp(calibFilePath, "") != 0) {
+		if (filter->clusti_instance != NULL) {
+			//hack: not update, but purge and recreate
+			clusti_destroy(filter->clusti_instance);
+			filter->clusti_instance = NULL;
+		}
+		filter->clusti_instance = clusti_create();
+
+		clusti_readConfig(filter->clusti_instance, calibFilePath);
+			// hard code for basic functioning test
+			// "C:/Users/Domecaster/devel/obs-studio/github_tychonaut/plugins/prosense-obs-stitcher/testData/calibration_viewfrusta.xml");
+
+		blog(LOG_DEBUG, "stitcher: num video sources: %d",
+		     filter->clusti_instance->stitchingConfig.numVideoSources);
+	}
+
+	// ---------------------------------------------------------------------------
+
 
 	filter->resO.x = (float)4096;
 	filter->resO.y = (float)2048;
@@ -481,7 +495,8 @@ static obs_properties_t *stitch_filter_properties(void *data)
 				NULL);
 	obs_properties_add_int(props, "nodeIndex", "Node index", 0, 64, 1);
 
-	// old code
+
+	// old code --------------------------
 	obs_properties_add_path(props, "alpha", "Mask Image", OBS_PATH_FILE,
 				"*.png", NULL);
 	obs_properties_add_path(props, "project", "Project File", OBS_PATH_FILE,

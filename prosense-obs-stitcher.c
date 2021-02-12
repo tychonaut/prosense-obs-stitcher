@@ -495,6 +495,7 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 	// cluster node index is way more interesting
 	const int nodeIndex = (int)obs_data_get_int(settings, "nodeIndex");
 
+
 	// texture
 	// sinkParams_in_backgroundTexture
 	clusti_OBS_initUniformTexture(
@@ -669,26 +670,77 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 //-----------------------------------------------------------------------------
 static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms)
 {
-	//TODO
+	Clusti_OBS_uniform const *currUni = NULL;
 
-	//gs_effect_set_texture(
-	//	filter->param_alpha,
-	//	uniforms->sinkParams_in_backgroundTexture.image.texture);
+	// texture
+	// sinkParams_in_backgroundTexture
+	currUni = &uniforms->sinkParams_in_backgroundTexture;
+	gs_effect_set_texture(currUni->handle, currUni->image.texture);
 
-	//gs_effect_set_texture(filter->param_alpha, filter->target);
+	// int
+	// sinkParams_in_index
+	currUni = &uniforms->sinkParams_in_index;
+	gs_effect_set_int(currUni->handle, currUni->_int);
 
-	//uniforms->sinkParams_in_backgroundTexture.handle =
-	//	gs_effect_get_param_by_name(
-	//		obsEffect,
-	//		uniforms->sinkParams_in_backgroundTexture.name);
-	//uniforms->sinkParams_in_backgroundTexture.
+	// vec2
+	// sinkParams_in_resolution_virtual
+	currUni = &uniforms->sinkParams_in_resolution_virtual;
+	gs_effect_set_vec2(currUni->handle, &currUni->_vec2);
+		
+	// vec2
+	// sinkParams_in_cropRectangle_lowerLeft
+	currUni = &uniforms->sinkParams_in_cropRectangle_lowerLeft;
+	gs_effect_set_vec2(currUni->handle, &currUni->_vec2);
 
-	//filter->param_alpha = gs_effect_get_param_by_name(filter->effect,
-	//						  "oldUniforms_target");
-	//gs_effect_set_texture(filter->param_alpha, filter->target);
+	// vec2
+	// sinkParams_in_cropRectangle_extents
+	currUni = &uniforms->sinkParams_in_cropRectangle_extents;
+	gs_effect_set_vec2(currUni->handle, &currUni->_vec2);
 
+	// bool
+	// sinkParams_in_useFishEye
+	currUni = &uniforms->sinkParams_in_useFishEye;
+	gs_effect_set_bool(currUni->handle, currUni->_bool);
 
-	//gs_effect_set_matrix4()
+	// float
+	// sinkParams_in_fishEyeFOV_angle
+	currUni = &uniforms->sinkParams_in_fishEyeFOV_angle;
+	gs_effect_set_float(currUni->handle, currUni->_float);
+
+	// vec2
+	// sourceParams_in_resolution
+	currUni = &uniforms->sourceParams_in_resolution;
+	gs_effect_set_vec2(currUni->handle, &currUni->_vec2);
+
+	// int
+	// sourceParams_in_index
+	currUni = &uniforms->sourceParams_in_index;
+	gs_effect_set_int(currUni->handle, currUni->_int);
+
+	// int
+	// sourceParams_in_decklinkWorkaround_verticalOffset_pixels
+	currUni = &uniforms->sourceParams_in_decklinkWorkaround_verticalOffset_pixels;
+	gs_effect_set_int(currUni->handle, currUni->_int);
+
+	// mat4
+	// sourceParams_in_frustum_reorientedViewProjectionMatrix
+	currUni = &uniforms->sourceParams_in_frustum_reorientedViewProjectionMatrix;
+	gs_effect_set_matrix4(currUni->handle, &currUni->_mat4.obs);
+
+	// mat4
+	// sourceParams_in_frustum_viewMatrix
+	currUni = &uniforms->sourceParams_in_frustum_viewMatrix;
+	gs_effect_set_matrix4(currUni->handle, &currUni->_mat4.obs);
+
+	// mat4
+	// sourceParams_in_frustum_projectionMatrix
+	currUni = &uniforms->sourceParams_in_frustum_projectionMatrix;
+	gs_effect_set_matrix4(currUni->handle, &currUni->_mat4.obs);
+
+	// mat4
+	// sourceParams_in_frustum_viewProjectionMatrix
+	currUni = &uniforms->sourceParams_in_frustum_viewProjectionMatrix;
+	gs_effect_set_matrix4(currUni->handle, &currUni->_mat4.obs);
 }
 //-----------------------------------------------------------------------------
 

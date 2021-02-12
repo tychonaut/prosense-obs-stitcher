@@ -33,6 +33,44 @@ char *clusti_loadFileContents(char const *configPath);
 char *clusti_String_concat(const char *s1, const char *s2);
 
 
+// The "frustum rotation matrix" is multiplied by the sink's
+// "scene rotation matrix", the result is transposed to a view matrix
+//  and then mult. with the frustum's projection matrix:
+// This can be useful to render tilted hemispherical content
+// in a way to only fill the left half of the full-spherical
+// canvas, allowing the right haft to be cropped
+// without loss of information.
+//
+// Construct on the fly, to decouple sink from source data
+// (if we need more sinks later);
+//
+// All members of the params must be set,
+// especially the projection matrix!
+//
+// In graphene notation
+// (multiply row vectors by matrices to the right):
+// point'^T = point^T * VP
+// Wanted: VP
+// VP = V*P
+// V = (R)^T
+// R = R_Frustum * R_Scene
+// --> VP = (R_Frustum * R_Scene)^T * P
+graphene_matrix_t clusti_math_reorientedViewProjectionMatrix(
+	graphene_euler_t const *sinkSceneOrientation,
+	Clusti_Params_Projection const *sourcePlanarProjection);
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ----------------------------------------------------------------------------
 // public memory interface:
 // Use clusti_free() to delete any heap memory allocated by clusti

@@ -72,7 +72,6 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 
 	graphene_matrix_t rotationMatrix;
 	graphene_euler_to_matrix(eulerAnglesPtr, &rotationMatrix);
-
 	/*
 	TEST scene rotation:
 	Put the rendered pixels of the hemisphere of our -21° tilted  dome
@@ -85,16 +84,14 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 	and fragCoordsToAziEle_FishEye() in fragment shader
 	(frustumToEquirect.frag)
 	(works):
-	*/
 	//graphene_matrix_t sceneRotMat;
 	//graphene_matrix_init_rotate(&sceneRotMat, 111.0f, graphene_vec3_x_axis());
 	//graphene_matrix_t tmpMat;
 	//graphene_matrix_multiply(&rotationMatrix, &sceneRotMat, & tmpMat);
 	//rotationMatrix = tmpMat;
-
+	*/
 	graphene_matrix_t viewMatrix;
 	graphene_matrix_transpose(&rotationMatrix, &viewMatrix);
-
 	planarProjection_inOut->planar_viewMatrix = viewMatrix;
 
 
@@ -146,26 +143,58 @@ bool clusti_math_ViewProjectionMatrixFromFrustumAndOrientation(
 		&(planarProjection_inOut->planar_viewProjectionMatrix));
 
 
-
-
-
-
-
-	////debug stuff:
-	//graphene_matrix_print(&viewMatrix);
-	//float viewMatAsFloat[16];
-	//// returns row major matrix! my shader expacts column major matrix!
-	//graphene_matrix_to_float(&viewMatrix, viewMatAsFloat);
-	//// hence own converter function:
-	//clusti_math_grapheneMatrixToColumnMajorFloatArray(&viewMatrix,
-	//						  viewMatAsFloat);
-	//graphene_matrix_print(&projMatrix);
-	//graphene_matrix_print(
-	//	&(planarProjection_inOut->planar_viewProjectionMatrix));
-
-
 	return true;
-
-	// TODO test 
 }
+
+
+
+// The "frustum rotation matrix" is multiplied by the sink's
+// "scene rotation matrix", the result is transposed to a view matrix
+//  and then mult. with the frustum's projection matrix:
+// This can be useful to render tilted hemispherical content
+// in a way to only fill the left half of the full-spherical
+// canvas, allowing the right haft to be cropped
+// without loss of information.
+//
+// Construct on the fly, to decouple sink from source data
+// (if we need more sinks later);
+//
+// In graphene notation
+// (multiply row vectors by matrices to the right):
+// point'^T = point^T * VP
+// Wanted: VP
+// VP = V*P
+// V = (R)^T
+// R = R_Frustum * R_Scene
+// --> VP = (R_Frustum * R_Scene)^T * P
+graphene_matrix_t clusti_math_reorientedViewProjectionMatrix(
+	graphene_euler_t const *sinkSceneOrientation,
+	Clusti_Params_Projection const *sourcePlanarProjection)
+{
+	// Sink's Euler angles to rotation matrix
+	graphene_matrix_t sceneRotMat;
+	graphene_euler_to_matrix(sinkSceneOrientation,
+				 &sceneRotMat);
+
+	// Source's Euler angles to rotation matrix:
+	graphene_matrix_t frustumRotMat;
+	graphene_euler_to_matrix(&sourcePlanarProjection->orientation,
+				 &frustumRotMat);
+
+	graphene_matrix_t finalRotMat;
+	graphene_matrix_multiply(&frustumRotMat, &sceneRotMat, &finalRotMat);
+
+	graphene_matrix_t finalViewMat;
+	graphene_matrix_transpose(&finalRotMat, &finalViewMat);
+
+	graphene_matrix_t sceneRotatedViewProjectionMatrix;
+	graphene_matrix_multiply(
+		&finalViewMat,
+		&sourcePlanarProjection->planar_projectionMatrix,
+		&sceneRotatedViewProjectionMatrix);
+
+	return sceneRotatedViewProjectionMatrix;
+}
+
+
 //-----------------------------------------------------------------------------

@@ -297,44 +297,13 @@ void setupStichingShaderUniforms(Clusti const *clusti, int videoSinkIndex,
 	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
 
 
-	// The "frustum rotation matrix" is multiplied by the sink's
-	// "scene rotation matrix", the result is transposed to a view matrix
-	//  and then mult. with the frustum's projection matrix:
-	// This can be useful to render tilted hemispherical content
-	// in a way to only fill the left half of the full-spherical
-	// canvas, allowing the right haft to be cropped
-	// without loss of information.
-	//
-	// Construct on the fly here, to decouple sink from source data
-	// (if we need more sinks later);
-	// In graphene notation
-	// (multiply row vectors by matrices to the right):
-	// point'^T = point^T * VP
-	// Wanted: VP
-	// VP = V*P
-	// V = (R)^T
-	// R = R_Frustum * R_Scene
-	// --> VP = (R_Frustum * R_Scene)^T * P
-	//
 	//mat4
 	currULoc = glGetUniformLocation(
 		currProg, "sourceParams_in.frustum_reorientedViewProjectionMatrix");
-	// Source's Euler angles to rotation matrix:
-	graphene_matrix_t frustumRotMat;
-	graphene_euler_to_matrix(&source_config->projection.orientation,
-				 &frustumRotMat);
-	// Sink's Euler angles to rotation matrix
-	graphene_matrix_t sceneRotMat;
-	graphene_euler_to_matrix(&sink_config->projection.orientation, &sceneRotMat);
-	graphene_matrix_t finalRotMat;
-	graphene_matrix_multiply(&frustumRotMat, &sceneRotMat, &finalRotMat);
-	graphene_matrix_t finalViewMat;
-	graphene_matrix_transpose(&finalRotMat, &finalViewMat);
-	graphene_matrix_t sceneRotatedViewProjectionMatrix;
-	graphene_matrix_multiply(
-		&finalViewMat,
-		&source_config->projection.planar_projectionMatrix,
-		&sceneRotatedViewProjectionMatrix);
+	graphene_matrix_t sceneRotatedViewProjectionMatrix =
+		clusti_math_reorientedViewProjectionMatrix(
+			&sink_config->projection.orientation,
+			&source_config->projection);
 	graphene_matrix_to_float(&sceneRotatedViewProjectionMatrix, matBuff);
 	glUniformMatrix4fv(currULoc, 1, doTranspose, matBuff);
 

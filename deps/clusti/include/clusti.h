@@ -32,6 +32,10 @@ char *clusti_loadFileContents(char const *configPath);
 // must be clusti_free()'d
 char *clusti_String_concat(const char *s1, const char *s2);
 
+// returned string must be clusti_free()'d
+char *clusti_string_getDirectoryFromPath(char const *path);
+
+
 
 // The "frustum rotation matrix" is multiplied by the sink's
 // "scene rotation matrix", the result is transposed to a view matrix

@@ -12,6 +12,7 @@
 #include <string.h> // strncpy_s
 #include <ctype.h>  // tolower
 
+
 #include <assert.h> // assert
 #include <stdbool.h> // bool
 // ----------------------------------------------------------------------------
@@ -86,6 +87,44 @@ void clusti_mem_printItem(int index, int numTotalItems,
 
 //-----------------------------------------------------------------------------
 // function implementations (string helpers & string memory management)
+
+
+
+
+// based on https://stackoverflow.com/questions/1575278/function-to-split-a-filepath-into-path-and-file
+// returned string must be clusti_free()'d
+char* clusti_string_getDirectoryFromPath(char const *path)
+{
+	char *slash = path;
+	char *next;
+
+	while ((next = strpbrk(slash + 1, "\\/"))) {
+		slash = next;
+	}
+
+	if (path != slash) {
+		slash++;
+	}
+
+	// char* ret = strndup(path, slash - path);
+	char *ret = clusti_String_callocAndCopy(path);
+	size_t slashPos = slash - path;
+	//"cut" result by null-terminating :
+	ret[slashPos] = '\0';
+
+	//*f = strdup(slash);
+
+	return ret;
+}
+
+
+
+
+
+
+
+
+
 
 // must be clusti_free()'d
 char *clusti_String_concat(const char *s1, const char *s2)

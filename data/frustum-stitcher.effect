@@ -507,7 +507,9 @@ float4 oldcode_fragmentShade_main(VertData v_in) : TARGET
         v_in.uv.x,
         1.0 - v_in.uv.y
     );
-    val.xy *= texCoords_yFlipped.xy;
+    val.xy += texCoords_yFlipped.xy;
+    
+    val.xyz = oldUniforms_target.Sample(textureSampler, v_in.uv).xyz;
     
 	return val;
 }

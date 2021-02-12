@@ -127,6 +127,7 @@ static uint32_t stitch_filter_width(void *data);
 //static void clusti_OBS_deinit(void *data);
 
 static void clusti_OBS_initUniforms(Clusti const *clusti,
+				    obs_data_t const *settings,
 				    gs_effect_t const *obsEffect,
 				    Clusti_OBS_uniforms *uniforms);
 
@@ -376,15 +377,63 @@ static void stitch_filter_destroy(void *data)
 //}
 ////-----------------------------------------------------------------------------
 
+
+
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+
+static void clusti_OBS_initUniformTexture(Clusti_OBS_uniform *uni_out,
+					  gs_effect_t const *obsEffect,
+					  obs_data_t const *settings,
+					  char *const varName,
+					  char *const textureFileName)
+{
+	uni_out->name = varName;
+	uni_out->type = CLUSTI_ENUM_UNIFORM_TYPE_texture;
+	uni_out->handle = gs_effect_get_param_by_name(obsEffect, uni_out->name);
+
+	const char *calibFilePath =
+		obs_data_get_string(settings, "calibrationFile");
+	assert(strcmp(calibFilePath, "") != 0);
+	if (strcmp(calibFilePath, "") != 0) {
+		char *dir = clusti_string_getDirectoryFromPath(calibFilePath);
+		char *imgPath = clusti_String_concat(dir, textureFileName);
+
+		gs_image_file_init(&uni_out->image, imgPath);
+		obs_enter_graphics();
+		gs_image_file_init_texture(&uni_out->image);
+		obs_leave_graphics();
+
+		clusti_free(imgPath);
+		clusti_free(dir);
+	}
+
+
+
+}
+
+
+
 //-----------------------------------------------------------------------------
 static void clusti_OBS_initUniforms(Clusti const *clusti,
+				    obs_data_t const *settings,
 				    gs_effect_t const *obsEffect,
 				    Clusti_OBS_uniforms *uniforms)
 {
-	uniforms->sinkParams_in_backgroundTexture.name =
-		"sinkParams_in_backgroundTexture";
-	uniforms->sinkParams_in_backgroundTexture.type =
-		CLUSTI_ENUM_UNIFORM_TYPE_texture;
+	clusti_OBS_initUniformTexture(
+		&uniforms->sinkParams_in_backgroundTexture,
+		obsEffect,
+		settings,
+		"sinkParams_in_backgroundTexture",
+		clusti->stitchingConfig.videoSinks[0].debug_backgroundImageName
+	);
+
+
+
+
+	//
 
 	//TODO
 
@@ -397,6 +446,29 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 	//filter->param_alpha = gs_effect_get_param_by_name(filter->effect,
 	//						  "oldUniforms_target");
 	//gs_effect_set_texture(filter->param_alpha, filter->target);
+
+
+	/*
+	Clusti_OBS_uniform sinkParams_in_backgroundTexture;
+	Clusti_OBS_uniform sinkParams_in_index;
+	Clusti_OBS_uniform sinkParams_in_resolution_virtual;
+	Clusti_OBS_uniform sinkParams_in_cropRectangle_lowerLeft;
+	Clusti_OBS_uniform sinkParams_in_cropRectangle_extents;
+	Clusti_OBS_uniform sinkParams_in_useFishEye;
+	Clusti_OBS_uniform sinkParams_in_fishEyeFOV_angle;
+	Clusti_OBS_uniform sourceParams_in_currentPlanarRendering;
+	Clusti_OBS_uniform sourceParams_in_resolution;
+	Clusti_OBS_uniform sourceParams_in_index;
+	Clusti_OBS_uniform
+		sourceParams_in_decklinkWorkaround_verticalOffset_pixels;
+	Clusti_OBS_uniform
+		sourceParams_in_frustum_reorientedViewProjectionMatrix;
+	Clusti_OBS_uniform sourceParams_in_frustum_viewMatrix;
+	Clusti_OBS_uniform sourceParams_in_frustum_projectionMatrix;
+	Clusti_OBS_uniform sourceParams_in_frustum_viewProjectionMatrix;
+	*/
+
+
 }
 //-----------------------------------------------------------------------------
 
@@ -404,6 +476,12 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms)
 {
 	//TODO
+
+	//gs_effect_set_texture(
+	//	filter->param_alpha,
+	//	uniforms->sinkParams_in_backgroundTexture.image.texture);
+
+	//gs_effect_set_texture(filter->param_alpha, filter->target);
 }
 //-----------------------------------------------------------------------------
 
@@ -433,8 +511,14 @@ static void initState(stitch_filter_data *filter, obs_data_t *settings)
 	obs_enter_graphics();
 	filter->frustumStitchEffect =
 		gs_effect_create_from_file(effect_path, NULL);
-	obs_leave_graphics();
 	bfree(effect_path);
+	obs_leave_graphics();
+
+
+	clusti_OBS_initUniforms(filter->clusti_instance, settings,
+				filter->frustumStitchEffect,
+				&filter->clusti_OBS_uniforms);
+
 
 }
 //-----------------------------------------------------------------------------
@@ -471,11 +555,13 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 		}
 
 		initState(filter, settings);
-
 	}
 
-	// ----------------------------
 
+
+
+	// ----------------------------
+	// old code: 
 
 	filter->resO.x = (float)4096;
 	filter->resO.y = (float)2048;
@@ -524,8 +610,6 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 		parse_file(path, cam, filter);
 	}
 
-	//free(res);
-	//res = NULL;
 }
 //-----------------------------------------------------------------------------
 
@@ -607,6 +691,15 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 	gs_effect_set_vec2(filter->param_crop_r, &filter->crop_r);
 
 	//gs_effect_set_matrix4()
+	 
+	// hack test:
+	gs_effect_set_texture(
+		filter->param_alpha,
+		filter->clusti_OBS_uniforms.sinkParams_in_backgroundTexture.image.texture);
+
+
+	clusti_OBS_bindUniforms(&filter->clusti_OBS_uniforms);
+
 
 	obs_source_process_filter_end(filter->context, filter->frustumStitchEffect,
 				      (uint32_t)filter->resO.x,

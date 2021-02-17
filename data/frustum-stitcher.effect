@@ -492,10 +492,10 @@ float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
     */
     
     //debug
-     out_color.xyz += 
-        sinkParams_in_backgroundTexture.Sample(textureSampler, tc_Yinverted).xyz;
-    out_color.xyz += 
-        sinkParams_in_testImageTexture.Sample(textureSampler, tc_Yinverted).xyz;     
+    //out_color.xyz += 
+    //    sinkParams_in_backgroundTexture.Sample(textureSampler, tc_Yinverted).xyz;
+    //out_color.xyz += 
+    //    sinkParams_in_testImageTexture.Sample(textureSampler, tc_Yinverted).xyz;     
      
         
     

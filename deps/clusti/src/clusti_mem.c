@@ -93,6 +93,25 @@ void clusti_mem_printItem(int index, int numTotalItems,
 
 // based on https://stackoverflow.com/questions/1575278/function-to-split-a-filepath-into-path-and-file
 // returned string must be clusti_free()'d
+//
+////test clusti_string_getDirectoryFromPath; works as needed;
+//// without trailing slash, the last substring is interpreted as file
+//// TODO put this elsewhere if there will ever be a "no hack"-time for this project.
+//char * testRes = clusti_string_getDirectoryFromPath(NULL);
+//clusti_free(testRes);
+//testRes = clusti_string_getDirectoryFromPath("");
+//clusti_free(testRes);
+//testRes = clusti_string_getDirectoryFromPath("/");
+//clusti_free(testRes);
+//testRes = clusti_string_getDirectoryFromPath("noslash");
+//clusti_free(testRes);
+//testRes = clusti_string_getDirectoryFromPath("/noTrailingSlash");
+//clusti_free(testRes);
+//testRes = clusti_string_getDirectoryFromPath("/trailingSlash/");
+//clusti_free(testRes);
+//testRes = clusti_string_getDirectoryFromPath("/wayne/noEnding");
+//clusti_free(testRes);
+//testRes = NULL;
 char* clusti_string_getDirectoryFromPath(char const *path)
 {
 	if (path == NULL) {

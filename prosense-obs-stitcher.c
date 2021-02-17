@@ -167,6 +167,9 @@ struct obs_source_info stitch_filter = {
 	.get_width = stitch_filter_width,
 	.get_height = stitch_filter_height,
 };
+
+
+
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -290,7 +293,7 @@ typedef struct Clusti_OBS_uniforms Clusti_OBS_uniforms;
 
 struct stitch_filter_data {
 
-	obs_source_t *context;
+	obs_source_t *obsSourceTarget;
 
 	gs_effect_t *frustumStitchEffect;
 	
@@ -299,6 +302,7 @@ struct stitch_filter_data {
 	// that have to be converted, though)
 	Clusti *clusti_instance;
 
+	int sinkIndexToUse;
 	int sourceIndexToUse;
 	// update and issue a warning when mismatch to calibration file
 	vec2 currentSinkResolution;
@@ -321,14 +325,14 @@ struct stitch_filter_data {
 
 	gs_texture_t *target;
 	gs_image_file_t alpha;
-	struct vec2 resO;
-	struct vec2 resI;
-	struct vec3 yrp;
+	//vec2 resO;
+	vec2 resI;
+	 vec3 yrp;
 	float ppr;
-	struct vec3 abc;
-	struct vec2 de;
-	struct vec2 crop_c;
-	struct vec2 crop_r;
+	vec3 abc;
+	vec2 de;
+	vec2 crop_c;
+	vec2 crop_r;
 };
 typedef struct stitch_filter_data stitch_filter_data;
 //-----------------------------------------------------------------------------
@@ -352,7 +356,7 @@ static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context)
 	struct stitch_filter_data *filter =
 		(struct stitch_filter_data *)bzalloc(sizeof(*filter));
 
-	filter->context = context;
+	filter->obsSourceTarget = context;
 
 	stitch_filter_update(filter, settings);
 
@@ -398,31 +402,12 @@ static void clusti_OBS_initUniformTexture(Clusti_OBS_uniform *uni_out,
 					  char *const varName,
 					  char *const textureFileName)
 {
-	////test clusti_string_getDirectoryFromPath; works as needed;
-	//// without trailing slash, the last substring is interpreted as file
-	//// TODO put this elsewhere
-	//char * testRes = clusti_string_getDirectoryFromPath(NULL);
-	//clusti_free(testRes);
-	//testRes = clusti_string_getDirectoryFromPath("");
-	//clusti_free(testRes);
-	//testRes = clusti_string_getDirectoryFromPath("/");
-	//clusti_free(testRes);
-	//testRes = clusti_string_getDirectoryFromPath("noslash");
-	//clusti_free(testRes);
-	//testRes = clusti_string_getDirectoryFromPath("/noTrailingSlash");
-	//clusti_free(testRes);
-	//testRes = clusti_string_getDirectoryFromPath("/trailingSlash/");
-	//clusti_free(testRes);
-	//testRes = clusti_string_getDirectoryFromPath("/wayne/noEnding");
-	//clusti_free(testRes);
-	//testRes = NULL;
-
 	uni_out->name = varName;
 	uni_out->type = CLUSTI_ENUM_UNIFORM_TYPE_texture;
 	uni_out->handle = gs_effect_get_param_by_name(obsEffect, uni_out->name);
 
-	const char *calibFilePath =
-		obs_data_get_string(settings, "calibrationFile");
+	char const *calibFilePath = obs_data_get_string(
+		(obs_data_t *)settings, (const char *)"calibrationFile");
 	assert(strcmp(calibFilePath, "") != 0);
 
 	if (strcmp(calibFilePath, "") != 0) {
@@ -493,7 +478,8 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 	// always 0 now, but maybe one wnats multiple sinks in the future
 	const int sinkIndex = 0;
 	// cluster node index is way more interesting
-	const int nodeIndex = (int)obs_data_get_int(settings, "nodeIndex");
+	const int nodeIndex = (int)obs_data_get_int((obs_data_t *)settings,
+						    (char const *)"nodeIndex");
 
 
 	// texture
@@ -701,17 +687,17 @@ static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms)
 	// vec2
 	// sinkParams_in_resolution_virtual
 	currUni = &uniforms->sinkParams_in_resolution_virtual;
-	gs_effect_set_vec2(currUni->handle, &currUni->_vec2);
+	gs_effect_set_vec2(currUni->handle, &currUni->_vec2.obs);
 		
 	// vec2
 	// sinkParams_in_cropRectangle_lowerLeft
 	currUni = &uniforms->sinkParams_in_cropRectangle_lowerLeft;
-	gs_effect_set_vec2(currUni->handle, &currUni->_vec2);
+	gs_effect_set_vec2(currUni->handle, &currUni->_vec2.obs);
 
 	// vec2
 	// sinkParams_in_cropRectangle_extents
 	currUni = &uniforms->sinkParams_in_cropRectangle_extents;
-	gs_effect_set_vec2(currUni->handle, &currUni->_vec2);
+	gs_effect_set_vec2(currUni->handle, &currUni->_vec2.obs);
 
 	// bool
 	// sinkParams_in_useFishEye
@@ -726,7 +712,7 @@ static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms)
 	// vec2
 	// sourceParams_in_resolution
 	currUni = &uniforms->sourceParams_in_resolution;
-	gs_effect_set_vec2(currUni->handle, &currUni->_vec2);
+	gs_effect_set_vec2(currUni->handle, &currUni->_vec2.obs);
 
 	// int
 	// sourceParams_in_index
@@ -765,6 +751,8 @@ static void initState(stitch_filter_data *filter, obs_data_t *settings)
 {
 	int nodeIndex = (int)obs_data_get_int(settings, "nodeIndex");
 	filter->sourceIndexToUse = nodeIndex;
+	// maybe make customizable later
+	filter->sinkIndexToUse = 0;
 
 	assert(filter->clusti_instance == NULL);
 
@@ -779,6 +767,59 @@ static void initState(stitch_filter_data *filter, obs_data_t *settings)
 
 	blog(LOG_DEBUG, "stitcher: num video sources: %d",
 	     filter->clusti_instance->stitchingConfig.numVideoSources);
+
+
+	bool overrideCalibFile =
+		obs_data_get_bool(settings, "overrideCalibFile");
+
+	if (overrideCalibFile) {
+
+		// override output resolution:
+		char const *resolutionString =
+			obs_data_get_string(settings, (const char *)"resolution_out");
+		if (resolutionString != NULL) {
+			long r =
+				strtol(resolutionString, &resolutionString, 10);
+			if (r > 0) {
+				filter->currentSinkResolution.x = (float)r;
+				if (resolutionString != NULL) {
+					r = strtol(resolutionString + 1, NULL,
+						   10);
+					if (r > 0) {
+						filter->currentSinkResolution.y =
+							(float)r;
+					}
+				}
+			}
+		}
+
+
+		
+		bool stitchToFishEye =
+			obs_data_get_bool(settings, "stitchToFishEye");
+		if (stitchToFishEye) {
+			filter->clusti_instance->stitchingConfig
+				.videoSinks[filter->sinkIndexToUse]
+				.projection.type =
+				CLUSTI_ENUM_PROJECTION_TYPE_FISHEYE;
+			// TODO make customizable
+			filter->clusti_instance->stitchingConfig
+				.videoSinks[filter->sinkIndexToUse]
+				.projection.fisheye_aperture_degrees = 180.0f;
+		}
+
+
+	} else {
+		filter->currentSinkResolution.x =
+			(float)
+			filter->clusti_instance->stitchingConfig
+				.videoSinks[filter->sinkIndexToUse].cropRectangle.extents.x;
+		filter->currentSinkResolution.y =
+			(float)filter->clusti_instance->stitchingConfig
+				.videoSinks[filter->sinkIndexToUse]
+				.cropRectangle.extents.y;
+	}
+
 
 
 	//create effect
@@ -826,6 +867,17 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 {
 	stitch_filter_data *filter = (stitch_filter_data *)data;
 
+	obs_source_t *obsSource_filterTarget= obs_filter_get_target(filter->obsSourceTarget);
+	//obs_scene_find_source_recursive()
+	obs_scene_t *obsScene = obs_scene_from_source(obsSource_filterTarget);
+	//obs_scene_get_settin
+	//obs_source_get_settings()
+
+	//obs_source_get_filter_by_name
+	//obs_filter
+	//obs_scene_find_source()
+	//obs_source_update();
+
 	// ----------------------------
 	const char *calibFilePath = obs_data_get_string(settings, "calibrationFile");
 	// string not empty?
@@ -833,7 +885,7 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 
 		if (filter->clusti_instance != NULL) {
 			//hack: not update, but purge and recreate
-			purgeState(filter);
+			purgeState(filter); 
 		}
 
 		initState(filter, settings);
@@ -842,41 +894,16 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 
 
 
+
+	
+
+
 	// ----------------------------
 	// old code: 
-
-	filter->resO.x = (float)4096;
-	filter->resO.y = (float)2048;
 
 	int cam = (int)obs_data_get_int(settings, "cam");
 	const char *path = obs_data_get_string(settings, "alpha");
 
-	//original code: C seems to be less strict with th constness
-	//char* res = obs_data_get_string(settings, "res");
-
-	//workaround:
-	//const char *res_const = obs_data_get_string(settings, "res");
-	char const *const res_const =
-		obs_data_get_string(settings, (const char *)"res");
-
-	//char *res = (char *)malloc(strlen(res_const) * sizeof(char));
-	//res =
-	//strcpy(res, res_const);
-	//char *res = strdup(res_const);
-	//char *const res = (char *const) res_const;
-	char **res_ptr = (char **)&(res_const);
-
-	//long r = strtol(res, &res, 10);
-	long r = strtol(res_const, res_ptr, 10);
-	if (r > 0) {
-		filter->resO.x = (float)r;
-		if (res_const != NULL) {
-			r = strtol(res_const + 1, NULL, 10);
-			if (r > 0) {
-				filter->resO.y = (float)r;
-			}
-		}
-	}
 
 	gs_image_file_init(&filter->alpha, path);
 
@@ -905,7 +932,17 @@ static obs_properties_t *stitch_filter_properties(void *data)
 	obs_properties_add_path(props, "calibrationFile",
 				"Calibration XML file", OBS_PATH_FILE, "*.xml",
 				NULL);
-	obs_properties_add_int(props, "nodeIndex", "Node index", 0, 64, 1);
+	obs_properties_add_int(props, "nodeIndex", "Render Node index", 0, 64,
+			       1);
+
+	obs_properties_add_bool(props, "overrideCalibFile",
+				"Override calib file settings");
+
+	// The following settings will only be used if "overrideCalibFile" is true:
+	obs_properties_add_bool(props, "stitchToFishEye", "Stitch to FishEye");
+	obs_properties_add_text(props, "resolution_out", "Resolution", OBS_TEXT_DEFAULT);
+
+
 
 
 	// old code --------------------------
@@ -914,7 +951,6 @@ static obs_properties_t *stitch_filter_properties(void *data)
 	obs_properties_add_path(props, "project", "Project File", OBS_PATH_FILE,
 				"PtGUI/Hugin project (*.pts *.pto)", NULL);
 	obs_properties_add_int(props, "cam", "Input #", 0, 99, 1);
-	obs_properties_add_text(props, "res", "Resolution", OBS_TEXT_DEFAULT);
 
 	return props;
 }
@@ -925,9 +961,13 @@ static void stitch_filter_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "nodeIndex", 0);
 
+	obs_data_set_default_bool(settings, "overrideCalibFile", false);
+	
+	obs_data_set_default_bool(settings, "stitchToFishEye", false);
+	obs_data_set_default_string(settings, "resolution_out", "4096x2048");
+
 	// old code
 	obs_data_set_default_int(settings, "cam", 0);
-	obs_data_set_default_string(settings, "res", "4096x2048");
 }
 //-----------------------------------------------------------------------------
 
@@ -939,9 +979,7 @@ static void stitch_filter_tick(void *data, float seconds)
 	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
 	obs_source_t *source;
-	source = obs_filter_get_target(filter->context);
-
-	//filter->clusti_instance->stitchingConfig.
+	source = obs_filter_get_target(filter->obsSourceTarget);
 
 	filter->resI.x = (float)obs_source_get_base_width(source);
 	filter->resI.y = (float)obs_source_get_base_height(source);
@@ -954,11 +992,11 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
 	if (!filter->target || !filter->frustumStitchEffect) {
-		obs_source_skip_video_filter(filter->context);
+		obs_source_skip_video_filter(filter->obsSourceTarget);
 		return;
 	}
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+	if (!obs_source_process_filter_begin(filter->obsSourceTarget, GS_RGBA,
 					     OBS_NO_DIRECT_RENDERING))
 		return;
 
@@ -976,9 +1014,10 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 	clusti_OBS_bindUniforms(&filter->clusti_OBS_uniforms);
 
 
-	obs_source_process_filter_end(filter->context, filter->frustumStitchEffect,
-				      (uint32_t)filter->resO.x,
-				      (uint32_t)filter->resO.y);
+	obs_source_process_filter_end(
+		filter->obsSourceTarget, filter->frustumStitchEffect,
+		(uint32_t)filter->currentSinkResolution.x,
+		(uint32_t)filter->currentSinkResolution.y);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -998,7 +1037,7 @@ static uint32_t stitch_filter_width(void *data)
 	if (data != NULL) {
 		struct stitch_filter_data *filter =
 			(struct stitch_filter_data *)data;
-		return (uint32_t)filter->resO.x;
+		return (uint32_t)filter->currentSinkResolution.x;
 	} else {
 		return (uint32_t)4096;
 	}
@@ -1011,7 +1050,7 @@ static uint32_t stitch_filter_height(void *data)
 	if (data != NULL) {
 		struct stitch_filter_data *filter =
 			(struct stitch_filter_data *)data;
-		return (uint32_t)filter->resO.y;
+		return (uint32_t)filter->currentSinkResolution.y;
 	} else {
 		return (uint32_t)2048;
 	}

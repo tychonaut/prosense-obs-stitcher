@@ -25,6 +25,20 @@
                         yaw="0.0"
                     />
                 </Projection>
+                
+                <!--
+                <VirtualResolution
+                    x="4096"
+                    y="2048"
+                />
+                <CropRectangle
+                    lowerLeft_x="0"
+                    lowerLeft_y="0"
+                    extents_x="4096"
+                    extents_y="2048"
+                />
+                -->
+                
                 <VirtualResolution
                     x="8192"
                     y="4096"
@@ -35,6 +49,7 @@
                     extents_x="4096"
                     extents_y="4096"
                 />
+                
             </VideoSink>
 
             <!--

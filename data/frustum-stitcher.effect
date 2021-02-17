@@ -43,6 +43,13 @@ uniform float4x4 ViewProj;
 uniform texture2d image;
 //}
 
+// The DirectX "effect" system seems to have a similar
+// issue as ShaderEd: Textures must be defined first?
+uniform texture2d   sinkParams_in_backgroundTexture;
+
+uniform texture2d   sinkParams_in_testImageTexture;
+
+
 /* ~~~~~~~~~~~~~
 Damn, this implementation does not support uniform structs!
 struct Old_Uniforms 
@@ -64,7 +71,12 @@ function forwards also not work;
 ~~~~~~~~~~~~~~~*/
 
 //{ old code's uniforms
+
 uniform texture2d   oldUniforms_target;
+
+
+
+
 uniform float2      oldUniforms_resI;
 uniform float3      oldUniforms_yrp;
 uniform float       oldUniforms_ppr;
@@ -175,13 +187,20 @@ uniform float4x4    sourceParams_in_frustum_viewProjectionMatrix;
 
 
 
+/*
 sampler_state textureSampler {
 	Filter    = Linear;
 	AddressU  = Border;
 	AddressV  = Border;
 	BorderColor = 00000000;
 };
-
+*/
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+	BorderColor = 00000000;
+};
 
 
 struct VertData {
@@ -420,6 +439,13 @@ float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
         discard;
     }
     
+    //TEST get rid of black bar by cropping top region
+    if( texCoords_0_1.y > 0.9 )
+    {
+        discard;
+    }
+    
+    
     // correct for the black bar issue in dacklink capture cards:
     // https://forum.blackmagicdesign.com/viewtopic.php?f=4&t=131164
     float2 tc_offset = 
@@ -464,6 +490,14 @@ float4 frustumToPano_fragmentShade_main(VertData v_in) : TARGET
                  + 0.25 * debugColor[sourceParams_in.index] ;
                  
     */
+    
+    //debug
+     out_color.xyz += 
+        sinkParams_in_backgroundTexture.Sample(textureSampler, tc_Yinverted).xyz;
+    out_color.xyz += 
+        sinkParams_in_testImageTexture.Sample(textureSampler, tc_Yinverted).xyz;     
+     
+        
     
     return out_color;
 }

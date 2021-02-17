@@ -309,30 +309,6 @@ struct stitch_filter_data {
 	vec2 currentSourceResolution;
 
 	Clusti_OBS_uniforms clusti_OBS_uniforms;
-
-	// old code --------------------------
-	//gs_effect_t *oldEffect;
-
-	gs_eparam_t *param_alpha;
-	//gs_eparam_t *param_resO;
-	gs_eparam_t *param_resI;
-	gs_eparam_t *param_yrp;
-	gs_eparam_t *param_ppr;
-	gs_eparam_t *param_abc;
-	gs_eparam_t *param_de;
-	gs_eparam_t *param_crop_c;
-	gs_eparam_t *param_crop_r;
-
-	gs_texture_t *target;
-	gs_image_file_t alpha;
-	//vec2 resO;
-	vec2 resI;
-	 vec3 yrp;
-	float ppr;
-	vec3 abc;
-	vec2 de;
-	vec2 crop_c;
-	vec2 crop_r;
 };
 typedef struct stitch_filter_data stitch_filter_data;
 //-----------------------------------------------------------------------------
@@ -375,23 +351,7 @@ static void stitch_filter_destroy(void *data)
 }
 //-----------------------------------------------------------------------------
 
-////-----------------------------------------------------------------------------
-//static void clusti_OBS_init(void *data, obs_data_t *settings)
-//{
-//	//TODO
-//}
-////-----------------------------------------------------------------------------
-//
-////-----------------------------------------------------------------------------
-//static void clusti_OBS_deinit(void *data, obs_data_t *settings)
-//{
-//	//TODO
-//}
-////-----------------------------------------------------------------------------
 
-
-
-//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
@@ -779,7 +739,7 @@ static void initState(stitch_filter_data *filter, obs_data_t *settings)
 			obs_data_get_string(settings, (const char *)"resolution_out");
 		if (resolutionString != NULL) {
 			long r =
-				strtol(resolutionString, &resolutionString, 10);
+				strtol(resolutionString, &(char*)resolutionString, 10);
 			if (r > 0) {
 				filter->currentSinkResolution.x = (float)r;
 				if (resolutionString != NULL) {
@@ -867,6 +827,8 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 {
 	stitch_filter_data *filter = (stitch_filter_data *)data;
 
+	// ----------------------------
+	// ideas for plugin-global settings update...
 	obs_source_t *obsSource_filterTarget= obs_filter_get_target(filter->obsSourceTarget);
 	//obs_scene_find_source_recursive()
 	obs_scene_t *obsScene = obs_scene_from_source(obsSource_filterTarget);
@@ -877,6 +839,7 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 	//obs_filter
 	//obs_scene_find_source()
 	//obs_source_update();
+
 
 	// ----------------------------
 	const char *calibFilePath = obs_data_get_string(settings, "calibrationFile");
@@ -890,35 +853,6 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 
 		initState(filter, settings);
 	}
-
-
-
-
-
-	
-
-
-	// ----------------------------
-	// old code: 
-
-	int cam = (int)obs_data_get_int(settings, "cam");
-	const char *path = obs_data_get_string(settings, "alpha");
-
-
-	gs_image_file_init(&filter->alpha, path);
-
-	obs_enter_graphics();
-
-	gs_image_file_init_texture(&filter->alpha);
-
-	filter->target = filter->alpha.texture;
-	obs_leave_graphics();
-
-	path = obs_data_get_string(settings, "project");
-	if (path[0] != '\0') {
-		parse_file(path, cam, filter);
-	}
-
 }
 //-----------------------------------------------------------------------------
 
@@ -944,14 +878,6 @@ static obs_properties_t *stitch_filter_properties(void *data)
 
 
 
-
-	// old code --------------------------
-	obs_properties_add_path(props, "alpha", "Mask Image", OBS_PATH_FILE,
-				"*.png", NULL);
-	obs_properties_add_path(props, "project", "Project File", OBS_PATH_FILE,
-				"PtGUI/Hugin project (*.pts *.pto)", NULL);
-	obs_properties_add_int(props, "cam", "Input #", 0, 99, 1);
-
 	return props;
 }
 //-----------------------------------------------------------------------------
@@ -966,8 +892,6 @@ static void stitch_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "stitchToFishEye", false);
 	obs_data_set_default_string(settings, "resolution_out", "4096x2048");
 
-	// old code
-	obs_data_set_default_int(settings, "cam", 0);
 }
 //-----------------------------------------------------------------------------
 
@@ -980,9 +904,6 @@ static void stitch_filter_tick(void *data, float seconds)
 
 	obs_source_t *source;
 	source = obs_filter_get_target(filter->obsSourceTarget);
-
-	filter->resI.x = (float)obs_source_get_base_width(source);
-	filter->resI.y = (float)obs_source_get_base_height(source);
 }
 //-----------------------------------------------------------------------------
 
@@ -991,24 +912,16 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 {
 	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
-	if (!filter->target || !filter->frustumStitchEffect) {
+	//!filter->target ||
+	if (!filter->frustumStitchEffect) {
 		obs_source_skip_video_filter(filter->obsSourceTarget);
 		return;
 	}
 
 	if (!obs_source_process_filter_begin(filter->obsSourceTarget, GS_RGBA,
-					     OBS_NO_DIRECT_RENDERING))
+					     OBS_NO_DIRECT_RENDERING)) {
 		return;
-
-	gs_effect_set_texture(filter->param_alpha, filter->target);
-	//gs_effect_set_vec2(filter->param_resO, &filter->resO);
-	gs_effect_set_vec2(filter->param_resI, &filter->resI);
-	gs_effect_set_vec3(filter->param_yrp, &filter->yrp);
-	gs_effect_set_float(filter->param_ppr, filter->ppr);
-	gs_effect_set_vec3(filter->param_abc, &filter->abc);
-	gs_effect_set_vec2(filter->param_de, &filter->de);
-	gs_effect_set_vec2(filter->param_crop_c, &filter->crop_c);
-	gs_effect_set_vec2(filter->param_crop_r, &filter->crop_r);
+	}
 
 
 	clusti_OBS_bindUniforms(&filter->clusti_OBS_uniforms);
@@ -1057,193 +970,6 @@ static uint32_t stitch_filter_height(void *data)
 }
 //-----------------------------------------------------------------------------
 
-//=============================================================================
-//=============================================================================
-// old function impls, TODO delete when obsolete
-
-//-----------------------------------------------------------------------------
-float parse_script(char *str, char *p)
-{
-	char *num = strstr(str, p);
-	if (num != NULL) {
-		return (float)strtod(num + strlen(p), NULL);
-	} else {
-		return 0.0;
-	}
-}
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void parse_script_crop(char *str, struct vec2 *crop_c, struct vec2 *crop_r,
-		       char crop_type)
-{
-	struct vec4 crop;
-	char *num = strchr(str, crop_type);
-	if (num != NULL) {
-		crop.x = strtol(num + 1, &num, 10);
-	} else
-		return;
-	if (num != NULL) {
-		crop.y = strtol(num + 1, &num, 10);
-	} else
-		return;
-	if (num != NULL) {
-		crop.z = strtol(num + 1, &num, 10);
-	} else
-		return;
-	if (num != NULL) {
-		crop.w = strtol(num + 1, NULL, 10);
-	} else
-		return;
-	crop_c->x = (crop.y + crop.x) / 2.0f;
-	crop_c->y = (crop.w + crop.z) / 2.0f;
-
-	crop_r->x = (crop.y - crop.x) / 2.0f;
-	crop_r->y = (crop.w - crop.z) / 2.0f;
-}
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void parse_file(const char *path, int cam, struct stitch_filter_data *filter)
-{
-	if (cam < 0)
-		return;
-	FILE *pFile;
-	char *str;
-	str = (char *)malloc(150 * 1000 * 1000);
-
-	pFile = fopen(path, "r");
-	if (pFile != NULL) {
-		const char *fext = strrchr(path, '.');
-		if (strcmp(fext, ".pts") == 0) {
-
-			blog(LOG_ERROR, "not supported anymore, old code to be removed");
-
-			char *effect_path =
-				obs_module_file("pts-stitcher.effect");
-			obs_enter_graphics();
-			filter->frustumStitchEffect =
-				gs_effect_create_from_file(effect_path, NULL);
-			obs_leave_graphics();
-			bfree(effect_path);
-
-			filter->param_alpha = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "target");
-			//filter->param_resO		= gs_effect_get_param_by_name(filter->effect, "resO");
-			filter->param_resI = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "resI");
-			filter->param_yrp = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "yrp");
-			filter->param_ppr = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "ppr");
-			filter->param_abc = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "abc");
-			filter->param_de = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "de");
-			filter->param_crop_c = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "crop_c");
-			filter->param_crop_r = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "crop_r");
-
-			while (str[0] != 'o') {
-				if (fgets(str, 150 * 1000 * 1000, pFile) ==
-				    NULL)
-					break;
-			}
-
-			float v =
-				parse_script(str, (char *)" v") * M_PI / 180.0f;
-			filter->abc.x = parse_script(str, (char *)" a");
-			filter->abc.y = parse_script(str, (char *)" b");
-			filter->abc.z = parse_script(str, (char *)" c");
-			filter->de.x = parse_script(str, (char *)" d");
-			filter->de.y = parse_script(str, (char *)" e");
-
-			int i = -1;
-			while (i < cam) {
-				fgets(str, 150 * 1000 * 1000, pFile);
-				while (str[0] != 'o') {
-					if (fgets(str, 150 * 1000 * 1000,
-						  pFile) == NULL) {
-						break;
-					}
-				}
-				i++;
-			}
-
-			filter->yrp.x =
-				parse_script(str, (char *)" y") * M_PI / 180.0f;
-			filter->yrp.y =
-				parse_script(str, (char *)" r") * M_PI / 180.0f;
-			filter->yrp.z =
-				parse_script(str, (char *)" p") * M_PI / 180.0f;
-			parse_script_crop(str, &filter->crop_c, &filter->crop_r,
-					  'C');
-			filter->ppr = (filter->crop_r.x + filter->crop_r.y) / v;
-		}
-		if (strcmp(fext, ".pto") == 0) {
-			//char *effect_path =
-			//	//obs_module_file("pto-stitcher.effect");
-			//	//hack
-			//	obs_module_file("frustum-stitcher.effect");
-			//obs_enter_graphics();
-			//filter->frustumStitchEffect =
-			//	gs_effect_create_from_file(effect_path, NULL);
-			//obs_leave_graphics();
-			//bfree(effect_path);
-
-			filter->param_alpha = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "oldUniforms_target");
-			//filter->param_resO		= gs_effect_get_param_by_name(filter->effect, "resO");
-			filter->param_resI = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "oldUniforms_resI");
-			filter->param_yrp = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "oldUniforms_yrp");
-			filter->param_ppr = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "oldUniforms_ppr");
-			filter->param_abc = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "oldUniforms_abc");
-			filter->param_de = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "oldUniforms_de");
-			filter->param_crop_c = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "oldUniforms_crop_c");
-			filter->param_crop_r = gs_effect_get_param_by_name(
-				filter->frustumStitchEffect, "oldUniforms_crop_r");
-
-			int i = 0;
-			while (i <= cam) {
-				fgets(str, 150 * 1000 * 1000, pFile);
-				while (str[0] != 'i') {
-					if (fgets(str, 150 * 1000 * 1000,
-						  pFile) == NULL) {
-						break;
-					}
-				}
-				i++;
-			}
-
-			float v =
-				parse_script(str, (char *)" v") * M_PI / 180.0f;
-			filter->abc.x = parse_script(str, (char *)" a");
-			filter->abc.y = parse_script(str, (char *)" b");
-			filter->abc.z = parse_script(str, (char *)" c");
-			filter->de.x = parse_script(str, (char *)" d");
-			filter->de.y = parse_script(str, (char *)" e");
-
-			filter->yrp.x =
-				parse_script(str, (char *)" y") * M_PI / 180.0f;
-			filter->yrp.y =
-				parse_script(str, (char *)" r") * M_PI / 180.0f;
-			filter->yrp.z =
-				parse_script(str, (char *)" p") * M_PI / 180.0f;
-			filter->ppr = parse_script(str, (char *)" w") / v;
-		}
-
-		fclose(pFile);
-	}
-	free(str);
-}
-//-----------------------------------------------------------------------------
 
 #ifdef __cplusplus
 } // extern "C"

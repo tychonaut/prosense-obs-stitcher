@@ -1,0 +1,85 @@
+
+The "Synced realtime stitching with capture cards"-puzzle
+----------------------------------------------------------
+
+Video illustrating the problem:
+    
+    https://www.youtube.com/watch?v=DyHN5PFXhMU
+
+Exemplary timing diagram:
+
+    Render frames from cluster: 60 Hz, synced
+        |0    |1    |2    |3    |4    |5    |6    |7    
+        |0    |1    |2    |3    |4    |5    |6    |7    
+        |0    |1    |2    |3    |4    |5    |6    |7    
+        |0    |1    |2    |3    |4    |5    |6    |7    
+        |0    |1    |2    |3    |4    |5    |6    |7    
+  
+    Capture frames from Decklink card: 60 Hz, not synced  
+          |0    |X1      |Y2   |3  |4    |5    |6    |7    
+              |0   |XY1       |2     |    |4    |5    |6    |7    
+         |0    |X1    |2   |Y3  |4    |5    |6    |7    
+          |0   |X1   |Y2       |3     |4    |5    |6    |7    
+           |0      |X1    |Y2   |3   |4    |5    |6    |7    
+        
+    Streaming frame from OBS: 30Hz (can be more or less), not synced
+              |0            |1        |2          |3      
+
+Analysis:
+
+    In this example, for streaming frame "0", one possible
+    useful choice would be all render frames "1" 
+    (marked with an X).
+    But OBS may give use the most recent ones arrived,
+    marked with a Y. Those encode different render frames!
+    
+Solution idea 1: Use only Capture frames and OBS programming:
+                 Hacky, unreliable and maybe OBS-breaking
+    
+    We could try to Hack OBS so that it applies some 
+    heuristics on "clustering" capture frames with close
+    time stamps (might mess up deep internal OBS logic (?)).
+    But there is no guaranteed way to identify 
+    "the same render frames" with only the capture frames!
+    One can only do the clustering and hope for the best 
+    (that no hickup in the cluster, 
+    the capture cards, PCIe-trensfer or OBS scrambled 
+    the time stamps in a way that mixes different render 
+    frames into the same cluster!).
+
+Solution idea 2: Throw known, but expensive
+                 hardware at the problem:
+                 Expensive, hacky, might not even work 
+                 for 60Hz rendering <--> 30Hz streaming 
+    Get another potent Quadro GPU and QuadroSync card, 
+    add a dummy Desktop Capture Source to the OBS scene.
+    This way, we may have a definite time stamps to 
+    "grab the next following frame" for each capture source.
+    Like idea 1, may break internal OBS logic when trying
+    to skip every second frame by hand.
+    
+Solution idea 3: Reduce the *RENDER* framefrate to 30Hz:
+                 Ugly and also no guaranty to work.
+    This relieves PCIe-bandwith pressure and may hence cause
+    no hickups in the time stamps of the most recently arrived
+    capture frames anymore.
+    The price is high: more junky rendering in dome,
+    unloading EDIDs and mess in the Nvidia settings of
+    each render computer. In the end, this is also no
+    guaranty to cluster the "wrong" collection of capture frames.
+    
+Solution idea 4: Throw unknown, but cheaper hardware at the problem:
+                 like idea 2, but cheaper hardware, but also more
+                 software complexity and less portability.
+    Buy sth. like a BNC-sync-receiver, set it up in software,
+    use it in OBS.
+    
+Summary: all above solution ideas are quite bad ihmo. 
+There has to be a way to get & cache all incoming frames,
+jiggle the timestamps,cluster promising frames,
+keep some of the most recents for the next streaming frame,
+and ditch the rest, and all without breaking internal OBS logic.
+I will try idea 3 first, in order to get a feeling for the behavior.
+Then, I will create a post in the OBS forum in hope to get some help there.
+
+                 

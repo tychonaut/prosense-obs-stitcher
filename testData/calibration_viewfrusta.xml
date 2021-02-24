@@ -28,18 +28,6 @@
                 
                 <!--
                 <VirtualResolution
-                    x="4096"
-                    y="2048"
-                />
-                <CropRectangle
-                    lowerLeft_x="0"
-                    lowerLeft_y="0"
-                    extents_x="4096"
-                    extents_y="2048"
-                />
-                -->
-                
-                <VirtualResolution
                     x="8192"
                     y="4096"
                 />
@@ -48,6 +36,28 @@
                     lowerLeft_y="0"
                     extents_x="4096"
                     extents_y="4096"
+                />
+                
+                <VirtualResolution
+                    x="2048"
+                    y="1024"
+                />
+                <CropRectangle
+                    lowerLeft_x="0"
+                    lowerLeft_y="0"
+                    extents_x="1024"
+                    extents_y="1024"
+                />
+                -->
+                <VirtualResolution
+                    x="4096"
+                    y="2048"
+                />
+                <CropRectangle
+                    lowerLeft_x="0"
+                    lowerLeft_y="0"
+                    extents_x="2048"
+                    extents_y="2048"
                 />
                 
             </VideoSink>
@@ -117,9 +127,10 @@
                 warpFileName="warpLUT_RT001.pfm"
                 blendImageName="blendmask_RT001.png"
                 testImageName="OpenSpace/RT001.png"
-                decklinkWorkaround_verticalOffset_pixels="29"
+                decklinkWorkaround_verticalOffset_pixels="0"
             >        
-                <Resolution x="2560" y="1600" /> 
+                <Resolution x="1920" y="1080" /> 
+                
                 <Projection
                     type="planar"
                 >
@@ -150,9 +161,10 @@
                 warpFileName="warpLUT_RT002.pfm"
                 blendImageName="blendmask_RT002.png"
                 testImageName="OpenSpace/RT002.png"
-                decklinkWorkaround_verticalOffset_pixels="29"
+                decklinkWorkaround_verticalOffset_pixels="0"
             >        
-                <Resolution x="2560" y="1600" /> 
+                <Resolution x="1920" y="1080" /> 
+                
                 <Projection
                     type="planar"
                 >
@@ -180,9 +192,10 @@
                 warpFileName="warpLUT_RT003.pfm"
                 blendImageName="blendmask_RT003.png"
                 testImageName="OpenSpace/RT003.png"
-                decklinkWorkaround_verticalOffset_pixels="29"
+                decklinkWorkaround_verticalOffset_pixels="0"
             >        
-                <Resolution x="2560" y="1600" /> 
+                <Resolution x="1920" y="1080" /> 
+                
                 <Projection
                     type="planar"
                 >
@@ -211,9 +224,9 @@
                 warpFileName="warpLUT_RT004.pfm"
                 blendImageName="blendmask_RT004.png"
                 testImageName="OpenSpace/RT004.png"
-                decklinkWorkaround_verticalOffset_pixels="29"
+                decklinkWorkaround_verticalOffset_pixels="0"
             >        
-                <Resolution x="2560" y="1600" /> 
+                <Resolution x="1920" y="1080" /> 
                 <Projection
                     type="planar"
                 >
@@ -242,9 +255,9 @@
                 warpFileName="warpLUT_RT005.pfm"
                 blendImageName="blendmask_RT005.png"
                 testImageName="OpenSpace/RT005.png"
-                decklinkWorkaround_verticalOffset_pixels="29"
+                decklinkWorkaround_verticalOffset_pixels="0"
             >        
-                <Resolution x="2560" y="1600" /> 
+                <Resolution x="1920" y="1080" /> 
                 <Projection
                     type="planar"
                 >

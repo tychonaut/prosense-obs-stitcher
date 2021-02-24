@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Includes:
@@ -112,6 +111,11 @@ static void stitch_filter_tick(void *data, float seconds);
 // update the uniform variables of the shader
 static void stitch_filter_render(void *data, gs_effect_t *effect);
 
+//experimental: try to get some time stamp info
+static struct obs_source_frame *
+stitch_filter_filterRawFrame(void *data,
+					 struct obs_source_frame *frame);
+
 //{ simple getters for the main app
 static const char *stitch_filter_get_name(void *unused);
 // know the  plugin's output resolution:
@@ -132,13 +136,6 @@ static void clusti_OBS_initUniforms(Clusti const *clusti,
 				    Clusti_OBS_uniforms *uniforms);
 
 static void clusti_OBS_bindUniforms(Clusti_OBS_uniforms const *uniforms);
-//}
-
-//{ old code: Hugin etc. file parsing.
-void parse_file(const char *path, int cam, struct stitch_filter_data *filter);
-void parse_script_crop(char *str, struct vec2 *crop_c, struct vec2 *crop_r,
-		       char crop_type);
-float parse_script(char *str, char *p);
 //}
 
 //-----------------------------------------------------------------------------
@@ -162,6 +159,7 @@ struct obs_source_info stitch_filter = {
 	.update = stitch_filter_update,
 	.video_tick = stitch_filter_tick,
 	.video_render = stitch_filter_render,
+	.filter_video = stitch_filter_filterRawFrame,
 	.get_properties = stitch_filter_properties,
 	.get_defaults = stitch_filter_defaults,
 	.get_width = stitch_filter_width,
@@ -293,7 +291,7 @@ typedef struct Clusti_OBS_uniforms Clusti_OBS_uniforms;
 
 struct stitch_filter_data {
 
-	obs_source_t *obsSourceTarget;
+	obs_source_t *obsFilterObject;
 
 	gs_effect_t *frustumStitchEffect;
 	
@@ -332,7 +330,7 @@ static void *stitch_filter_create(obs_data_t *settings, obs_source_t *context)
 	struct stitch_filter_data *filter =
 		(struct stitch_filter_data *)bzalloc(sizeof(*filter));
 
-	filter->obsSourceTarget = context;
+	filter->obsFilterObject = context;
 
 	stitch_filter_update(filter, settings);
 
@@ -829,7 +827,7 @@ static void stitch_filter_update(void *data, obs_data_t *settings)
 
 	// ----------------------------
 	// ideas for plugin-global settings update...
-	obs_source_t *obsSource_filterTarget= obs_filter_get_target(filter->obsSourceTarget);
+	obs_source_t *obsSource_filterTarget= obs_filter_get_target(filter->obsFilterObject);
 	//obs_scene_find_source_recursive()
 	obs_scene_t *obsScene = obs_scene_from_source(obsSource_filterTarget);
 	//obs_scene_get_settin
@@ -898,12 +896,16 @@ static void stitch_filter_defaults(obs_data_t *settings)
 //-----------------------------------------------------------------------------
 static void stitch_filter_tick(void *data, float seconds)
 {
-	UNUSED_PARAMETER(seconds);
-
 	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
 
+	//seconds;
+	blog(LOG_DEBUG, "tick timestamp for source"
+		"%d: %f seconds",
+	     filter->sourceIndexToUse, 
+	     seconds);
+
 	obs_source_t *source;
-	source = obs_filter_get_target(filter->obsSourceTarget);
+	source = obs_filter_get_target(filter->obsFilterObject);
 }
 //-----------------------------------------------------------------------------
 
@@ -914,27 +916,74 @@ static void stitch_filter_render(void *data, gs_effect_t *effect)
 
 	//!filter->target ||
 	if (!filter->frustumStitchEffect) {
-		obs_source_skip_video_filter(filter->obsSourceTarget);
+		obs_source_skip_video_filter(filter->obsFilterObject);
 		return;
 	}
 
-	if (!obs_source_process_filter_begin(filter->obsSourceTarget, GS_RGBA,
+
+
+	if (!obs_source_process_filter_begin(filter->obsFilterObject, GS_RGBA,
 					     OBS_NO_DIRECT_RENDERING)) {
 		return;
 	}
 
+	////obs_source_t* obsVideoSource =
+	//struct obs_source *obsVideoSource =
+	//	obs_filter_get_target(filter->obsFilterObject);
+
+
+	////obsVideoSource->last_frame_ts;
+	////obs_source_frame2
+
+	//struct obs_source_frame *currentFrame =
+	//	obs_source_get_frame(obsVideoSource);
+	//if (currentFrame == NULL) {
+	//	blog(LOG_DEBUG, "stitcher: source #%d: No Frame available",
+	//	     filter->sourceIndexToUse);
+	//}
+	//else {
+	//	blog(LOG_DEBUG, "stitcher: source #%d, timestamp: %ul",
+	//		filter->sourceIndexToUse,
+	//		currentFrame->timestamp);
+
+	//	obs_source_release_frame(obsVideoSource, currentFrame);
+	//}
+
+	
 
 	clusti_OBS_bindUniforms(&filter->clusti_OBS_uniforms);
 
-
 	obs_source_process_filter_end(
-		filter->obsSourceTarget, filter->frustumStitchEffect,
+		filter->obsFilterObject, filter->frustumStitchEffect,
 		(uint32_t)filter->currentSinkResolution.x,
 		(uint32_t)filter->currentSinkResolution.y);
 
 	UNUSED_PARAMETER(effect);
 }
+
+
 //-----------------------------------------------------------------------------
+//experimental: try to get some time stamp info
+static struct obs_source_frame *
+stitch_filter_filterRawFrame(void *data,
+					 struct obs_source_frame *frame)
+{
+	struct stitch_filter_data *filter = (struct stitch_filter_data *)data;
+
+	if (frame == NULL) {
+		blog(LOG_DEBUG, "stitcher: source #%d: No Frame available",
+		     filter->sourceIndexToUse);
+	} else {
+		/*blog(LOG_DEBUG, "stitcher: source #%d, timestamp: %llu",
+		     filter->sourceIndexToUse, frame->timestamp);*/
+
+		//obs_source_release_frame(obsVideoSource, currentFrame);
+	}
+
+	return frame;
+}
+//-----------------------------------------------------------------------------}
+
 
 //-----------------------------------------------------------------------------
 static const char *stitch_filter_get_name(void *unused)

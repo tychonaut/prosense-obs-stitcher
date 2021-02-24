@@ -119,7 +119,7 @@ char* clusti_string_getDirectoryFromPath(char const *path)
 		return clusti_String_callocAndCopy("");
 	}
 
-	char *slash = path;
+	char const *slash = path;
 	char *next;
 
 	while ((next = strpbrk(slash + 1, "\\/"))) {
